@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "TDpiN3EYFGQ=",
+  "dgSpecHash": "TFnWvI05YKE=",
   "success": true,
-  "projectFilePath": "C:\\Users\\alex.finch\\OneDrive - WiseTech Global Pty Ltd\\Documents\\Coding Projects\\Application Site\\JobPortal\\JobPortal.csproj",
+  "projectFilePath": "C:\\Users\\alex.finch\\OneDrive - WiseTech Global Pty Ltd\\Documents\\Coding Projects\\Application Site\\jobportal\\JobPortal.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\alex.finch\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
     "C:\\Users\\alex.finch\\.nuget\\packages\\microsoft.bcl.asyncinterfaces\\7.0.0\\microsoft.bcl.asyncinterfaces.7.0.0.nupkg.sha512",

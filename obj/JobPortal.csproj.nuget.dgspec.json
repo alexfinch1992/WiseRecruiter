@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\alex.finch\\OneDrive - WiseTech Global Pty Ltd\\Documents\\Coding Projects\\Application Site\\JobPortal\\JobPortal.csproj": {}
+    "C:\\Users\\alex.finch\\OneDrive - WiseTech Global Pty Ltd\\Documents\\Coding Projects\\Application Site\\jobportal\\JobPortal.csproj": {}
   },
   "projects": {
-    "C:\\Users\\alex.finch\\OneDrive - WiseTech Global Pty Ltd\\Documents\\Coding Projects\\Application Site\\JobPortal\\JobPortal.csproj": {
+    "C:\\Users\\alex.finch\\OneDrive - WiseTech Global Pty Ltd\\Documents\\Coding Projects\\Application Site\\jobportal\\JobPortal.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\alex.finch\\OneDrive - WiseTech Global Pty Ltd\\Documents\\Coding Projects\\Application Site\\JobPortal\\JobPortal.csproj",
+        "projectUniqueName": "C:\\Users\\alex.finch\\OneDrive - WiseTech Global Pty Ltd\\Documents\\Coding Projects\\Application Site\\jobportal\\JobPortal.csproj",
         "projectName": "JobPortal",
-        "projectPath": "C:\\Users\\alex.finch\\OneDrive - WiseTech Global Pty Ltd\\Documents\\Coding Projects\\Application Site\\JobPortal\\JobPortal.csproj",
+        "projectPath": "C:\\Users\\alex.finch\\OneDrive - WiseTech Global Pty Ltd\\Documents\\Coding Projects\\Application Site\\jobportal\\JobPortal.csproj",
         "packagesPath": "C:\\Users\\alex.finch\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\alex.finch\\OneDrive - WiseTech Global Pty Ltd\\Documents\\Coding Projects\\Application Site\\JobPortal\\obj\\",
+        "outputPath": "C:\\Users\\alex.finch\\OneDrive - WiseTech Global Pty Ltd\\Documents\\Coding Projects\\Application Site\\jobportal\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\alex.finch\\AppData\\Roaming\\NuGet\\NuGet.Config"
