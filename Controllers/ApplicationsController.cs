@@ -1,0 +1,138 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using JobPortal.Models;
+using JobPortal.Data;
+using JobPortal.Helpers;
+
+public class ApplicationsController : Controller
+{
+    private readonly AppDbContext _context;
+    private readonly IWebHostEnvironment _webHostEnvironment;
+
+    public ApplicationsController(AppDbContext context, IWebHostEnvironment webHostEnvironment)
+    {
+        _context = context;
+        _webHostEnvironment = webHostEnvironment;
+    }
+
+    public async Task<IActionResult> Index()    
+    {
+        return View(await _context.Applications.ToListAsync());
+    }
+
+    public async Task<IActionResult> Details(int? id)
+    {
+        if (id == null)
+            return NotFound();
+
+        var application = await _context.Applications
+            .Include(a => a.Job)
+            .ThenInclude(j => j.Stages)
+            .Include(a => a.CurrentStage)
+            .FirstOrDefaultAsync(m => m.Id == id);
+        return application == null ? NotFound() : View(application);
+    }
+
+    public IActionResult Create(int? jobId)
+    {
+        var application = new Application();
+        if (jobId.HasValue)
+            application.JobId = jobId.Value;
+        return View(application);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create([Bind("Name,Email,City,JobId")] Application application, IFormFile resume)
+    {
+        var (isValid, errorMessage) = FileUploadHelper.ValidateResume(resume);
+        if (!isValid)
+            ModelState.AddModelError("resume", errorMessage);
+
+        if (ModelState.IsValid && resume != null)
+        {
+            var (success, filePath, uploadError) = await FileUploadHelper.SaveResumeAsync(resume, _webHostEnvironment.WebRootPath);
+            
+            if (!success)
+            {
+                ModelState.AddModelError("", uploadError);
+                return View(application);
+            }
+
+            application.ResumePath = filePath;
+            
+            // Auto-assign to "Application" stage (first stage with Order 0)
+            var applicationStage = await _context.JobStages
+                .FirstOrDefaultAsync(s => s.JobId == application.JobId && s.Order == 0);
+            if (applicationStage != null)
+                application.CurrentJobStageId = applicationStage.Id;
+            
+            _context.Add(application);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
+
+        return View(application);
+    }
+
+    public async Task<IActionResult> Edit(int? id)
+    {
+        if (id == null)
+            return NotFound();
+
+        var application = await _context.Applications.FindAsync(id);
+        return application == null ? NotFound() : View(application);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(int? id, [Bind("Id,Name,Email,City,ResumePath,JobId")] Application application)
+    {
+        if (id != application.Id)
+            return NotFound();
+
+        if (ModelState.IsValid)
+        {
+            try
+            {
+                _context.Update(application);
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!ApplicationExists(application.Id))
+                    return NotFound();
+                throw;
+            }
+            return RedirectToAction(nameof(Index));
+        }
+
+        return View(application);
+    }
+
+    public async Task<IActionResult> Delete(int? id)
+    {
+        if (id == null)
+            return NotFound();
+
+        var application = await _context.Applications.FirstOrDefaultAsync(m => m.Id == id);
+        return application == null ? NotFound() : View(application);
+    }
+
+    [HttpPost, ActionName("Delete")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteConfirmed(int? id)
+    {
+        var application = await _context.Applications.FindAsync(id);
+        if (application != null)
+        {
+            FileUploadHelper.DeleteResume(application.ResumePath, _webHostEnvironment.WebRootPath);
+            _context.Applications.Remove(application);
+        }
+
+        await _context.SaveChangesAsync();
+        return RedirectToAction(nameof(Index));
+    }
+
+    private bool ApplicationExists(int? id) => _context.Applications.Any(e => e.Id == id);
+}

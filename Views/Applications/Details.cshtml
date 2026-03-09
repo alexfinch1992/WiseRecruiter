@@ -1,0 +1,172 @@
+@model JobPortal.Models.Application
+
+@{
+    ViewData["Title"] = $"{Model.Name} - Candidate Profile";
+}
+
+<div class="container-fluid py-5">
+    <div class="row mb-5">
+        <div class="col-md-8">
+            <a href="javascript:history.back()" class="btn btn-outline-secondary mb-4">
+                <i class="fas fa-arrow-left me-2"></i>Back
+            </a>
+            <h1 class="fw-bold mb-3" style="color: #1E1765;">
+                <i class="fas fa-user-circle me-3"></i>@Model.Name
+            </h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Contact Information Card -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
+                    <h5 class="fw-bold mb-0 text-white"><i class="fas fa-phone me-2"></i>Contact Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="fw-bold text-muted small"><i class="fas fa-envelope me-2"></i>Email</label>
+                            <p class="lead mb-0">
+                                <a href="mailto:@Model.Email">@Model.Email</a>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="fw-bold text-muted small"><i class="fas fa-map-marker-alt me-2"></i>City</label>
+                            <p class="lead mb-0">
+                                <span class="badge" style="background: #7B3FF2; font-size: 1rem;">@Model.City</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Application Details Card -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
+                    <h5 class="fw-bold mb-0 text-white"><i class="fas fa-briefcase me-2"></i>Application Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="fw-bold text-muted small"><i class="fas fa-briefcase me-2"></i>Position</label>
+                            <p class="lead mb-0">
+                                <a asp-controller="Admin" asp-action="JobDetail" asp-route-id="@Model.JobId" style="color: #1E1765; text-decoration: none;" class="fw-bold">
+                                    @Model.Job?.Title
+                                </a>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="fw-bold text-muted small"><i class="fas fa-calendar me-2"></i>Applied Date</label>
+                            <p class="lead mb-0">@Model.AppliedDate.ToString("MMMM dd, yyyy")</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interview Stage Card -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
+                    <h5 class="fw-bold mb-0 text-white"><i class="fas fa-tasks me-2"></i>Interview Stage</h5>
+                </div>
+                <div class="card-body">
+                    @{
+                        var allStages = Model.Job?.Stages?.OrderBy(s => s.Order).ToList() ?? new List<JobStage>();
+                        var currentStageIndex = allStages.FindIndex(s => s.Id == Model.CurrentJobStageId);
+                        if (currentStageIndex < 0) currentStageIndex = 0;
+                        var progressPercent = allStages.Any() ? ((currentStageIndex + 1) * 100) / allStages.Count : 0;
+                    }
+                    <div class="progress" style="height: 30px;">
+                        <div class="progress-bar fw-bold" role="progressbar" style="width: @progressPercent%; background: linear-gradient(90deg, #1E1765, #7B3FF2);" 
+                             aria-valuenow="@progressPercent" aria-valuemin="0" aria-valuemax="100">
+                            @(allStages.Any() ? allStages[currentStageIndex].Name : "N/A") (@progressPercent%)
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <p class="fw-bold mb-2">Stage Indicators:</p>
+                        <div class="d-flex justify-content-between flex-wrap gap-2">
+                            @for (int i = 0; i < allStages.Count; i++)
+                            {
+                                var isActive = i <= currentStageIndex;
+                                var badgeClass = isActive ? "badge-success" : "badge-secondary";
+                                <span class="badge @badgeClass" style="font-size: 0.9rem;">
+                                    <i class="fas @(isActive ? "fa-check-circle" : "fa-circle") me-1"></i>@allStages[i].Name
+                                </span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resume Card -->
+            @if (!string.IsNullOrEmpty(Model.ResumePath))
+            {
+                <div class="card shadow-sm border-0">
+                    <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
+                        <h5 class="fw-bold mb-0 text-white"><i class="fas fa-file-alt me-2"></i>Resume</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex gap-2">
+                            <a href="@Model.ResumePath" target="_blank" class="btn btn-outline-primary">
+                                <i class="fas fa-eye me-2"></i>View Resume
+                            </a>
+                            <a asp-action="DownloadResume" asp-controller="Admin" asp-route-id="@Model.Id" class="btn btn-outline-success">
+                                <i class="fas fa-download me-2"></i>Download Resume
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-warning" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i><strong>No Resume</strong>
+                    <p class="mb-0">This candidate has not provided a resume.</p>
+                </div>
+            }
+        </div>
+
+        <!-- Summary Card -->
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 sticky-top" style="top: 20px;">
+                <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
+                    <h5 class="fw-bold mb-0 text-white"><i class="fas fa-info-circle me-2"></i>Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <small class="fw-bold text-muted">CANDIDATE ID</small>
+                        <p class="lead">@Model.Id</p>
+                    </div>
+                    <div class="mb-4">
+                        <small class="fw-bold text-muted">CURRENT STAGE</small>
+                        <p class="lead">
+                            <span class="badge" style="background: #7B3FF2; font-size: 0.9rem;">
+                                @(Model.CurrentStage?.Name ?? "Unassigned")
+                            </span>
+                        </p>
+                    </div>
+                    <div>
+                        <small class="fw-bold text-muted">TIME IN SYSTEM</small>
+                        <p class="lead">
+                            @{
+                                var daysInSystem = (DateTime.UtcNow - Model.AppliedDate).Days;
+                            }
+                            @if (daysInSystem == 0)
+                            {
+                                <span>Today</span>
+                            }
+                            else if (daysInSystem == 1)
+                            {
+                                <span>1 day</span>
+                            }
+                            else
+                            {
+                                <span>@daysInSystem days</span>
+                            }
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

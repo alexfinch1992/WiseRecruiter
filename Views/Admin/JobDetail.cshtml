@@ -1,0 +1,404 @@
+@model JobPortal.Models.Job
+
+@{
+    ViewData["Title"] = "Job Details";
+}
+
+<style>
+    .stage-item {
+        transition: all 0.3s ease-in-out;
+    }
+    
+    .stage-item.moving-up {
+        animation: slideUp 0.3s ease-in-out;
+    }
+    
+    .stage-item.moving-down {
+        animation: slideDown 0.3s ease-in-out;
+    }
+    
+    @@keyframes slideUp {
+        0% {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.7;
+        }
+        100% {
+            transform: translateY(-52px);
+            opacity: 1;
+        }
+    }
+    
+    @@keyframes slideDown {
+        0% {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.7;
+        }
+        100% {
+            transform: translateY(52px);
+            opacity: 1;
+        }
+    }
+</style>
+
+<div class="container-fluid py-5">
+    <div class="row mb-5">
+        <div class="col-md-8">
+            <h1 class="fw-bold mb-2"><i class="fas fa-briefcase me-3"></i>@Model.Title</h1>
+            <p class="text-muted lead">Job ID: @Model.Id</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a asp-action="Index" class="btn btn-outline-primary"><i class="fas fa-arrow-left me-2"></i>Back to Jobs</a>
+        </div>
+    </div>
+
+    <div class="row mb-5">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header">
+                    <h5 class="fw-bold mb-0"><i class="fas fa-file-alt me-2"></i>Job Description</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text lead">@Model.Description</p>
+                </div>
+                <div class="card-footer bg-white border-top">
+                    <div class="btn-group" role="group">
+                        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-sm btn-outline-warning"><i class="fas fa-edit me-1"></i>Edit</a>
+                        <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash me-1"></i>Delete</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-info">
+                    <h5 class="fw-bold mb-0 text-white"><i class="fas fa-users me-2"></i>Candidates</h5>
+                </div>
+                <div class="card-body">
+                    <h2 class="display-4 fw-bold text-center" style="color: #1E1765;">
+                        @(Model.Applications?.Count ?? 0)
+                    </h2>
+                    <p class="text-center text-muted mt-3">
+                        @(Model.Applications?.Count == 1 ? "candidate has" : "candidates have") applied
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (Model.Applications?.Any() == true)
+    {
+        <!-- Interview Stages Management Section -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
+                <h5 class="fw-bold mb-0 text-white"><i class="fas fa-tasks me-2"></i>Interview Stages</h5>
+            </div>
+            <div class="card-body">
+                @{
+                    var stages = Model.Stages?.OrderBy(s => s.Order).ToList() ?? new List<JobStage>();
+                }
+
+                @if (stages.Any())
+                {
+                    <div class="mb-3" id="stagesContainer">
+                        @for (int i = 0; i < stages.Count; i++)
+                        {
+                            var stage = stages[i];
+                            <div class="stage-item d-flex align-items-center px-3 py-2 rounded mb-2" data-stage-id="@stage.Id" data-stage-order="@i" style="border-left: 4px solid #7B3FF2; background-color: #f8f9fa;">
+                                <span class="flex-grow-1 fw-500">@stage.Name</span>
+                                <div class="btn-group btn-group-sm ms-2" role="group">
+                                    @if (i > 0)
+                                    {
+                                        <button type="button" class="btn btn-outline-secondary" title="Move Up" onclick="moveStage(@stage.Id, @Model.Id, 'up', this)">
+                                            <i class="fas fa-chevron-up"></i>
+                                        </button>
+                                    }
+                                    @if (i < stages.Count - 1)
+                                    {
+                                        <button type="button" class="btn btn-outline-secondary" title="Move Down" onclick="moveStage(@stage.Id, @Model.Id, 'down', this)">
+                                            <i class="fas fa-chevron-down"></i>
+                                        </button>
+                                    }
+                                    <button type="button" class="btn btn-outline-danger" title="Remove Stage" onclick="removeStage(@stage.Id, @Model.Id, this)">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted small mb-3"><i class="fas fa-info-circle me-1"></i>No stages configured</p>
+                }
+
+                <!-- Add New Stage Form -->
+                <form method="post" asp-action="AddStage" class="d-flex gap-2">
+                    <input type="hidden" name="jobId" value="@Model.Id" />
+                    <input type="text" name="stageName" class="form-control form-control-sm" placeholder="Enter stage name (e.g., HR Review, Coding Test)" required />
+                    <button type="submit" class="btn btn-sm btn-outline-success"><i class="fas fa-plus me-1"></i>Add Stage</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <div class="btn-group" role="group">
+                <a href="@Url.Action("JobDetail", new { id = Model.Id, sort = "name" })" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-sort-alpha-down me-1"></i>Sort by Name
+                </a>
+                <a href="@Url.Action("JobDetail", new { id = Model.Id, sort = "stage" })" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-filter me-1"></i>Sort by Stage
+                </a>
+                <a href="@Url.Action("JobDetail", new { id = Model.Id, sort = "date" })" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-calendar me-1"></i>Sort by Date
+                </a>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0">
+            <div class="card-header">
+                <h5 class="fw-bold mb-0"><i class="fas fa-list me-2"></i>Applicants</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-user me-2"></i>Name</th>
+                            <th><i class="fas fa-envelope me-2"></i>Email</th>
+                            <th><i class="fas fa-map-marker-alt me-2"></i>City</th>
+                            <th class="text-center"><i class="fas fa-tasks me-2"></i>Stage</th>
+                            <th class="text-center"><i class="fas fa-file me-2"></i>Resume</th>
+                            <th class="text-center"><i class="fas fa-cog me-2"></i>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var app in Model.Applications)
+                        {
+                            <tr>
+                                <td>
+                                    <a asp-controller="Applications" asp-action="Details" asp-route-id="@app.Id" style="color: #1E1765; text-decoration: none;">
+                                        <strong>@app.Name</strong>
+                                    </a>
+                                    <br />
+                                    <small class="text-muted">@app.AppliedDate.ToString("MMM dd, yyyy")</small>
+                                </td>
+                                <td>
+                                    <a href="mailto:@app.Email">@app.Email</a>
+                                </td>
+                                <td>
+                                    <span class="badge badge-primary">@app.City</span>
+                                </td>
+                                <td class="text-center">
+                                    <form asp-action="UpdateStage" method="post" class="d-inline">
+                                        <input type="hidden" name="applicationId" value="@app.Id" />
+                                        <input type="hidden" name="jobId" value="@Model.Id" />
+                                        <select name="stageId" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto; display: inline-block;">
+                                            <option value="" selected="@(app.CurrentJobStageId == null)">-- Unassigned --</option>
+                                            @foreach (var stage in (Model.Stages?.OrderBy(s => s.Order) ?? Enumerable.Empty<JobStage>()).ToList())
+                                            {
+                                                <option value="@stage.Id" selected="@(app.CurrentJobStageId == stage.Id)">@stage.Name</option>
+                                            }
+                                        </select>
+                                    </form>
+                                </td>
+                                <td class="text-center">
+                                    @if (!string.IsNullOrEmpty(app.ResumePath))
+                                    {
+                                        <a href="@app.ResumePath" target="_blank" class="btn btn-sm btn-outline-secondary" title="View Resume">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">N/A</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group" role="group">
+                                        @if (!string.IsNullOrEmpty(app.ResumePath))
+                                        {
+                                            <a asp-action="DownloadResume" asp-route-id="@app.Id" class="btn btn-sm btn-outline-success" title="Download Resume">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info text-center py-5 rounded">
+            <i class="fas fa-inbox fa-3x mb-3" style="color: #7B3FF2;"></i>
+            <h5 class="fw-bold mt-3">No Candidates Yet</h5>
+            <p class="text-muted">No one has applied for this position yet. Check back soon!</p>
+        </div>
+    }
+</div>
+
+<script>
+async function moveStage(stageId, jobId, direction, button) {
+    const container = document.getElementById('stagesContainer');
+    const currentItem = container.querySelector(`[data-stage-id="${stageId}"]`);
+    
+    if (!currentItem) return;
+
+    const currentOrder = parseInt(currentItem.getAttribute('data-stage-order'));
+    const siblings = Array.from(container.querySelectorAll('.stage-item'));
+    const nextOrder = direction === 'up' ? currentOrder - 1 : currentOrder + 1;
+    const nextItem = siblings.find(s => parseInt(s.getAttribute('data-stage-order')) === nextOrder);
+
+    if (!nextItem) return;
+
+    // Disable button during animation
+    button.disabled = true;
+
+    try {
+        const response = await fetch('@Url.Action("MoveStage")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: new URLSearchParams({
+                stageId: stageId,
+                jobId: jobId,
+                direction: direction
+            })
+        });
+
+        if (response.ok) {
+            // Add animation classes
+            currentItem.classList.add(`moving-${direction}`);
+            nextItem.classList.add(`moving-${direction === 'up' ? 'down' : 'up'}`);
+
+            // Wait for animation to complete
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            // Swap the elements in DOM
+            if (direction === 'up') {
+                currentItem.parentNode.insertBefore(currentItem, nextItem);
+            } else {
+                nextItem.parentNode.insertBefore(nextItem, currentItem);
+            }
+
+            // Update order attributes
+            currentItem.setAttribute('data-stage-order', nextOrder);
+            nextItem.setAttribute('data-stage-order', currentOrder);
+
+            // Remove animation classes
+            currentItem.classList.remove(`moving-${direction}`);
+            nextItem.classList.remove(`moving-${direction === 'up' ? 'down' : 'up'}`);
+
+            // Re-render buttons for new positions
+            renderStageButtons();
+        } else {
+            alert('Failed to move stage');
+            button.disabled = false;
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error moving stage');
+        button.disabled = false;
+    }
+}
+
+async function removeStage(stageId, jobId, button) {
+    if (!confirm('Remove this stage?')) return;
+
+    const container = document.getElementById('stagesContainer');
+    const stageItem = container.querySelector(`[data-stage-id="${stageId}"]`);
+
+    if (!stageItem) return;
+
+    button.disabled = true;
+
+    try {
+        const response = await fetch('@Url.Action("RemoveStage")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: new URLSearchParams({
+                stageId: stageId,
+                jobId: jobId
+            })
+        });
+
+        if (response.ok) {
+            // Fade out animation
+            stageItem.style.opacity = '0';
+            stageItem.style.transform = 'scale(0.95)';
+            
+            await new Promise(resolve => setTimeout(resolve, 300));
+            stageItem.remove();
+
+            // Re-render buttons for remaining stages
+            renderStageButtons();
+        } else {
+            alert('Failed to remove stage');
+            button.disabled = false;
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error removing stage');
+        button.disabled = false;
+    }
+}
+
+function renderStageButtons() {
+    const container = document.getElementById('stagesContainer');
+    const items = Array.from(container.querySelectorAll('.stage-item'));
+    
+    items.forEach((item, index) => {
+        const btnGroup = item.querySelector('.btn-group');
+        const stageId = item.getAttribute('data-stage-id');
+        const jobId = '@Model.Id';
+        
+        // Clear existing buttons
+        btnGroup.innerHTML = '';
+        
+        // Add up button
+        if (index > 0) {
+            const upBtn = document.createElement('button');
+            upBtn.type = 'button';
+            upBtn.className = 'btn btn-outline-secondary';
+            upBtn.title = 'Move Up';
+            upBtn.innerHTML = '<i class="fas fa-chevron-up"></i>';
+            upBtn.onclick = () => moveStage(stageId, jobId, 'up', upBtn);
+            btnGroup.appendChild(upBtn);
+        }
+        
+        // Add down button
+        if (index < items.length - 1) {
+            const downBtn = document.createElement('button');
+            downBtn.type = 'button';
+            downBtn.className = 'btn btn-outline-secondary';
+            downBtn.title = 'Move Down';
+            downBtn.innerHTML = '<i class="fas fa-chevron-down"></i>';
+            downBtn.onclick = () => moveStage(stageId, jobId, 'down', downBtn);
+            btnGroup.appendChild(downBtn);
+        }
+        
+        // Add remove button
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'btn btn-outline-danger';
+        removeBtn.title = 'Remove Stage';
+        removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+        removeBtn.onclick = () => removeStage(stageId, jobId, removeBtn);
+        btnGroup.appendChild(removeBtn);
+    });
+}
+</script>
