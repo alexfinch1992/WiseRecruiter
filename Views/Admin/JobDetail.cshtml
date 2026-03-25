@@ -87,6 +87,29 @@
                     <p class="text-center text-muted mt-3">
                         @(Model.Applications?.Count == 1 ? "candidate has" : "candidates have") applied
                     </p>
+                    
+                    @if (Model.Applications?.Any() == true && Model.Stages?.Any() == true)
+                    {
+                        <hr class="my-3" />
+                        <div class="small">
+                            @{
+                                var stageGroups = Model.Applications.GroupBy(a => a.CurrentJobStageId)
+                                    .OrderBy(g => Model.Stages.FirstOrDefault(s => s.Id == g.Key)?.Order ?? int.MaxValue)
+                                    .ToList();
+                            }
+                            @foreach (var group in stageGroups)
+                            {
+                                var stage = Model.Stages.FirstOrDefault(s => s.Id == group.Key);
+                                if (stage != null)
+                                {
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="text-truncate me-2">@stage.Name</span>
+                                        <span class="badge bg-secondary" style="background-color: #7B3FF2 !important;">@group.Count()</span>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    }
                 </div>
             </div>
         </div>
@@ -94,16 +117,17 @@
 
     @if (Model.Applications?.Any() == true)
     {
+        var stages = Model.Stages?.OrderBy(s => s.Order).ToList() ?? new List<JobStage>();
+        
         <!-- Interview Stages Management Section -->
         <div class="card shadow-sm border-0 mb-4">
-            <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
+            <div class="card-header d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
                 <h5 class="fw-bold mb-0 text-white"><i class="fas fa-tasks me-2"></i>Interview Stages</h5>
+                <button class="btn btn-sm btn-light" onclick="toggleStagesCollapse()" title="Expand/Collapse">
+                    <i class="fas fa-chevron-down" id="stagesCollapseIcon"></i>
+                </button>
             </div>
-            <div class="card-body">
-                @{
-                    var stages = Model.Stages?.OrderBy(s => s.Order).ToList() ?? new List<JobStage>();
-                }
-
+            <div class="card-body" style="display: none;" id="stagesFilledView">
                 @if (stages.Any())
                 {
                     <div class="mb-3" id="stagesContainer">
@@ -145,6 +169,21 @@
                     <button type="submit" class="btn btn-sm btn-outline-success"><i class="fas fa-plus me-1"></i>Add Stage</button>
                 </form>
             </div>
+            <div class="card-body" id="stagesCollapsedView">
+                @if (stages.Any())
+                {
+                    <div class="d-flex flex-wrap gap-2">
+                        @foreach (var stage in stages)
+                        {
+                            <span class="badge" style="background-color: #7B3FF2; font-size: 0.85rem;">@stage.Name</span>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted small mb-0"><i class="fas fa-info-circle me-1"></i>No stages configured</p>
+                }
+            </div>
         </div>
 
         <div class="mb-4">
@@ -172,6 +211,7 @@
                             <th><i class="fas fa-user me-2"></i>Name</th>
                             <th><i class="fas fa-envelope me-2"></i>Email</th>
                             <th><i class="fas fa-map-marker-alt me-2"></i>City</th>
+                            <th><i class="fas fa-calendar me-2"></i>Applied</th>
                             <th class="text-center"><i class="fas fa-tasks me-2"></i>Stage</th>
                             <th class="text-center"><i class="fas fa-file me-2"></i>Resume</th>
                             <th class="text-center"><i class="fas fa-cog me-2"></i>Actions</th>
@@ -185,14 +225,15 @@
                                     <a asp-controller="Applications" asp-action="Details" asp-route-id="@app.Id" style="color: #1E1765; text-decoration: none;">
                                         <strong>@app.Name</strong>
                                     </a>
-                                    <br />
-                                    <small class="text-muted">@app.AppliedDate.ToString("MMM dd, yyyy")</small>
                                 </td>
                                 <td>
                                     <a href="mailto:@app.Email">@app.Email</a>
                                 </td>
                                 <td>
                                     <span class="badge badge-primary">@app.City</span>
+                                </td>
+                                <td>
+                                    <small class="text-muted">@app.AppliedDate.ToString("MMM dd, yyyy hh:mm tt")</small>
                                 </td>
                                 <td class="text-center">
                                     <form asp-action="UpdateStage" method="post" class="d-inline">
@@ -400,5 +441,27 @@ function renderStageButtons() {
         removeBtn.onclick = () => removeStage(stageId, jobId, removeBtn);
         btnGroup.appendChild(removeBtn);
     });
+}
+
+function toggleStagesCollapse() {
+    const filledView = document.getElementById('stagesFilledView');
+    const collapsedView = document.getElementById('stagesCollapsedView');
+    const icon = document.getElementById('stagesCollapseIcon');
+    
+    const isCollapsed = filledView.style.display === 'none';
+    
+    if (isCollapsed) {
+        // Expand
+        filledView.style.display = 'block';
+        collapsedView.style.display = 'none';
+        icon.classList.remove('fa-chevron-down');
+        icon.classList.add('fa-chevron-up');
+    } else {
+        // Collapse
+        filledView.style.display = 'none';
+        collapsedView.style.display = 'block';
+        icon.classList.remove('fa-chevron-up');
+        icon.classList.add('fa-chevron-down');
+    }
 }
 </script>

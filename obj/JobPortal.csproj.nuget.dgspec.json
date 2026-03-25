@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\alex.finch\\OneDrive - WiseTech Global Pty Ltd\\Documents\\Coding Projects\\Application Site\\jobportal\\JobPortal.csproj": {}
+    "C:\\Users\\alex.finch\\OneDrive - WiseTech Global Pty Ltd\\Documents\\Coding Projects\\Application Site\\JobPortal\\JobPortal.csproj": {}
   },
   "projects": {
-    "C:\\Users\\alex.finch\\OneDrive - WiseTech Global Pty Ltd\\Documents\\Coding Projects\\Application Site\\jobportal\\JobPortal.csproj": {
+    "C:\\Users\\alex.finch\\OneDrive - WiseTech Global Pty Ltd\\Documents\\Coding Projects\\Application Site\\JobPortal\\JobPortal.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\alex.finch\\OneDrive - WiseTech Global Pty Ltd\\Documents\\Coding Projects\\Application Site\\jobportal\\JobPortal.csproj",
+        "projectUniqueName": "C:\\Users\\alex.finch\\OneDrive - WiseTech Global Pty Ltd\\Documents\\Coding Projects\\Application Site\\JobPortal\\JobPortal.csproj",
         "projectName": "JobPortal",
-        "projectPath": "C:\\Users\\alex.finch\\OneDrive - WiseTech Global Pty Ltd\\Documents\\Coding Projects\\Application Site\\jobportal\\JobPortal.csproj",
+        "projectPath": "C:\\Users\\alex.finch\\OneDrive - WiseTech Global Pty Ltd\\Documents\\Coding Projects\\Application Site\\JobPortal\\JobPortal.csproj",
         "packagesPath": "C:\\Users\\alex.finch\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\alex.finch\\OneDrive - WiseTech Global Pty Ltd\\Documents\\Coding Projects\\Application Site\\jobportal\\obj\\",
+        "outputPath": "C:\\Users\\alex.finch\\OneDrive - WiseTech Global Pty Ltd\\Documents\\Coding Projects\\Application Site\\JobPortal\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\alex.finch\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -78,7 +78,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.311/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.312/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
