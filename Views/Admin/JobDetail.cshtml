@@ -100,13 +100,23 @@
                             @foreach (var group in stageGroups)
                             {
                                 var stage = Model.Stages.FirstOrDefault(s => s.Id == group.Key);
+                                string stageName;
                                 if (stage != null)
                                 {
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <span class="text-truncate me-2">@stage.Name</span>
-                                        <span class="badge bg-secondary" style="background-color: #7B3FF2 !important;">@group.Count()</span>
-                                    </div>
+                                    stageName = stage.Name;
                                 }
+                                else if (group.Key == null)
+                                {
+                                    stageName = "Unassigned";
+                                }
+                                else
+                                {
+                                    stageName = "Unknown stage";
+                                }
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="text-truncate me-2">@stageName</span>
+                                    <span class="badge bg-secondary" style="background-color: #7B3FF2 !important;">@group.Count()</span>
+                                </div>
                             }
                         </div>
                     }
@@ -123,7 +133,13 @@
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-header d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
                 <h5 class="fw-bold mb-0 text-white"><i class="fas fa-tasks me-2"></i>Interview Stages</h5>
-                <button class="btn btn-sm btn-light" onclick="toggleStagesCollapse()" title="Expand/Collapse">
+                <button
+                    type="button"
+                    class="btn btn-sm btn-light"
+                    title="Expand/Collapse"
+                    aria-label="Toggle interview stages"
+                    aria-expanded="false"
+                    onclick="toggleStagesCollapse(); this.setAttribute('aria-expanded', this.getAttribute('aria-expanded') === 'true' ? 'false' : 'true');">
                     <i class="fas fa-chevron-down" id="stagesCollapseIcon"></i>
                 </button>
             </div>
