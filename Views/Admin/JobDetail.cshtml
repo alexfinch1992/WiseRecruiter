@@ -297,9 +297,13 @@
                                     </form>
                                 </td>
                                 <td class="text-center">
-                                    @if (!string.IsNullOrEmpty(app.ResumePath))
+                                    @{
+                                        var hasResume = !string.IsNullOrEmpty(app.ResumePath) || (app.Documents != null && app.Documents.Any(d => d.Type == DocumentType.Resume));
+                                        var resumePath = !string.IsNullOrEmpty(app.ResumePath) ? app.ResumePath : app.Documents?.FirstOrDefault(d => d.Type == DocumentType.Resume)?.FilePath;
+                                    }
+                                    @if (hasResume && !string.IsNullOrEmpty(resumePath))
                                     {
-                                        <a href="@app.ResumePath" target="_blank" class="btn btn-sm btn-outline-secondary" title="View Resume">
+                                        <a href="@resumePath" target="_blank" class="btn btn-sm btn-outline-secondary" title="View Resume">
                                             <i class="fas fa-eye"></i> View
                                         </a>
                                     }
@@ -313,6 +317,13 @@
                                         @if (!string.IsNullOrEmpty(app.ResumePath))
                                         {
                                             <a asp-action="DownloadResume" asp-route-id="@app.Id" class="btn btn-sm btn-outline-success" title="Download Resume">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                        }
+                                        else if (app.Documents != null && app.Documents.Any(d => d.Type == DocumentType.Resume))
+                                        {
+                                            var resumeDoc = app.Documents.FirstOrDefault(d => d.Type == DocumentType.Resume);
+                                            <a href="@resumeDoc?.FilePath" download class="btn btn-sm btn-outline-success" title="Download Resume">
                                                 <i class="fas fa-download"></i>
                                             </a>
                                         }

@@ -163,6 +163,14 @@ public class ApplicationsController : Controller
         };
 
         _context.Documents.Add(newDocument);
+
+        // If uploading a Resume document, also sync it to ResumePath for backward compatibility
+        if (documentType == (int)DocumentType.Resume)
+        {
+            application.ResumePath = filePath;
+            _context.Update(application);
+        }
+
         await _context.SaveChangesAsync();
 
         return Json(new { success = true, message = "Document uploaded successfully", documentId = newDocument.Id });
