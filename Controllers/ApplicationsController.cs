@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using JobPortal.Models;
 using JobPortal.Data;
@@ -20,6 +21,7 @@ public class ApplicationsController : Controller
         return View(await _context.Applications.ToListAsync());
     }
 
+    // Public candidate view - shows only public information
     public async Task<IActionResult> Details(int? id)
     {
         if (id == null)
@@ -32,6 +34,38 @@ public class ApplicationsController : Controller
             .Include(a => a.Documents)
             .FirstOrDefaultAsync(m => m.Id == id);
         return application == null ? NotFound() : View(application);
+    }
+
+    // Admin-only view - shows sensitive information and interview notes
+    [Authorize(AuthenticationSchemes = "AdminAuth")]
+    public async Task<IActionResult> AdminDetails(int? id)
+    {
+        if (id == null)
+            return NotFound();
+
+        var application = await _context.Applications
+            .Include(a => a.Job)
+            .ThenInclude(j => j.Stages)
+            .Include(a => a.CurrentStage)
+            .Include(a => a.Documents)
+            .FirstOrDefaultAsync(m => m.Id == id);
+        return application == null ? NotFound() : View(application);
+    }
+
+    // Admin action to update interview notes (sensitive data)
+    [Authorize(AuthenticationSchemes = "AdminAuth")]
+    [HttpPost]
+    public async Task<IActionResult> UpdateInterviewNotes(int applicationId, string interviewNotes)
+    {
+        var application = await _context.Applications.FindAsync(applicationId);
+        if (application == null)
+            return NotFound();
+
+        application.InterviewNotes = interviewNotes;
+        _context.Update(application);
+        await _context.SaveChangesAsync();
+
+        return RedirectToAction(nameof(AdminDetails), new { id = applicationId });
     }
 
     public IActionResult Create(int? jobId)
