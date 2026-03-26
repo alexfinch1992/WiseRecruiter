@@ -2,10 +2,10 @@
     ViewData["Title"] = "Analytics Dashboard";
     int totalJobs = Model.TotalJobs;
     int totalApplications = Model.TotalApplications;
-    var candidatesByStage = (List<dynamic>)Model.CandidatesByStage;
-    var applicationsOverTime = (List<dynamic>)Model.ApplicationsOverTime;
-    var jobStats = (List<dynamic>)Model.JobStats;
-    var stageStats = (List<dynamic>)Model.StageStats;
+    var candidatesByStage = Model.CandidatesByStage;
+    var applicationsOverTime = Model.ApplicationsOverTime;
+    var jobStats = Model.JobStats;
+    var stageStats = Model.StageStats;
 }
 
 <div class="container-fluid py-5">
