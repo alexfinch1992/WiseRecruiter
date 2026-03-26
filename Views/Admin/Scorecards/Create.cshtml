@@ -1,0 +1,72 @@
+@model JobPortal.Models.ViewModels.CreateScorecardViewModel
+
+@{
+    ViewData["Title"] = "Create Scorecard";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="mb-0">Create Scorecard</h2>
+                <a asp-action="CandidateDetails" asp-route-id="@Model.ApplicationId" class="btn btn-outline-secondary">
+                    Back to Candidate
+                </a>
+            </div>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <p class="mb-1"><strong>Candidate:</strong> @Model.CandidateName</p>
+                    <p class="mb-3"><strong>Job:</strong> @Model.JobTitle</p>
+
+                    <form asp-action="CreateScorecard" method="post">
+                        @Html.AntiForgeryToken()
+                        <input asp-for="ApplicationId" type="hidden" />
+                        <input asp-for="CandidateId" type="hidden" />
+
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="table-responsive">
+                            <table class="table table-bordered align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 25%;">Facet</th>
+                                        <th style="width: 15%;">Score</th>
+                                        <th style="width: 60%;">Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (int i = 0; i < Model.Responses.Count; i++)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <input asp-for="Responses[@i].FacetName" type="hidden" />
+                                                <span class="fw-semibold">@Model.Responses[i].FacetName</span>
+                                            </td>
+                                            <td>
+                                                <input asp-for="Responses[@i].Score" type="number" step="0.1" min="1" max="5" class="form-control" />
+                                                <span asp-validation-for="Responses[@i].Score" class="text-danger small"></span>
+                                            </td>
+                                            <td>
+                                                <input asp-for="Responses[@i].Notes" type="text" class="form-control" placeholder="Optional note" />
+                                                <span asp-validation-for="Responses[@i].Notes" class="text-danger small"></span>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="d-flex justify-content-end mt-3">
+                            <button type="submit" class="btn btn-primary">Save Scorecard</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

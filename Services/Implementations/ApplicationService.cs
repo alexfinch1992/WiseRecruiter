@@ -28,6 +28,45 @@ namespace JobPortal.Services.Implementations
             if (application == null)
                 throw new ArgumentNullException(nameof(application));
 
+            if (application.JobId <= 0)
+                throw new ArgumentException("A valid JobId is required.", nameof(application.JobId));
+
+            var jobExists = await _context.Jobs.AnyAsync(j => j.Id == application.JobId);
+            if (!jobExists)
+                throw new InvalidOperationException($"Job with ID {application.JobId} does not exist.");
+
+            if (application.CandidateId <= 0)
+            {
+                var existingCandidate = await _context.Candidates
+                    .FirstOrDefaultAsync(c => c.Email == (application.Email ?? string.Empty));
+
+                if (existingCandidate != null)
+                {
+                    application.CandidateId = existingCandidate.Id;
+                }
+                else
+                {
+                    var (firstName, lastName) = SplitName(application.Name);
+                    var candidate = new Candidate
+                    {
+                        FirstName = firstName,
+                        LastName = lastName,
+                        Email = application.Email ?? string.Empty,
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    _context.Candidates.Add(candidate);
+                    await _context.SaveChangesAsync();
+                    application.CandidateId = candidate.Id;
+                }
+            }
+            else
+            {
+                var candidateExists = await _context.Candidates.AnyAsync(c => c.Id == application.CandidateId);
+                if (!candidateExists)
+                    throw new InvalidOperationException("Application references an invalid candidate.");
+            }
+
             // Auto-assign to first stage if not specified
             if (application.CurrentJobStageId == null)
             {
@@ -36,13 +75,35 @@ namespace JobPortal.Services.Implementations
                     .OrderBy(s => s.Order)
                     .FirstOrDefaultAsync();
 
-                if (firstStage != null)
-                    application.CurrentJobStageId = firstStage.Id;
+                if (firstStage == null)
+                    throw new InvalidOperationException("Application cannot be created without a valid stage.");
+
+                application.CurrentJobStageId = firstStage.Id;
+            }
+            else
+            {
+                var selectedStageExists = await _context.JobStages.AnyAsync(
+                    s => s.Id == application.CurrentJobStageId && s.JobId == application.JobId);
+
+                if (!selectedStageExists)
+                    throw new InvalidOperationException("Application stage is invalid for the selected job.");
             }
 
             _context.Applications.Add(application);
             await _context.SaveChangesAsync();
             return application;
+        }
+
+        private static (string firstName, string lastName) SplitName(string? fullName)
+        {
+            if (string.IsNullOrWhiteSpace(fullName))
+                return ("Unknown", "Candidate");
+
+            var parts = fullName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 1)
+                return (parts[0], "Candidate");
+
+            return (parts[0], string.Join(' ', parts.Skip(1)));
         }
 
         /// <summary>
@@ -52,7 +113,6 @@ namespace JobPortal.Services.Implementations
         public async Task<bool> TransitionToStageAsync(int applicationId, int newStageId)
         {
             var application = await _context.Applications
-                .Include(a => a.Job)
                 .FirstOrDefaultAsync(a => a.Id == applicationId);
 
             if (application == null)
@@ -64,6 +124,19 @@ namespace JobPortal.Services.Implementations
 
             if (stage == null)
                 return false;
+
+            if (application.CurrentJobStageId.HasValue)
+            {
+                var currentStage = await _context.JobStages
+                    .FirstOrDefaultAsync(s => s.Id == application.CurrentJobStageId.Value && s.JobId == application.JobId);
+
+                if (currentStage == null)
+                    return false;
+
+                // Prevent skipping mandatory forward stages in the pipeline.
+                if (stage.Order > currentStage.Order + 1)
+                    return false;
+            }
 
             application.CurrentJobStageId = newStageId;
             _context.Applications.Update(application);
