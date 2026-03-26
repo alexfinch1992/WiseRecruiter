@@ -58,7 +58,7 @@
                                     <div class="btn-group" role="group">
                                         <a asp-action="JobDetail" asp-route-id="@job.Id" class="btn btn-sm btn-outline-primary" title="View Details"><i class="fas fa-chart-bar"></i></a>
                                         <a asp-action="Edit" asp-route-id="@job.Id" class="btn btn-sm btn-outline-warning" title="Edit"><i class="fas fa-edit"></i></a>
-                                        <a asp-action="Delete" asp-route-id="@job.Id" class="btn btn-sm btn-outline-danger" title="Delete"><i class="fas fa-trash"></i></a>
+                                        <a asp-controller="Job" asp-action="Delete" asp-route-id="@job.Id" asp-route-returnUrl="@Url.Action("Index", "Admin")" class="btn btn-sm btn-outline-danger" title="Delete"><i class="fas fa-trash"></i></a>
                                     </div>
                                 </td>
                             </tr>

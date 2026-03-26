@@ -8,6 +8,8 @@ namespace JobPortal.Services.Interfaces
         Task<List<ScorecardResponse>> CreateDefaultResponsesFromTemplate();
         Task<List<ScorecardResponse>> CreateDefaultResponsesForApplication(int applicationId);
 
+        Task<Scorecard> CreateScorecardForApplicationAsync(int applicationId, string submittedBy);
+
         Task<Scorecard> CreateScorecardAsync(int candidateId, string submittedBy);
 
         Task<List<ScorecardResponse>> AddResponsesAsync(int scorecardId, IEnumerable<ScorecardResponse> responses);

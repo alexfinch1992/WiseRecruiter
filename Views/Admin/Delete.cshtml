@@ -30,10 +30,14 @@
                         <strong>Are you sure you want to delete this job posting?</strong>
                     </p>
 
-                    <form asp-controller="Admin" asp-action="DeleteConfirmed" method="post" style="display: inline;">
+                    <form asp-controller="Job" asp-action="Delete" asp-route-id="@Model.Id" method="post">
                         @Html.AntiForgeryToken()
+
                         <input type="hidden" asp-for="Id" />
-                        <button type="submit" class="btn btn-danger btn-lg">Yes, Delete</button>
+
+                        <button type="submit" class="btn btn-danger btn-lg">
+                            Yes, Delete
+                        </button>
                     </form>
                     <a asp-controller="Admin" asp-action="Index" class="btn btn-secondary btn-lg">Cancel</a>
                 </div>
