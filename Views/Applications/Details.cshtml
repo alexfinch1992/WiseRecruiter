@@ -20,8 +20,11 @@
         <div class="col-md-8">
             <!-- Contact Information Card -->
             <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
+                <div class="card-header d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
                     <h5 class="fw-bold mb-0 text-white"><i class="fas fa-phone me-2"></i>Contact Information</h5>
+                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-sm btn-light" title="Edit contact information">
+                        <i class="fas fa-edit"></i>
+                    </a>
                 </div>
                 <div class="card-body">
                     <div class="row mb-3">
@@ -43,7 +46,7 @@
 
             <!-- Application Details Card -->
             <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
+                <div class="card-header d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
                     <h5 class="fw-bold mb-0 text-white"><i class="fas fa-briefcase me-2"></i>Application Details</h5>
                 </div>
                 <div class="card-body">

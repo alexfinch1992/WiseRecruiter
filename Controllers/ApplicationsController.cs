@@ -80,7 +80,9 @@ public class ApplicationsController : Controller
         if (id == null)
             return NotFound();
 
-        var application = await _context.Applications.FindAsync(id);
+        var application = await _context.Applications
+            .Include(a => a.Job)
+            .FirstOrDefaultAsync(a => a.Id == id);
         return application == null ? NotFound() : View(application);
     }
 
@@ -104,10 +106,11 @@ public class ApplicationsController : Controller
                     return NotFound();
                 throw;
             }
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Details), new { id = application.Id });
         }
 
-        return View(application);
+        var editApp = await _context.Applications.Include(a => a.Job).FirstOrDefaultAsync(a => a.Id == id);
+        return View(editApp);
     }
 
     public async Task<IActionResult> Delete(int? id)
