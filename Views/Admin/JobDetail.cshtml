@@ -203,11 +203,17 @@
         </div>
 
         <div class="mb-4">
-            <form asp-action="JobDetailSearch" asp-route-id="@Model.Id" method="get" class="d-flex gap-2 mb-3">
-                <div class="flex-grow-1">
+            <form asp-action="JobDetailSearch" asp-route-id="@Model.Id" method="get" class="d-flex gap-2 mb-3" id="jobSearchForm">
+                <div class="flex-grow-1 position-relative">
                     <input type="text" name="searchQuery" class="form-control" 
+                           id="jobSearchInput"
                            placeholder="Search candidates by name or email..." 
-                           value="@ViewData["SearchQuery"]" />
+                           value="@ViewData["SearchQuery"]"
+                           autocomplete="off" />
+                    <div class="position-absolute w-100 bg-white border border-top-0 rounded-bottom shadow-sm" 
+                         id="jobSearchResults" 
+                         style="display: none; max-height: 400px; overflow-y: auto; z-index: 1000; top: 100%;">
+                    </div>
                 </div>
                 <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%); border: none;">
                     <i class="fas fa-search me-2"></i>Search
@@ -506,4 +512,67 @@ function toggleStagesCollapse() {
         icon.classList.add('fa-chevron-down');
     }
 }
+
+// Live search autocomplete for job candidates
+document.getElementById('jobSearchInput')?.addEventListener('input', async function(e) {
+    const searchQuery = e.target.value.trim();
+    const resultsContainer = document.getElementById('jobSearchResults');
+    
+    if (!searchQuery) {
+        resultsContainer.style.display = 'none';
+        return;
+    }
+    
+    try {
+        const response = await fetch(`@Url.Action("JobDetailSearchApi", "Admin")?id=@Model.Id&searchQuery=${encodeURIComponent(searchQuery)}`);
+        const results = await response.json();
+        
+        if (results.length === 0) {
+            resultsContainer.innerHTML = '<div class="p-3 text-muted text-center">No candidates found</div>';
+        } else {
+            resultsContainer.innerHTML = results.map(candidate => `
+                <a href="@Url.Action("Details", "Applications")?id=` + candidate.id + `" 
+                   class="d-block p-3 text-decoration-none border-bottom hover-light"
+                   style="transition: background-color 0.2s;">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="fw-bold" style="color: #1E1765;">` + candidate.name + `</div>
+                            <small class="text-muted">` + candidate.email + `</small>
+                        </div>
+                        <span class="badge" style="background: #7B3FF2; font-size: 0.75rem;">` + candidate.stage + `</span>
+                    </div>
+                </a>
+            `).join('');
+        }
+        
+        resultsContainer.style.display = 'block';
+    } catch (error) {
+        console.error('Search failed:', error);
+        resultsContainer.innerHTML = '<div class="p-3 text-danger text-center">Search error</div>';
+        resultsContainer.style.display = 'block';
+    }
+});
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+    const searchInput = document.getElementById('jobSearchInput');
+    const resultsContainer = document.getElementById('jobSearchResults');
+    
+    if (searchInput && !searchInput.contains(e.target) && !resultsContainer?.contains(e.target)) {
+        resultsContainer.style.display = 'none';
+    }
+});
+
+// Add hover effect to dropdown items
+document.addEventListener('mouseover', function(e) {
+    if (e.target.classList.contains('hover-light') || e.target.closest('.hover-light')) {
+        e.target.closest('.hover-light').style.backgroundColor = '#f8f9fa';
+    }
+}, true);
+
+document.addEventListener('mouseout', function(e) {
+    if (e.target.classList.contains('hover-light') || e.target.closest('.hover-light')) {
+        e.target.closest('.hover-light').style.backgroundColor = 'white';
+    }
+}, true);
 </script>

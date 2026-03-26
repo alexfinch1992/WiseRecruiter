@@ -324,4 +324,79 @@ public class AdminController : Controller
 
         return View(candidates);
     }
+
+    [HttpGet]
+    public async Task<IActionResult> JobDetailSearchApi(int? id, string? searchQuery)
+    {
+        if (id == null)
+            return BadRequest("Job ID is required");
+
+        var job = await _context.Jobs.FindAsync(id);
+        if (job == null)
+            return NotFound();
+
+        var candidates = await _context.Applications
+            .Where(a => a.JobId == id)
+            .Include(a => a.CurrentStage)
+            .ToListAsync();
+
+        // Filter by search query
+        if (!string.IsNullOrWhiteSpace(searchQuery))
+        {
+            var query = searchQuery.ToLowerInvariant();
+            candidates = candidates
+                .Where(a => (a.Name?.ToLowerInvariant().Contains(query) ?? false) ||
+                           (a.Email?.ToLowerInvariant().Contains(query) ?? false))
+                .ToList();
+        }
+
+        // Return limited results (top 10)
+        var results = candidates
+            .Take(10)
+            .Select(a => new
+            {
+                id = a.Id,
+                name = a.Name,
+                email = a.Email,
+                city = a.City,
+                stage = a.CurrentStage?.Name ?? "Unassigned"
+            })
+            .ToList();
+
+        return Json(results);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> SearchCandidatesApi(string? searchQuery)
+    {
+        var candidates = await _context.Applications
+            .Include(a => a.Job)
+            .Include(a => a.CurrentStage)
+            .ToListAsync();
+
+        // Filter by search query
+        if (!string.IsNullOrWhiteSpace(searchQuery))
+        {
+            var query = searchQuery.ToLowerInvariant();
+            candidates = candidates
+                .Where(a => (a.Name?.ToLowerInvariant().Contains(query) ?? false) ||
+                           (a.Email?.ToLowerInvariant().Contains(query) ?? false))
+                .ToList();
+        }
+
+        // Return limited results (top 15)
+        var results = candidates
+            .Take(15)
+            .Select(a => new
+            {
+                id = a.Id,
+                name = a.Name,
+                email = a.Email,
+                job = a.Job?.Title ?? "Unknown",
+                stage = a.CurrentStage?.Name ?? "Unassigned"
+            })
+            .ToList();
+
+        return Json(results);
+    }
 }
