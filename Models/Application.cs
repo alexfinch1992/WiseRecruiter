@@ -25,5 +25,8 @@ namespace JobPortal.Models
         public Job? Job { get; set; }
 
         public JobStage? CurrentStage { get; set; }
+
+        // Navigation property for documents
+        public ICollection<Document> Documents { get; set; } = new List<Document>();
     }
 }
