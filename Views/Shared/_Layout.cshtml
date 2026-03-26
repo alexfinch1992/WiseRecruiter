@@ -21,15 +21,31 @@
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Job" asp-action="Index">Browse Jobs</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Applications" asp-action="Index">My Applications</a>
-                        </li>
+                        @if (ViewContext.RouteData.Values["controller"]?.ToString() == "Admin")
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="" asp-controller="Admin" asp-action="Index">
+                                    <i class="fas fa-home me-1"></i>Manage Jobs
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="" asp-controller="Admin" asp-action="Analytics">
+                                    <i class="fas fa-chart-bar me-1"></i>Analytics
+                                </a>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="" asp-controller="Job" asp-action="Index">Browse Jobs</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="" asp-controller="Applications" asp-action="Index">My Applications</a>
+                            </li>
+                        }
                     </ul>
                     @if (ViewContext.RouteData.Values["controller"]?.ToString() == "Admin")
                     {

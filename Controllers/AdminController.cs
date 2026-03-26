@@ -1,6 +1,248 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</div>    </div>        </div>            </div>                </div>                    </table>                        </tbody>                            }                                </tr>                                    <td colspan="3" class="text-center text-muted py-4">No applications yet</td>                                <tr>                            {                            else                            }                                }                                    </tr>                                        <td class="text-end text-muted">@cumulativeTotal</td>                                        <td class="text-end fw-bold">@dateEntry.Count</td>                                        <td>@dateEntry.Date.ToString("MMM dd, yyyy")</td>                                    <tr>                                    cumulativeTotal += dateEntry.Count;                                {                                @foreach (var dateEntry in applicationsOverTime)                                }                                    int cumulativeTotal = 0;                                @{                            {                            @if (applicationsOverTime.Count > 0)                        <tbody>                        </thead>                            </tr>                                <th class="text-end">Cumulative Total</th>                                <th class="text-end"><i class="fas fa-file-alt me-2"></i>Applications Received</th>                                <th><i class="fas fa-calendar me-2"></i>Date</th>                            <tr>                        <thead>                    <table class="table table-hover mb-0">                <div class="table-responsive">                </div>                    <h5 class="fw-bold mb-0 text-white"><i class="fas fa-calendar me-2"></i>Applications Over Time</h5>                <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">            <div class="card shadow-sm border-0">        <div class="col-md-12">    <div class="row">    <!-- Applications Over Time -->    </div>        </div>            </div>                </div>                    </table>                        </tbody>                            }                                </tr>                                    <td colspan="3" class="text-center text-muted py-4">No stage data available</td>                                <tr>                            {                            else                            }                                }                                    </tr>                                        <td class="text-end fw-bold">@stage.CandidateCount</td>                                        </td>                                            <span class="badge" style="background: #7B3FF2;">@stage.StageName</span>                                        <td>                                        <td><strong>@stage.JobTitle</strong></td>                                    <tr>                                {                                @foreach (var stage in stageStats)                            {                            @if (stageStats.Count > 0)                        <tbody>                        </thead>                            </tr>                                <th class="text-end"><i class="fas fa-users me-2"></i>Candidates</th>                                <th><i class="fas fa-tasks me-2"></i>Stage</th>                                <th><i class="fas fa-briefcase me-2"></i>Job Title</th>                            <tr>                        <thead>                    <table class="table table-hover mb-0">                <div class="table-responsive">                </div>                    <h5 class="fw-bold mb-0 text-white"><i class="fas fa-sitemap me-2"></i>Candidate Distribution Across Stages by Job</h5>                <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">            <div class="card shadow-sm border-0">        <div class="col-md-12 mb-5">    <div class="row">    <!-- Stage Breakdown by Job -->    </div>        </div>            </div>                </div>                    </table>                        </tbody>                            }                                </tr>                                    <td colspan="2" class="text-center text-muted py-4">No jobs created yet</td>                                <tr>                            {                            else                            }                                }                                    </tr>                                        </td>                                            <span class="badge bg-primary">@job.TotalApplications</span>                                        <td class="text-end">                                        <td><strong>@job.JobTitle</strong></td>                                    <tr>                                {                                @foreach (var job in jobStats)                            {                            @if (jobStats.Count > 0)                        <tbody>                        </thead>                            </tr>                                <th class="text-end"><i class="fas fa-file-alt me-2"></i>Applications</th>                                <th><i class="fas fa-briefcase me-2"></i>Job Title</th>                            <tr>                        <thead>                    <table class="table table-hover mb-0">                <div class="table-responsive">                </div>                    <h5 class="fw-bold mb-0 text-white"><i class="fas fa-briefcase me-2"></i>Applications by Job</h5>                <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">            <div class="card shadow-sm border-0">        <div class="col-md-6 mb-5">        <!-- Applications by Job -->        </div>            </div>                </div>                    </table>                        </tbody>                            }                                </tr>                                    <td colspan="3" class="text-center text-muted py-4">No data available</td>                                <tr>                            {                            else                            }                                }                                    </tr>                                        <td class="text-end text-muted">@percentage%</td>                                        <td class="text-end fw-bold">@stage.Count</td>                                        </td>                                            </span>                                                @stage.StageName                                            <span class="badge" style="background: #7B3FF2; font-size: 0.9rem;">                                        <td>                                    <tr>                                    var percentage = totalApplications > 0 ? Math.Round(((double)stage.Count / totalApplications) * 100, 1) : 0;                                {                                @foreach (var stage in candidatesByStage)                            {                            @if (candidatesByStage.Count > 0)                        <tbody>                        </thead>                            </tr>                                <th class="text-end">%</th>                                <th class="text-end"><i class="fas fa-users me-2"></i>Count</th>                                <th><i class="fas fa-tasks me-2"></i>Stage</th>                            <tr>                        <thead>                    <table class="table table-hover mb-0">                <div class="table-responsive">                </div>                    <h5 class="fw-bold mb-0 text-white"><i class="fas fa-filter me-2"></i>Candidates by Interview Stage</h5>                <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">            <div class="card shadow-sm border-0">        <div class="col-md-6 mb-5">        <!-- Candidates by Stage -->    <div class="row">    <!-- Tables Row -->    </div>        </div>            </div>                </div>                    <p class="text-muted mb-0"><i class="fas fa-chart-line me-2"></i>Avg per Job</p>                    </h3>                        @avgApps                        }                            var avgApps = totalJobs > 0 ? (totalApplications / totalJobs) : 0;                        @{                    <h3 class="fw-bold display-5" style="color: #ffc107;">                <div class="card-body text-center">            <div class="card shadow-sm border-0 h-100" style="border-left: 4px solid #ffc107;">        <div class="col-md-6 col-lg-3 mb-4">        </div>            </div>                </div>                    <p class="text-muted mb-0"><i class="fas fa-check-circle me-2"></i>Candidates by Stage</p>                    </h3>                        @completedCount                        }                                .Count ?? 0;                                .FirstOrDefault()?                            var completedCount = candidatesByStage                        @{                    <h3 class="fw-bold display-5" style="color: #28a745;">                <div class="card-body text-center">            <div class="card shadow-sm border-0 h-100" style="border-left: 4px solid #28a745;">        <div class="col-md-6 col-lg-3 mb-4">        </div>            </div>                </div>                    <p class="text-muted mb-0"><i class="fas fa-briefcase me-2"></i>Active Jobs</p>                    <h3 class="fw-bold display-5" style="color: #1E1765;">@totalJobs</h3>                <div class="card-body text-center">            <div class="card shadow-sm border-0 h-100" style="border-left: 4px solid #1E1765;">        <div class="col-md-6 col-lg-3 mb-4">        </div>            </div>                </div>                    <p class="text-muted mb-0"><i class="fas fa-file-alt me-2"></i>Total Applications</p>                    <h3 class="fw-bold display-5" style="color: #7B3FF2;">@totalApplications</h3>                <div class="card-body text-center">            <div class="card shadow-sm border-0 h-100" style="border-left: 4px solid #7B3FF2;">        <div class="col-md-6 col-lg-3 mb-4">    <div class="row mb-5">    <!-- Key Metrics -->    </div>        </div>            <p class="text-muted">Overview of recruitment metrics and candidate flow</p>            <h1 class="fw-bold mb-2"><i class="fas fa-chart-bar me-3"></i>Analytics Dashboard</h1>        <div class="col-md-12">    <div class="row mb-5"><div class="container-fluid py-5">}    int totalJobs = Model.TotalJobs;    int totalApplications = Model.TotalApplications;    var candidatesByStage = (List<dynamic>)Model.CandidatesByStage;    var applicationsOverTime = (List<dynamic>)Model.ApplicationsOverTime;    var jobStats = (List<dynamic>)Model.JobStats;    var stageStats = (List<dynamic>)Model.StageStats;    ViewData["Title"] = "Analytics Dashboard";@{using Microsoft.EntityFrameworkCore;
 using JobPortal.Models;
 using JobPortal.Data;
 
@@ -398,5 +640,68 @@ public class AdminController : Controller
             .ToList();
 
         return Json(results);
+    }
+
+    public async Task<IActionResult> Analytics()
+    {
+        // Total candidates by stage
+        var stageStats = await _context.JobStages
+            .Include(s => s.Job)
+            .Select(s => new
+            {
+                StageName = s.Name,
+                JobTitle = s.Job.Title,
+                CandidateCount = s.Job.Applications.Count(a => a.CurrentJobStageId == s.Id)
+            })
+            .OrderBy(s => s.JobTitle)
+            .ThenBy(s => s.StageName)
+            .ToListAsync();
+
+        // Applications by job
+        var jobStats = await _context.Jobs
+            .Include(j => j.Applications)
+            .Select(j => new
+            {
+                JobTitle = j.Title,
+                TotalApplications = j.Applications.Count,
+                DateCreated = j.Id // placeholder for now
+            })
+            .OrderByDescending(j => j.TotalApplications)
+            .ToListAsync();
+
+        // Applications over time (grouped by date)
+        var applicationsOverTime = await _context.Applications
+            .GroupBy(a => a.AppliedDate.Date)
+            .Select(g => new
+            {
+                Date = g.Key,
+                Count = g.Count()
+            })
+            .OrderBy(g => g.Date)
+            .ToListAsync();
+
+        // Candidates by stage (overall)
+        var candidatesByStage = await _context.Applications
+            .Include(a => a.CurrentStage)
+            .GroupBy(a => a.CurrentJobStageId)
+            .Select(g => new
+            {
+                StageName = g.FirstOrDefault().CurrentStage.Name ?? "Unassigned",
+                Count = g.Count()
+            })
+            .OrderByDescending(g => g.Count)
+            .ToListAsync();
+
+        var analyticsData = new
+        {
+            StageStats = stageStats,
+            JobStats = jobStats,
+            ApplicationsOverTime = applicationsOverTime,
+            CandidatesByStage = candidatesByStage,
+            TotalApplications = await _context.Applications.CountAsync(),
+            TotalJobs = await _context.Jobs.CountAsync()
+        };
+
+        return View(analyticsData);
     }
 }
