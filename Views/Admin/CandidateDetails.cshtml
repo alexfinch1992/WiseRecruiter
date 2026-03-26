@@ -1,7 +1,7 @@
 @model JobPortal.Models.ViewModels.CandidateAdminViewModel
 
 @{
-    ViewData["Title"] = $"Admin: {Model.Name} - Candidate Profile";
+    ViewData["Title"] = $"{Model.Name} - Candidate Profile";
 }
 
 <div class="container-fluid py-5">
@@ -12,7 +12,6 @@
             </a>
             <h1 class="fw-bold mb-3" style="color: #1E1765;">
                 <i class="fas fa-user-circle me-3"></i>@Model.Name
-                <span class="badge bg-danger" style="font-size: 0.75rem;">ADMIN VIEW - CONFIDENTIAL</span>
             </h1>
         </div>
     </div>
@@ -94,22 +93,47 @@
                 </div>
             </div>
 
-            <!-- SENSITIVE: Admin Interview Notes Section -->
-            <div class="card shadow-sm border-0 mb-4" style="border-left: 5px solid #dc3545;">
-                <div class="card-header" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);">
-                    <h5 class="fw-bold mb-0 text-white"><i class="fas fa-lock me-2"></i>Interview Feedback (Admin Only)</h5>
+            <!-- Scorecards Section -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="fw-bold mb-0 text-white"><i class="fas fa-clipboard-check me-2"></i>Scorecards</h5>
+                        <a asp-action="CreateScorecard" asp-route-applicationId="@Model.Id" class="btn btn-light btn-sm">
+                            <i class="fas fa-plus me-1"></i>Add Scorecard
+                        </a>
+                    </div>
                 </div>
                 <div class="card-body">
-                    <form method="post" asp-action="UpdateInterviewNotes" asp-controller="Admin">
-                        <input type="hidden" name="applicationId" value="@Model.Id" />
-                        <textarea id="interviewNotes" name="interviewNotes" class="form-control" rows="8" placeholder="Enter interview feedback, assessment notes, concerns, or sensitive information here...">@Model.InterviewNotes</textarea>
-                        <small class="text-muted d-block mt-2">
-                            <i class="fas fa-shield-alt me-1"></i><strong>CONFIDENTIAL:</strong> This information is admin-only and will NEVER be visible to the candidate.
-                        </small>
-                        <button type="submit" class="btn btn-danger mt-3">
-                            <i class="fas fa-save me-2"></i>Save Interview Notes
-                        </button>
-                    </form>
+                    @if (Model.Scorecards.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Submitted By</th>
+                                        <th>Submitted At</th>
+                                        <th>Average Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var scorecard in Model.Scorecards)
+                                    {
+                                        <tr>
+                                            <td>@scorecard.SubmittedBy</td>
+                                            <td>@scorecard.SubmittedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                                            <td>
+                                                <span class="badge bg-primary">@scorecard.AverageScore.ToString("0.0")</span>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">No scorecards yet.</p>
+                    }
                 </div>
             </div>
 
@@ -205,11 +229,11 @@
             </div>
         </div>
 
-        <!-- Admin Summary Sidebar -->
+        <!-- Summary Sidebar -->
         <div class="col-md-4">
             <div class="card shadow-sm border-0 sticky-top" style="top: 20px;">
-                <div class="card-header" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);">
-                    <h5 class="fw-bold mb-0 text-white"><i class="fas fa-tools me-2"></i>Admin Controls</h5>
+                <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
+                    <h5 class="fw-bold mb-0 text-white"><i class="fas fa-tools me-2"></i>Candidate Summary</h5>
                 </div>
                 <div class="card-body">
                     <div class="mb-4">
@@ -230,7 +254,7 @@
                     </div>
                     <hr />
                     <div>
-                        <small class="fw-bold text-muted">ADMIN ACTIONS</small>
+                        <small class="fw-bold text-muted">ACTIONS</small>
                         <div class="d-grid gap-2">
                             <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-sm btn-outline-primary">
                                 <i class="fas fa-edit me-2"></i>Edit Application

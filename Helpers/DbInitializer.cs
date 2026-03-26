@@ -69,6 +69,77 @@ namespace JobPortal.Helpers
                     context.SaveChanges();
                 }
             }
+
+            BackfillCandidateRelationships(context);
+        }
+
+        private static void BackfillCandidateRelationships(AppDbContext context)
+        {
+            var applications = context.Applications.ToList();
+            foreach (var application in applications)
+            {
+                if (application.CandidateId > 0)
+                    continue;
+
+                var email = application.Email ?? string.Empty;
+                var existingCandidate = context.Candidates.FirstOrDefault(c => c.Email == email);
+                if (existingCandidate == null)
+                {
+                    var (firstName, lastName) = SplitName(application.Name);
+                    existingCandidate = new Candidate
+                    {
+                        FirstName = firstName,
+                        LastName = lastName,
+                        Email = email,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    context.Candidates.Add(existingCandidate);
+                    context.SaveChanges();
+                }
+
+                application.CandidateId = existingCandidate.Id;
+            }
+            context.SaveChanges();
+
+            var scorecards = context.Scorecards.ToList();
+            foreach (var scorecard in scorecards)
+            {
+                var candidateExists = context.Candidates.Any(c => c.Id == scorecard.CandidateId);
+                if (candidateExists)
+                    continue;
+
+                // Legacy mapping: CandidateId previously pointed to Application.Id.
+                var legacyApplication = context.Applications.FirstOrDefault(a => a.Id == scorecard.CandidateId);
+                if (legacyApplication != null && legacyApplication.CandidateId > 0)
+                {
+                    scorecard.CandidateId = legacyApplication.CandidateId;
+                    continue;
+                }
+
+                var placeholder = new Candidate
+                {
+                    FirstName = "Legacy",
+                    LastName = "Candidate",
+                    Email = $"legacy-candidate-{scorecard.Id}@local.invalid",
+                    CreatedAt = DateTime.UtcNow
+                };
+                context.Candidates.Add(placeholder);
+                context.SaveChanges();
+                scorecard.CandidateId = placeholder.Id;
+            }
+            context.SaveChanges();
+        }
+
+        private static (string firstName, string lastName) SplitName(string? fullName)
+        {
+            if (string.IsNullOrWhiteSpace(fullName))
+                return ("Unknown", "Candidate");
+
+            var parts = fullName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 1)
+                return (parts[0], "Candidate");
+
+            return (parts[0], string.Join(' ', parts.Skip(1)));
         }
 
         private static List<Application> GenerateDummyCandidates(List<Job> jobs)

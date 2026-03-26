@@ -10,6 +10,7 @@ namespace JobPortal.Models.ViewModels
     public class CandidateAdminViewModel
     {
         public int Id { get; set; }
+        public int CandidateId { get; set; }
         public string? Name { get; set; }
         public string? Email { get; set; }
         public string? City { get; set; }
@@ -22,12 +23,6 @@ namespace JobPortal.Models.ViewModels
         public int? CurrentJobStageId { get; set; }
         public string? CurrentStageName { get; set; }
         
-        // SENSITIVE ADMIN-ONLY DATA
-        public string? InterviewNotes { get; set; }
-        public string? InternalScorecard { get; set; }
-        public DateTime? LastUpdatedByAdmin { get; set; }
-        public string? LastUpdatedByAdminName { get; set; }
-        
         // Documents list (including all types)
         public List<DocumentDto> Documents { get; set; } = new();
         
@@ -39,5 +34,8 @@ namespace JobPortal.Models.ViewModels
         // Time tracking
         public int DaysInSystem { get; set; }
         public string? TimeInSystemDisplay { get; set; }
+
+        // Scorecards
+        public List<ScorecardSummaryViewModel> Scorecards { get; set; } = new();
     }
 }

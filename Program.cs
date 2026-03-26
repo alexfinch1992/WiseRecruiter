@@ -29,6 +29,7 @@ builder.Services.AddAuthentication("AdminAuth")
 // Register simplified business logic services (CRUD handled directly by controllers with DbContext)
 builder.Services.AddScoped<IApplicationService, ApplicationService>();
 builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
+builder.Services.AddScoped<IScorecardService, ScorecardService>();
 builder.Services.AddScoped<IFileUploadService, LocalFileUploadService>();
     
 var app = builder.Build();
