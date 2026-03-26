@@ -7,6 +7,8 @@ namespace JobPortal.Services.Implementations
 {
     public class ScorecardService : IScorecardService
     {
+        private const string NoTemplateFacetsMessage = "Scorecard could not be created because the template has no facets.";
+
         private readonly AppDbContext _context;
         private readonly IScorecardTemplateService _templateService;
 
@@ -57,6 +59,35 @@ namespace JobPortal.Services.Implementations
             var templateFacets = await _templateService.GetFacetsForTemplate(template.Id);
 
             return MapTemplateFacetsToDefaultResponses(templateFacets);
+        }
+
+        public async Task<Scorecard> CreateScorecardForApplicationAsync(int applicationId, string submittedBy)
+        {
+            var application = await _context.Applications
+                .Include(a => a.Job)
+                .FirstOrDefaultAsync(a => a.Id == applicationId);
+
+            if (application == null)
+                throw new InvalidOperationException("Application not found.");
+
+            if (application.CandidateId <= 0)
+                throw new InvalidOperationException("Cannot create scorecard for an application without a valid candidate.");
+
+            var defaultResponses = await CreateDefaultResponsesForApplication(applicationId);
+            if (defaultResponses.Count == 0)
+                throw new InvalidOperationException(NoTemplateFacetsMessage);
+
+            var scorecard = new Scorecard
+            {
+                CandidateId = application.CandidateId,
+                SubmittedBy = submittedBy ?? string.Empty,
+                SubmittedAt = DateTime.UtcNow,
+                Responses = defaultResponses
+            };
+
+            _context.Scorecards.Add(scorecard);
+            await _context.SaveChangesAsync();
+            return scorecard;
         }
 
         private static List<ScorecardResponse> MapTemplateFacetsToDefaultResponses(List<ScorecardTemplateFacet> templateFacets)
@@ -116,6 +147,9 @@ namespace JobPortal.Services.Implementations
                     Notes = response.Notes
                 };
             }).ToList();
+
+            if (entities.Count == 0)
+                throw new InvalidOperationException("Cannot add empty scorecard responses.");
 
             _context.ScorecardResponses.AddRange(entities);
             await _context.SaveChangesAsync();

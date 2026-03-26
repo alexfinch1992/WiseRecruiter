@@ -8,15 +8,19 @@ using JobPortal.Services.Interfaces;
 
 public class ApplicationsController : Controller
 {
+    private const string MissingTemplateFacetsWarning = "Application submitted, but scorecard could not be created because the template has no facets.";
+
     private readonly AppDbContext _context;
     private readonly IWebHostEnvironment _webHostEnvironment;
     private readonly IApplicationService _applicationService;
+    private readonly IScorecardService _scorecardService;
 
-    public ApplicationsController(AppDbContext context, IWebHostEnvironment webHostEnvironment, IApplicationService applicationService)
+    public ApplicationsController(AppDbContext context, IWebHostEnvironment webHostEnvironment, IApplicationService applicationService, IScorecardService scorecardService)
     {
         _context = context;
         _webHostEnvironment = webHostEnvironment;
         _applicationService = applicationService;
+        _scorecardService = scorecardService;
     }
 
     public async Task<IActionResult> Index()    
@@ -126,6 +130,10 @@ public class ApplicationsController : Controller
                 ModelState.AddModelError("", ex.Message);
                 return View(application);
             }
+
+            var warningMessage = await TryCreateScorecardAsync(application.Id);
+            if (!string.IsNullOrEmpty(warningMessage))
+                TempData["Warning"] = warningMessage;
 
             return RedirectToAction(nameof(Index));
         }
@@ -245,6 +253,23 @@ public class ApplicationsController : Controller
         await _context.SaveChangesAsync();
 
         return Json(new { success = true, message = "Document deleted successfully" });
+    }
+
+    private async Task<string?> TryCreateScorecardAsync(int applicationId)
+    {
+        try
+        {
+            await _scorecardService.CreateScorecardForApplicationAsync(applicationId, "System");
+            return null;
+        }
+        catch (InvalidOperationException ex) when (string.Equals(ex.Message, "Scorecard could not be created because the template has no facets.", StringComparison.Ordinal))
+        {
+            return MissingTemplateFacetsWarning;
+        }
+        catch (Exception ex)
+        {
+            return $"Application submitted, but scorecard could not be created: {ex.Message}";
+        }
     }
 
     private bool ApplicationExists(int? id) => _context.Applications.Any(e => e.Id == id);
