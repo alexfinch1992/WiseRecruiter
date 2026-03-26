@@ -125,12 +125,12 @@
         </div>
     </div>
 
-    @if (Model.Applications?.Any() == true)
-    {
+    @{
         var stages = Model.Stages?.OrderBy(s => s.Order).ToList() ?? new List<JobStage>();
-        
-        <!-- Interview Stages Management Section -->
-        <div class="card shadow-sm border-0 mb-4">
+    }
+    
+    <!-- Interview Stages Management Section -->
+    <div class="card shadow-sm border-0 mb-4">
             <div class="card-header d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
                 <h5 class="fw-bold mb-0 text-white"><i class="fas fa-tasks me-2"></i>Interview Stages</h5>
                 <button
@@ -202,6 +202,8 @@
             </div>
         </div>
 
+    @if (Model.Applications?.Any() == true)
+    {
         <div class="mb-4">
             <form asp-action="JobDetailSearch" asp-route-id="@Model.Id" method="get" class="d-flex gap-2 mb-3" id="jobSearchForm">
                 <div class="flex-grow-1 position-relative">

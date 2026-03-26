@@ -4,16 +4,19 @@ using JobPortal.Models;
 using JobPortal.Data;
 using JobPortal.Helpers;
 using JobPortal.Models.ViewModels;
+using JobPortal.Services.Interfaces;
 
 public class ApplicationsController : Controller
 {
     private readonly AppDbContext _context;
     private readonly IWebHostEnvironment _webHostEnvironment;
+    private readonly IApplicationService _applicationService;
 
-    public ApplicationsController(AppDbContext context, IWebHostEnvironment webHostEnvironment)
+    public ApplicationsController(AppDbContext context, IWebHostEnvironment webHostEnvironment, IApplicationService applicationService)
     {
         _context = context;
         _webHostEnvironment = webHostEnvironment;
+        _applicationService = applicationService;
     }
 
     public async Task<IActionResult> Index()    
@@ -113,15 +116,17 @@ public class ApplicationsController : Controller
             }
 
             application.ResumePath = filePath;
-            
-            // Auto-assign to "Application" stage (first stage with Order 0)
-            var applicationStage = await _context.JobStages
-                .FirstOrDefaultAsync(s => s.JobId == application.JobId && s.Order == 0);
-            if (applicationStage != null)
-                application.CurrentJobStageId = applicationStage.Id;
-            
-            _context.Add(application);
-            await _context.SaveChangesAsync();
+
+            try
+            {
+                await _applicationService.CreateApplicationAsync(application);
+            }
+            catch (InvalidOperationException ex)
+            {
+                ModelState.AddModelError("", ex.Message);
+                return View(application);
+            }
+
             return RedirectToAction(nameof(Index));
         }
 

@@ -1,0 +1,122 @@
+@model JobPortal.Models.ViewModels.EditTemplateFacetsViewModel
+
+@{
+    ViewData["Title"] = "Edit Template Facets";
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">Edit Template Facets</h2>
+            <p class="text-muted mb-0">@Model.TemplateName</p>
+        </div>
+        <a asp-action="Templates" class="btn btn-outline-secondary">Back to Templates</a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <form asp-action="EditTemplateFacets" asp-route-templateId="@Model.TemplateId" method="post" id="edit-template-facets-form">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead>
+                            <tr>
+                                <th>Include</th>
+                                <th>Facet Name</th>
+                                <th>Order</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (var i = 0; i < Model.Facets.Count; i++)
+                            {
+                                <tr>
+                                    <td>
+                                        <input type="checkbox"
+                                               class="form-check-input facet-include"
+                                               data-facet-id="@Model.Facets[i].FacetId"
+                                               data-order-input-id="facet-order-@Model.Facets[i].FacetId"
+                                               @(Model.Facets[i].IsSelected ? "checked" : string.Empty) />
+                                    </td>
+                                    <td>@Model.Facets[i].FacetName</td>
+                                    <td>
+                                        <input id="facet-order-@Model.Facets[i].FacetId"
+                                               type="number"
+                                               min="1"
+                                               class="form-control"
+                                               value="@Model.Facets[i].DisplayOrder" />
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="selected-facets-container"></div>
+
+                <div class="d-flex justify-content-end gap-2 mt-3">
+                    <a asp-action="Templates" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Save Facets</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            const form = document.getElementById('edit-template-facets-form');
+            const container = document.getElementById('selected-facets-container');
+            const checkboxes = Array.from(document.querySelectorAll('.facet-include'));
+
+            const syncOrderInputStates = () => {
+                checkboxes.forEach((checkbox) => {
+                    const orderInputId = checkbox.getAttribute('data-order-input-id');
+                    const orderInput = document.getElementById(orderInputId);
+                    if (orderInput) {
+                        orderInput.disabled = !checkbox.checked;
+                    }
+                });
+            };
+
+            checkboxes.forEach((checkbox) => {
+                checkbox.addEventListener('change', syncOrderInputStates);
+            });
+
+            form.addEventListener('submit', () => {
+                container.innerHTML = '';
+
+                let index = 0;
+                checkboxes.forEach((checkbox) => {
+                    if (!checkbox.checked) {
+                        return;
+                    }
+
+                    const facetId = checkbox.getAttribute('data-facet-id');
+                    const orderInputId = checkbox.getAttribute('data-order-input-id');
+                    const orderInput = document.getElementById(orderInputId);
+                    const displayOrder = orderInput ? orderInput.value : '';
+
+                    const facetIdInput = document.createElement('input');
+                    facetIdInput.type = 'hidden';
+                    facetIdInput.name = `facets[${index}].FacetId`;
+                    facetIdInput.value = facetId;
+                    container.appendChild(facetIdInput);
+
+                    const displayOrderInput = document.createElement('input');
+                    displayOrderInput.type = 'hidden';
+                    displayOrderInput.name = `facets[${index}].DisplayOrder`;
+                    displayOrderInput.value = displayOrder;
+                    container.appendChild(displayOrderInput);
+
+                    index++;
+                });
+            });
+
+            syncOrderInputStates();
+        })();
+    </script>
+}

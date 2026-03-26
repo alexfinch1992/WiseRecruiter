@@ -113,6 +113,7 @@
                                         <th>Submitted By</th>
                                         <th>Submitted At</th>
                                         <th>Average Score</th>
+                                        <th></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -123,6 +124,9 @@
                                             <td>@scorecard.SubmittedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
                                             <td>
                                                 <span class="badge bg-primary">@scorecard.AverageScore.ToString("0.0")</span>
+                                            </td>
+                                            <td class="text-end">
+                                                <a asp-action="ScorecardDetails" asp-route-id="@scorecard.Id" class="btn btn-outline-primary btn-sm">View Details</a>
                                             </td>
                                         </tr>
                                     }

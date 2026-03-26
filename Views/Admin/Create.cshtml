@@ -27,6 +27,12 @@
                             <span asp-validation-for="Description" class="text-danger small"></span>
                         </div>
 
+                        <div class="mb-3">
+                            <label asp-for="ScorecardTemplateId" class="form-label fw-bold">Scorecard Template</label>
+                            <select asp-for="ScorecardTemplateId" asp-items="ViewBag.ScorecardTemplates" class="form-select"></select>
+                            <span asp-validation-for="ScorecardTemplateId" class="text-danger small"></span>
+                        </div>
+
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                             <a asp-controller="Admin" asp-action="Index" class="btn btn-secondary me-2">Cancel</a>
                             <button type="submit" class="btn btn-success btn-lg">Post Job</button>
