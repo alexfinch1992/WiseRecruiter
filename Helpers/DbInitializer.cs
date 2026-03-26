@@ -8,6 +8,10 @@ namespace JobPortal.Helpers
     {
         public static void Initialize(AppDbContext context)
         {
+            SeedDefaultScorecardFacets(context);
+            SeedDefaultScorecardTemplate(context);
+            NullifyOrphanedScorecardTemplateIds(context);
+
             // Seed admin user
             if (!context.AdminUsers.Any())
             {
@@ -71,6 +75,71 @@ namespace JobPortal.Helpers
             }
 
             BackfillCandidateRelationships(context);
+        }
+
+        private static void SeedDefaultScorecardFacets(AppDbContext context)
+        {
+            if (context.ScorecardFacets.Any())
+                return;
+
+            var defaultFacets = new[]
+            {
+                "Communication",
+                "Quality",
+                "Speed",
+                "Problem Solving",
+                "Collaboration"
+            };
+
+            for (var index = 0; index < defaultFacets.Length; index++)
+            {
+                context.ScorecardFacets.Add(new ScorecardFacet
+                {
+                    Name = defaultFacets[index],
+                    IsActive = true,
+                    DisplayOrder = index + 1
+                });
+            }
+
+            context.SaveChanges();
+        }
+
+        private static void SeedDefaultScorecardTemplate(AppDbContext context)
+        {
+            var template = context.ScorecardTemplates.FirstOrDefault(t => t.Name == "Default Scorecard");
+            if (template == null)
+            {
+                template = new ScorecardTemplate
+                {
+                    Name = "Default Scorecard"
+                };
+                context.ScorecardTemplates.Add(template);
+                context.SaveChanges();
+            }
+
+            var activeFacets = context.ScorecardFacets
+                .Where(f => f.IsActive)
+                .OrderBy(f => f.DisplayOrder)
+                .ToList();
+
+            foreach (var facet in activeFacets)
+            {
+                var existingLink = context.ScorecardTemplateFacets.Any(tf =>
+                    tf.ScorecardTemplateId == template.Id &&
+                    tf.ScorecardFacetId == facet.Id);
+
+                if (existingLink)
+                    continue;
+
+                context.ScorecardTemplateFacets.Add(new ScorecardTemplateFacet
+                {
+                    ScorecardTemplateId = template.Id,
+                    ScorecardFacetId = facet.Id,
+                    DisplayOrder = facet.DisplayOrder
+                });
+            }
+
+            context.SaveChanges();
         }
 
         private static void BackfillCandidateRelationships(AppDbContext context)
@@ -199,6 +268,24 @@ namespace JobPortal.Helpers
             }
 
             return applications;
+        }
+
+        private static void NullifyOrphanedScorecardTemplateIds(AppDbContext context)
+        {
+            var validTemplateIds = context.ScorecardTemplates.Select(t => t.Id).ToHashSet();
+            var orphanedJobs = context.Jobs
+                .Where(j => j.ScorecardTemplateId != null)
+                .ToList()
+                .Where(j => !validTemplateIds.Contains(j.ScorecardTemplateId!.Value))
+                .ToList();
+
+            if (!orphanedJobs.Any())
+                return;
+
+            foreach (var job in orphanedJobs)
+                job.ScorecardTemplateId = null;
+
+            context.SaveChanges();
         }
     }
 }

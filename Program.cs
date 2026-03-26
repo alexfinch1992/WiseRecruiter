@@ -30,6 +30,9 @@ builder.Services.AddAuthentication("AdminAuth")
 builder.Services.AddScoped<IApplicationService, ApplicationService>();
 builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 builder.Services.AddScoped<IScorecardService, ScorecardService>();
+builder.Services.AddScoped<IFacetService, FacetService>();
+builder.Services.AddScoped<IScorecardTemplateService, ScorecardTemplateService>();
+builder.Services.AddScoped<IJobService, JobService>();
 builder.Services.AddScoped<IFileUploadService, LocalFileUploadService>();
     
 var app = builder.Build();

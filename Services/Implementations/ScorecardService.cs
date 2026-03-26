@@ -8,10 +8,72 @@ namespace JobPortal.Services.Implementations
     public class ScorecardService : IScorecardService
     {
         private readonly AppDbContext _context;
+        private readonly IScorecardTemplateService _templateService;
 
         public ScorecardService(AppDbContext context)
+            : this(context, new ScorecardTemplateService(context))
+        {
+        }
+
+        public ScorecardService(AppDbContext context, IScorecardTemplateService templateService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _templateService = templateService ?? throw new ArgumentNullException(nameof(templateService));
+        }
+
+        public async Task<List<ScorecardResponse>> CreateDefaultResponsesFromTemplate()
+        {
+            var defaultTemplate = await _templateService.GetDefaultTemplate();
+            var templateFacets = await _templateService.GetFacetsForTemplate(defaultTemplate.Id);
+
+            return MapTemplateFacetsToDefaultResponses(templateFacets);
+        }
+
+        public async Task<List<ScorecardResponse>> CreateDefaultResponsesForApplication(int applicationId)
+        {
+            var application = await _context.Applications
+                .Include(a => a.Job)
+                .FirstOrDefaultAsync(a => a.Id == applicationId);
+
+            if (application == null)
+                throw new InvalidOperationException("Application not found.");
+
+            var templateId = application.Job?.ScorecardTemplateId;
+            ScorecardTemplate template;
+
+            if (templateId.HasValue)
+            {
+                var assignedTemplate = await _templateService.GetTemplateById(templateId.Value);
+                if (assignedTemplate == null)
+                    throw new InvalidOperationException("Assigned scorecard template was not found.");
+
+                template = assignedTemplate;
+            }
+            else
+            {
+                template = await _templateService.GetDefaultTemplate();
+            }
+
+            var templateFacets = await _templateService.GetFacetsForTemplate(template.Id);
+
+            return MapTemplateFacetsToDefaultResponses(templateFacets);
+        }
+
+        private static List<ScorecardResponse> MapTemplateFacetsToDefaultResponses(List<ScorecardTemplateFacet> templateFacets)
+        {
+
+            if (templateFacets.GroupBy(templateFacet => templateFacet.DisplayOrder).Any(group => group.Count() > 1))
+                throw new InvalidOperationException("Template has duplicate display order values.");
+
+            return templateFacets
+                .Where(templateFacet => templateFacet.ScorecardFacet != null)
+                .Select(templateFacet => new ScorecardResponse
+                {
+                    FacetName = templateFacet.ScorecardFacet!.Name,
+                    Score = 3.0m,
+                    Notes = string.Empty
+                })
+                .ToList();
         }
 
         public async Task<Scorecard> CreateScorecardAsync(int candidateId, string submittedBy)
@@ -70,6 +132,70 @@ namespace JobPortal.Services.Implementations
             return await _context.Scorecards
                 .Include(s => s.Responses)
                 .FirstOrDefaultAsync(s => s.Id == scorecardId);
+        }
+
+        public async Task<ScorecardDetailDto?> GetScorecardById(int scorecardId)
+        {
+            var scorecard = await _context.Scorecards
+                .Include(s => s.Responses)
+                .FirstOrDefaultAsync(s => s.Id == scorecardId);
+
+            if (scorecard == null)
+                return null;
+
+            var orderedResponses = scorecard.Responses
+                .OrderBy(response => response.Id)
+                .ToList();
+
+            return new ScorecardDetailDto
+            {
+                Id = scorecard.Id,
+                CandidateId = scorecard.CandidateId,
+                Responses = orderedResponses
+                    .Select(response => new ScorecardDetailDto.ScorecardResponseDto
+                    {
+                        FacetName = response.FacetName,
+                        Score = response.Score,
+                        Notes = response.Notes
+                    })
+                    .ToList(),
+                AverageScore = orderedResponses.Count == 0 ? 0m : orderedResponses.Average(response => response.Score)
+            };
+        }
+
+        public async Task UpdateScorecard(int scorecardId, List<ScorecardDetailDto.ScorecardResponseDto> responses)
+        {
+            var scorecardExists = await _context.Scorecards.AnyAsync(s => s.Id == scorecardId);
+            if (!scorecardExists)
+                throw new InvalidOperationException("Cannot update an invalid scorecard.");
+
+            if (responses == null)
+                throw new ArgumentNullException(nameof(responses));
+
+            var replacementResponses = responses.Select(response =>
+            {
+                if (response.Score < 1.0m || response.Score > 5.0m)
+                    throw new ArgumentOutOfRangeException(nameof(response.Score), "Score must be between 1.0 and 5.0.");
+
+                return new ScorecardResponse
+                {
+                    ScorecardId = scorecardId,
+                    FacetName = response.FacetName,
+                    Score = response.Score,
+                    Notes = response.Notes
+                };
+            }).ToList();
+
+            var existingResponses = await _context.ScorecardResponses
+                .Where(response => response.ScorecardId == scorecardId)
+                .ToListAsync();
+
+            _context.ScorecardResponses.RemoveRange(existingResponses);
+
+            if (replacementResponses.Count > 0)
+                _context.ScorecardResponses.AddRange(replacementResponses);
+
+            await _context.SaveChangesAsync();
         }
 
         public async Task<List<Scorecard>> GetScorecardsByCandidateAsync(int candidateId)

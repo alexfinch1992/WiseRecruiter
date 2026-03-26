@@ -27,6 +27,12 @@ namespace JobPortal.Data
 
         public DbSet<ScorecardResponse> ScorecardResponses { get; set; } = null!;
 
+        public DbSet<ScorecardFacet> ScorecardFacets { get; set; } = null!;
+
+        public DbSet<ScorecardTemplate> ScorecardTemplates { get; set; } = null!;
+
+        public DbSet<ScorecardTemplateFacet> ScorecardTemplateFacets { get; set; } = null!;
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -51,6 +57,34 @@ namespace JobPortal.Data
                 .HasForeignKey(a => a.CandidateId)
                 .IsRequired()
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ScorecardFacet>()
+                .HasIndex(f => f.Name)
+                .IsUnique();
+
+            modelBuilder.Entity<ScorecardTemplate>()
+                .HasMany(t => t.TemplateFacets)
+                .WithOne(tf => tf.ScorecardTemplate)
+                .HasForeignKey(tf => tf.ScorecardTemplateId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ScorecardFacet>()
+                .HasMany(f => f.TemplateFacets)
+                .WithOne(tf => tf.ScorecardFacet)
+                .HasForeignKey(tf => tf.ScorecardFacetId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ScorecardTemplateFacet>()
+                .HasIndex(tf => new { tf.ScorecardTemplateId, tf.ScorecardFacetId })
+                .IsUnique();
+
+            modelBuilder.Entity<Job>()
+                .HasOne(j => j.ScorecardTemplate)
+                .WithMany(t => t.Jobs)
+                .HasForeignKey(j => j.ScorecardTemplateId)
+                .OnDelete(DeleteBehavior.SetNull);
         }
     }
 
