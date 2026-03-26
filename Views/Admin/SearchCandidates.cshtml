@@ -1,0 +1,95 @@
+@model List<JobPortal.Models.Application>
+
+@{
+    ViewData["Title"] = "Candidate Search Results";
+}
+
+<div class="container-fluid py-5">
+    <div class="row mb-5">
+        <div class="col-md-12">
+            <a href="@Url.Action("Index")" class="btn btn-outline-secondary mb-4">
+                <i class="fas fa-arrow-left me-2"></i>Back to Manage
+            </a>
+            <h1 class="fw-bold mb-2"><i class="fas fa-search me-3"></i>Candidate Search Results</h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            @if (Model == null || Model.Count == 0)
+            {
+                <div class="alert alert-info" role="alert">
+                    <i class="fas fa-info-circle me-2"></i>
+                    No candidates found. Try a different search query.
+                </div>
+            }
+            else
+            {
+                <div class="card shadow-sm border-0">
+                    <div class="card-header">
+                        <h5 class="fw-bold mb-0">
+                            <i class="fas fa-users me-2"></i>
+                            @Model.Count Candidate@(Model.Count != 1 ? "s" : "") Found
+                        </h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th><i class="fas fa-user me-2"></i>Name</th>
+                                    <th><i class="fas fa-envelope me-2"></i>Email</th>
+                                    <th><i class="fas fa-map-marker-alt me-2"></i>City</th>
+                                    <th><i class="fas fa-briefcase me-2"></i>Position</th>
+                                    <th><i class="fas fa-calendar me-2"></i>Applied</th>
+                                    <th class="text-center"><i class="fas fa-tasks me-2"></i>Stage</th>
+                                    <th class="text-center"><i class="fas fa-cog me-2"></i>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var app in Model)
+                                {
+                                    <tr>
+                                        <td>
+                                            <a asp-controller="Applications" asp-action="Details" asp-route-id="@app.Id" style="color: #1E1765; text-decoration: none;">
+                                                <strong>@app.Name</strong>
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <a href="mailto:@app.Email">@app.Email</a>
+                                        </td>
+                                        <td>
+                                            <span class="badge" style="background: #7B3FF2;">@app.City</span>
+                                        </td>
+                                        <td>
+                                            <a asp-action="JobDetail" asp-route-id="@app.JobId" style="color: #1E1765; text-decoration: none;">
+                                                @app.Job?.Title
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">@app.AppliedDate.ToString("MMM dd, yyyy")</small>
+                                        </td>
+                                        <td class="text-center">
+                                            @if (app.CurrentStage != null)
+                                            {
+                                                <span class="badge" style="background: #7B3FF2;">@app.CurrentStage.Name</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">Unassigned</span>
+                                            }
+                                        </td>
+                                        <td class="text-center">
+                                            <a asp-controller="Applications" asp-action="Details" asp-route-id="@app.Id" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

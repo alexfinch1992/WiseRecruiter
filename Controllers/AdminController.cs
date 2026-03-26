@@ -263,4 +263,65 @@ public class AdminController : Controller
         
         return RedirectToAction("JobDetail", new { id = jobId });
     }
+
+    [HttpGet]
+    public async Task<IActionResult> JobDetailSearch(int? id, string? searchQuery, string? sort = "stage")
+    {
+        if (id == null)
+            return NotFound();
+
+        var job = await _context.Jobs
+            .Include(j => j.Applications)
+            .ThenInclude(a => a.CurrentStage)
+            .Include(j => j.Stages)
+            .FirstOrDefaultAsync(j => j.Id == id);
+
+        if (job == null)
+            return NotFound();
+
+        // Filter applications by search query
+        if (job.Applications != null && !string.IsNullOrWhiteSpace(searchQuery))
+        {
+            var query = searchQuery.ToLowerInvariant();
+            job.Applications = job.Applications
+                .Where(a => (a.Name?.ToLowerInvariant().Contains(query) ?? false) ||
+                           (a.Email?.ToLowerInvariant().Contains(query) ?? false))
+                .ToList();
+        }
+
+        // Sort applications
+        if (job.Applications != null)
+        {
+            job.Applications = sort switch
+            {
+                "name" => job.Applications.OrderBy(a => a.Name).ToList(),
+                "date" => job.Applications.OrderByDescending(a => a.AppliedDate).ToList(),
+                _ => job.Applications.OrderBy(a => a.CurrentStage?.Order ?? 0).ThenBy(a => a.Name).ToList()
+            };
+        }
+
+        ViewData["SearchQuery"] = searchQuery;
+        return View("JobDetail", job);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> SearchCandidates(string? searchQuery)
+    {
+        var candidates = await _context.Applications
+            .Include(a => a.Job)
+            .Include(a => a.CurrentStage)
+            .ToListAsync();
+
+        // Filter by search query
+        if (!string.IsNullOrWhiteSpace(searchQuery))
+        {
+            var query = searchQuery.ToLowerInvariant();
+            candidates = candidates
+                .Where(a => (a.Name?.ToLowerInvariant().Contains(query) ?? false) ||
+                           (a.Email?.ToLowerInvariant().Contains(query) ?? false))
+                .ToList();
+        }
+
+        return View(candidates);
+    }
 }

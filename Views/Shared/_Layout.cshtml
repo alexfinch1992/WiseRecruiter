@@ -31,6 +31,16 @@
                             <a class="nav-link" asp-area="" asp-controller="Applications" asp-action="Index">My Applications</a>
                         </li>
                     </ul>
+                    @if (ViewContext.RouteData.Values["controller"]?.ToString() == "Admin")
+                    {
+                        <form asp-action="SearchCandidates" asp-controller="Admin" method="get" class="d-flex ms-auto" style="max-width: 350px;">
+                            <input type="text" name="searchQuery" class="form-control form-control-sm me-2" 
+                                   placeholder="Search candidates..." aria-label="Search candidates" />
+                            <button class="btn btn-outline-light btn-sm" type="submit">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </form>
+                    }
                 </div>
             </div>
         </nav>
