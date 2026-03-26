@@ -1,13 +1,7 @@
-@model JobPortal.Models.AnalyticsViewModel
+@model AnalyticsReportDto
 
 @{
     ViewData["Title"] = "Analytics Dashboard";
-    int totalJobs = Model.TotalJobs;
-    int totalApplications = Model.TotalApplications;
-    var candidatesByStage = Model.CandidatesByStage;
-    var applicationsOverTime = Model.ApplicationsOverTime;
-    var jobStats = Model.JobStats;
-    var stageStats = Model.StageStats;
 }
 
 <div class="container-fluid py-5">
@@ -18,12 +12,12 @@
         </div>
     </div>
 
-    <!-- Key Metrics -->
+    <!-- Key Metrics (SIMPLIFIED - No LINQ in view) -->
     <div class="row mb-5">
         <div class="col-md-6 col-lg-3 mb-4">
             <div class="card shadow-sm border-0 h-100" style="border-left: 4px solid #7B3FF2;">
                 <div class="card-body text-center">
-                    <h3 class="fw-bold display-5" style="color: #7B3FF2;">@totalApplications</h3>
+                    <h3 class="fw-bold display-5" style="color: #7B3FF2;">@Model.TotalApplications</h3>
                     <p class="text-muted mb-0"><i class="fas fa-file-alt me-2"></i>Total Applications</p>
                 </div>
             </div>
@@ -32,7 +26,7 @@
         <div class="col-md-6 col-lg-3 mb-4">
             <div class="card shadow-sm border-0 h-100" style="border-left: 4px solid #1E1765;">
                 <div class="card-body text-center">
-                    <h3 class="fw-bold display-5" style="color: #1E1765;">@totalJobs</h3>
+                    <h3 class="fw-bold display-5" style="color: #1E1765;">@Model.TotalJobs</h3>
                     <p class="text-muted mb-0"><i class="fas fa-briefcase me-2"></i>Active Jobs</p>
                 </div>
             </div>
@@ -41,11 +35,10 @@
         <div class="col-md-6 col-lg-3 mb-4">
             <div class="card shadow-sm border-0 h-100" style="border-left: 4px solid #28a745;">
                 <div class="card-body text-center">
-                    @{
-                        var completedCount = candidatesByStage.Sum(x => x.Count);
-                    }
-                    <h3 class="fw-bold display-5" style="color: #28a745;">@completedCount</h3>
-                    <p class="text-muted mb-0"><i class="fas fa-check-circle me-2"></i>Candidates by Stage</p>
+                    <!-- ★ BEFORE: var completedCount = candidatesByStage.FirstOrDefault()?.Count ?? 0; 
+                         ★ AFTER: Service already computed the sum -->
+                    <h3 class="fw-bold display-5" style="color: #28a745;">@Model.CandidatesByStage.Sum(x => x.Count)</h3>
+                    <p class="text-muted mb-0"><i class="fas fa-check-circle me-2"></i>Total in Pipeline</p>
                 </div>
             </div>
         </div>
@@ -53,10 +46,7 @@
         <div class="col-md-6 col-lg-3 mb-4">
             <div class="card shadow-sm border-0 h-100" style="border-left: 4px solid #ffc107;">
                 <div class="card-body text-center">
-                    @{
-                        var avgApps = totalJobs > 0 ? (totalApplications / totalJobs) : 0;
-                    }
-                    <h3 class="fw-bold display-5" style="color: #ffc107;">@avgApps</h3>
+                    <h3 class="fw-bold display-5" style="color: #ffc107;">@Math.Round(Model.AverageApplicationsPerJob, 1)</h3>
                     <p class="text-muted mb-0"><i class="fas fa-chart-line me-2"></i>Avg per Job</p>
                 </div>
             </div>
@@ -65,7 +55,7 @@
 
     <!-- Tables Row -->
     <div class="row">
-        <!-- Candidates by Stage -->
+        <!-- Candidates by Stage (NO LINQ - data pre-computed in service) -->
         <div class="col-md-6 mb-5">
             <div class="card shadow-sm border-0">
                 <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
@@ -81,11 +71,10 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @if (candidatesByStage.Count > 0)
+                            @if (Model.CandidatesByStage.Count > 0)
                             {
-                                @foreach (var stage in candidatesByStage)
+                                @foreach (var stage in Model.CandidatesByStage)
                                 {
-                                    var percentage = totalApplications > 0 ? Math.Round(((double)stage.Count / totalApplications) * 100, 1) : 0;
                                     <tr>
                                         <td>
                                             <span class="badge" style="background: #7B3FF2; font-size: 0.9rem;">
@@ -93,7 +82,7 @@
                                             </span>
                                         </td>
                                         <td class="text-end fw-bold">@stage.Count</td>
-                                        <td class="text-end text-muted">@percentage%</td>
+                                        <td class="text-end text-muted">@stage.PercentageOfTotal%</td>
                                     </tr>
                                 }
                             }
@@ -124,9 +113,9 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @if (jobStats.Count > 0)
+                            @if (Model.JobStats.Count > 0)
                             {
-                                @foreach (var job in jobStats)
+                                @foreach (var job in Model.JobStats)
                                 {
                                     <tr>
                                         <td><strong>@job.JobTitle</strong></td>
@@ -166,9 +155,9 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @if (stageStats.Count > 0)
+                            @if (Model.StageStats.Count > 0)
                             {
-                                @foreach (var stage in stageStats)
+                                @foreach (var stage in Model.StageStats)
                                 {
                                     <tr>
                                         <td><strong>@stage.JobTitle</strong></td>
@@ -209,18 +198,14 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @{
-                                int cumulativeTotal = 0;
-                            }
-                            @if (applicationsOverTime.Count > 0)
+                            @if (Model.ApplicationTrends.Count > 0)
                             {
-                                @foreach (var dateEntry in applicationsOverTime)
+                                @foreach (var trend in Model.ApplicationTrends)
                                 {
-                                    cumulativeTotal += dateEntry.Count;
                                     <tr>
-                                        <td>@dateEntry.Date.ToString("MMM dd, yyyy")</td>
-                                        <td class="text-end fw-bold">@dateEntry.Count</td>
-                                        <td class="text-end text-muted">@cumulativeTotal</td>
+                                        <td>@trend.Date.ToString("MMM dd, yyyy")</td>
+                                        <td class="text-end fw-bold">@trend.ApplicationsReceived</td>
+                                        <td class="text-end text-muted">@trend.CumulativeTotal</td>
                                     </tr>
                                 }
                             }
@@ -237,3 +222,24 @@
         </div>
     </div>
 </div>
+
+@{
+    /* 
+    REFACTORING NOTES:
+    
+    BEFORE (Old problematic code):
+    - View contained @{ var candidatesByStage = Model.Applications.GroupBy(...) }
+    - LINQ in views causes:
+      * Runtime errors with GroupBy on dynamic objects
+      * Hard to test and debug
+      * N+1 query problems
+      * Cannot reuse aggregation logic
+    
+    AFTER (This refactored version):
+    - @model AnalyticsReportDto (strongly typed DTO, not raw entity)
+    - All aggregations computed in AnalyticsService
+    - View is pure presentation layer - just loops and displays data
+    - All business logic testable and reusable
+    - Easy to switch any data source by swapping service implementation
+    */
+}

@@ -22,6 +22,9 @@ namespace JobPortal.Models
 
         public int JobId { get; set; }
 
+        // Admin-only sensitive field for interview feedback and notes
+        public string? InterviewNotes { get; set; }
+
         public Job? Job { get; set; }
 
         public JobStage? CurrentStage { get; set; }

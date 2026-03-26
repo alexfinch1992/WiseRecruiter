@@ -162,6 +162,7 @@ main {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
   margin-bottom: 20px;
+  background-color: #ffffff;
 }
 
 .card:hover {
@@ -185,6 +186,7 @@ main {
 
 .card-body {
   padding: 20px;
+  background-color: #ffffff;
 }
 
 /* Tables */
@@ -238,16 +240,20 @@ main {
   padding: 10px 15px;
   font-size: 1rem;
   transition: all 0.3s ease;
+  background-color: #ffffff;
+  color: #212529;
 }
 
 .form-control:focus {
   border-color: var(--wr-secondary);
   box-shadow: 0 0 0 0.2rem rgba(123, 63, 242, 0.1);
+  background-color: #ffffff;
+  color: #212529;
 }
 
 .form-label {
   font-weight: 600;
-  color: var(--wr-primary);
+  color: #212529;
   margin-bottom: 8px;
 }
 

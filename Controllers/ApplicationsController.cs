@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using JobPortal.Models;
 using JobPortal.Data;
 using JobPortal.Helpers;
+using JobPortal.Models.ViewModels;
 
 public class ApplicationsController : Controller
 {
@@ -20,6 +21,10 @@ public class ApplicationsController : Controller
         return View(await _context.Applications.ToListAsync());
     }
 
+    /// <summary>
+    /// Public candidate-facing application details.
+    /// Returns CandidatePublicViewModel with ONLY safe public information.
+    /// </summary>
     public async Task<IActionResult> Details(int? id)
     {
         if (id == null)
@@ -31,7 +36,54 @@ public class ApplicationsController : Controller
             .Include(a => a.CurrentStage)
             .Include(a => a.Documents)
             .FirstOrDefaultAsync(m => m.Id == id);
-        return application == null ? NotFound() : View(application);
+        
+        if (application == null)
+            return NotFound();
+
+        // Map to public ViewModel - only safe information
+        var viewModel = new CandidatePublicViewModel
+        {
+            Id = application.Id,
+            Name = application.Name,
+            Email = application.Email,
+            City = application.City,
+            ResumePath = application.ResumePath,
+            AppliedDate = application.AppliedDate,
+            JobId = application.JobId,
+            JobTitle = application.Job?.Title,
+            CurrentJobStageId = application.CurrentJobStageId,
+            CurrentStageName = application.CurrentStage?.Name ?? "Unassigned",
+            Documents = application.Documents
+                .Select(d => new DocumentDto
+                {
+                    Id = d.Id,
+                    FileName = d.FileName,
+                    FilePath = d.FilePath,
+                    Type = d.Type,
+                    FileSize = d.FileSize,
+                    UploadDate = d.UploadDate
+                })
+                .ToList(),
+            StageProgression = (application.Job?.Stages?.OrderBy(s => s.Order) ?? Enumerable.Empty<JobStage>())
+                .Select(s => new JobStageDto
+                {
+                    Id = s.Id,
+                    Name = s.Name,
+                    Order = s.Order
+                })
+                .ToList()
+        };
+
+        // Calculate stage progress
+        var allStages = viewModel.StageProgression.ToList();
+        if (allStages.Any())
+        {
+            viewModel.CurrentStageIndex = allStages.FindIndex(s => s.Id == application.CurrentJobStageId);
+            if (viewModel.CurrentStageIndex < 0) viewModel.CurrentStageIndex = 0;
+            viewModel.ProgressPercentage = ((viewModel.CurrentStageIndex + 1) * 100.0) / allStages.Count;
+        }
+
+        return View(viewModel);
     }
 
     public IActionResult Create(int? jobId)

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using JobPortal.Data;
 using JobPortal.Helpers;
 using JobPortal.Services.Interfaces;
@@ -11,6 +11,13 @@ builder.Services.AddControllersWithViews();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite("Data Source=jobportal.db"));
+
+// ★ NEW: Register service layer interfaces and implementations
+// This is the key change enabling future API integration
+builder.Services.AddScoped<IJobService, JobService>();
+builder.Services.AddScoped<IApplicationService, ApplicationService>();
+builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
+builder.Services.AddScoped<IFileUploadService, LocalFileUploadService>();
 
 // Add session and authentication
 builder.Services.AddSession(options =>
@@ -25,11 +32,6 @@ builder.Services.AddAuthentication("AdminAuth")
         options.LogoutPath = "/Account/Logout";
         options.AccessDeniedPath = "/";
     });
-
-// Register simplified business logic services (CRUD handled directly by controllers with DbContext)
-builder.Services.AddScoped<IApplicationService, ApplicationService>();
-builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
-builder.Services.AddScoped<IFileUploadService, LocalFileUploadService>();
     
 var app = builder.Build();
 
