@@ -29,6 +29,7 @@ public class ApplicationsController : Controller
             .Include(a => a.Job)
             .ThenInclude(j => j.Stages)
             .Include(a => a.CurrentStage)
+            .Include(a => a.Documents)
             .FirstOrDefaultAsync(m => m.Id == id);
         return application == null ? NotFound() : View(application);
     }
@@ -135,6 +136,50 @@ public class ApplicationsController : Controller
 
         await _context.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> UploadDocument(int applicationId, IFormFile document, int documentType = 0)
+    {
+        var application = await _context.Applications.FindAsync(applicationId);
+        if (application == null)
+            return NotFound();
+
+        var (isValid, errorMessage) = FileUploadHelper.ValidateDocument(document);
+        if (!isValid)
+            return Json(new { success = false, message = errorMessage });
+
+        var (success, filePath, uploadError) = await FileUploadHelper.SaveDocumentAsync(document, _webHostEnvironment.WebRootPath);
+        if (!success)
+            return Json(new { success = false, message = uploadError });
+
+        var newDocument = new Document
+        {
+            ApplicationId = applicationId,
+            FileName = document.FileName,
+            FilePath = filePath,
+            Type = (DocumentType)documentType,
+            FileSize = document.Length
+        };
+
+        _context.Documents.Add(newDocument);
+        await _context.SaveChangesAsync();
+
+        return Json(new { success = true, message = "Document uploaded successfully", documentId = newDocument.Id });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> DeleteDocument(int documentId)
+    {
+        var document = await _context.Documents.FindAsync(documentId);
+        if (document == null)
+            return NotFound();
+
+        FileUploadHelper.DeleteDocument(document.FilePath, _webHostEnvironment.WebRootPath);
+        _context.Documents.Remove(document);
+        await _context.SaveChangesAsync();
+
+        return Json(new { success = true, message = "Document deleted successfully" });
     }
 
     private bool ApplicationExists(int? id) => _context.Applications.Any(e => e.Id == id);

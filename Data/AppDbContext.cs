@@ -18,6 +18,8 @@ namespace JobPortal.Data
         public DbSet<AdminUser> AdminUsers { get; set; } = null!;
 
         public DbSet<JobStage> JobStages { get; set; } = null!;
+
+        public DbSet<Document> Documents { get; set; } = null!;
     }
 
     public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
