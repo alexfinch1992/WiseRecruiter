@@ -6,58 +6,23 @@ using JobPortal.Services.Interfaces;
 namespace JobPortal.Services.Implementations
 {
     /// <summary>
-    /// Implementation of IApplicationService using Entity Framework.
-    /// Centralizes all candidate/application business logic.
+    /// Simplified ApplicationService with focused business logic only.
+    /// CRUD operations should be handled by controllers using DbContext directly.
+    /// This service only contains methods with actual business rules.
     /// </summary>
     public class ApplicationService : IApplicationService
     {
         private readonly AppDbContext _context;
-        private readonly IJobService _jobService;
 
-        public ApplicationService(AppDbContext context, IJobService jobService)
+        public ApplicationService(AppDbContext context)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
-            _jobService = jobService ?? throw new ArgumentNullException(nameof(jobService));
         }
 
-        public async Task<List<Application>> GetAllApplicationsAsync(int? jobId = null)
-        {
-            var query = _context.Applications
-                .Include(a => a.Job)
-                .Include(a => a.CurrentStage)
-                .Include(a => a.Documents)
-                .AsQueryable();
-
-            if (jobId.HasValue)
-                query = query.Where(a => a.JobId == jobId.Value);
-
-            return await query.OrderByDescending(a => a.AppliedDate).ToListAsync();
-        }
-
-        public async Task<Application?> GetApplicationByIdAsync(int applicationId)
-        {
-            return await _context.Applications
-                .Include(a => a.Job)
-                .ThenInclude(j => j!.Stages)
-                .Include(a => a.CurrentStage)
-                .Include(a => a.Documents)
-                .FirstOrDefaultAsync(a => a.Id == applicationId);
-        }
-
-        public async Task<List<Application>> SearchApplicationsAsync(string searchTerm)
-        {
-            if (string.IsNullOrWhiteSpace(searchTerm))
-                return new List<Application>();
-
-            var term = searchTerm.ToLower();
-            return await _context.Applications
-                .Where(a => a.Name!.ToLower().Contains(term) || a.Email!.ToLower().Contains(term))
-                .Include(a => a.Job)
-                .Include(a => a.CurrentStage)
-                .OrderByDescending(a => a.AppliedDate)
-                .ToListAsync();
-        }
-
+        /// <summary>
+        /// Creates application with auto-stage assignment business logic.
+        /// Assigns to the first stage of the job if not explicitly specified.
+        /// </summary>
         public async Task<Application> CreateApplicationAsync(Application application)
         {
             if (application == null)
@@ -80,36 +45,10 @@ namespace JobPortal.Services.Implementations
             return application;
         }
 
-        public async Task<bool> UpdateApplicationAsync(Application application)
-        {
-            if (application == null)
-                throw new ArgumentNullException(nameof(application));
-
-            try
-            {
-                _context.Applications.Update(application);
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!await ApplicationExistsAsync(application.Id))
-                    return false;
-                throw;
-            }
-        }
-
-        public async Task<bool> DeleteApplicationAsync(int applicationId)
-        {
-            var application = await _context.Applications.FindAsync(applicationId);
-            if (application == null)
-                return false;
-
-            _context.Applications.Remove(application);
-            await _context.SaveChangesAsync();
-            return true;
-        }
-
+        /// <summary>
+        /// Transitions an application to a new stage with validation.
+        /// Ensures the stage exists and belongs to the application's job.
+        /// </summary>
         public async Task<bool> TransitionToStageAsync(int applicationId, int newStageId)
         {
             var application = await _context.Applications
@@ -132,16 +71,10 @@ namespace JobPortal.Services.Implementations
             return true;
         }
 
-        public async Task<List<Application>> GetApplicationsByStageAsync(int stageId)
-        {
-            return await _context.Applications
-                .Where(a => a.CurrentJobStageId == stageId)
-                .Include(a => a.Job)
-                .Include(a => a.CurrentStage)
-                .OrderBy(a => a.Name)
-                .ToListAsync();
-        }
-
+        /// <summary>
+        /// Gets applications for a job sorted by specified strategy.
+        /// Handles multiple sort strategies: Name, AppliedDate, Stage order.
+        /// </summary>
         public async Task<List<Application>> GetApplicationsSortedAsync(int jobId, ApplicationSortBy sortBy)
         {
             var query = _context.Applications
@@ -158,11 +91,6 @@ namespace JobPortal.Services.Implementations
                 ApplicationSortBy.Stage => query.OrderBy(a => a.CurrentStage!.Order).ThenBy(a => a.Name),
                 _ => query.OrderBy(a => a.CurrentStage!.Order).ThenBy(a => a.Name)
             }).ToListAsync();
-        }
-
-        private async Task<bool> ApplicationExistsAsync(int applicationId)
-        {
-            return await _context.Applications.AnyAsync(a => a.Id == applicationId);
         }
     }
 }

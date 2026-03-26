@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using JobPortal.Data;
 using JobPortal.Helpers;
+using JobPortal.Services.Interfaces;
+using JobPortal.Services.Implementations;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +25,11 @@ builder.Services.AddAuthentication("AdminAuth")
         options.LogoutPath = "/Account/Logout";
         options.AccessDeniedPath = "/";
     });
+
+// Register simplified business logic services (CRUD handled directly by controllers with DbContext)
+builder.Services.AddScoped<IApplicationService, ApplicationService>();
+builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
+builder.Services.AddScoped<IFileUploadService, LocalFileUploadService>();
     
 var app = builder.Build();
 
