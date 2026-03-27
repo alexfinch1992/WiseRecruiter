@@ -14,15 +14,18 @@ namespace JobPortal.Helpers
             SeedDefaultScorecardTemplate(context);
             NullifyOrphanedScorecardTemplateIds(context);
 
-            // Seed admin user
+            // Seed admin users
             if (!context.AdminUsers.Any())
             {
-                var adminUser = new AdminUser
+                var adminUsers = new[]
                 {
-                    Username = "admin",
-                    PasswordHash = PasswordHasher.Hash("admin123")
+                    new AdminUser { Username = "admin",  PasswordHash = PasswordHasher.Hash("admin123") },
+                    new AdminUser { Username = "alex",   PasswordHash = PasswordHasher.Hash("admin123") },
+                    new AdminUser { Username = "taylor", PasswordHash = PasswordHasher.Hash("admin123") },
+                    new AdminUser { Username = "jordan", PasswordHash = PasswordHasher.Hash("admin123") },
+                    new AdminUser { Username = "casey",  PasswordHash = PasswordHasher.Hash("admin123") },
                 };
-                context.AdminUsers.Add(adminUser);
+                context.AdminUsers.AddRange(adminUsers);
                 context.SaveChanges();
             }
 

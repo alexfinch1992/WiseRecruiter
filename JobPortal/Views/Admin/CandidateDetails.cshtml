@@ -189,6 +189,7 @@
                                             <option value="@admin.Id">@admin.Username</option>
                                         }
                                     </select>
+                                    <small class="form-text text-muted">Hold Ctrl (Windows) or Command (Mac) to select multiple interviewers.</small>
                                 </div>
                             }
                             <div class="col-md-auto">
@@ -237,7 +238,16 @@
                                         <tr>
                                             <td><span class="local-time" data-utc="@interview.ScheduledAt.ToString("o")"></span></td>
                                             <td><span class="badge" style="background: #7B3FF2;">@interview.StageName</span></td>
-                                            <td class="text-muted small">@(interview.InterviewerNames.Any() ? string.Join(", ", interview.InterviewerNames) : "—")</td>
+                                            <td class="small">
+                                                @if (interview.InterviewerNames.Any())
+                                                {
+                                                    <span>@string.Join(", ", interview.InterviewerNames)</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">No interviewers</span>
+                                                }
+                                            </td>
                                             <td><span class="badge @statusBadgeClass">@interviewStatus</span></td>
                                             <td class="text-end">
                                                 @if (!interview.IsCancelled && interview.CompletedAt == null)

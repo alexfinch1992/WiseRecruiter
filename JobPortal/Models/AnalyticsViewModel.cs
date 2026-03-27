@@ -1,3 +1,5 @@
+using JobPortal.Models.ViewModels;
+
 namespace JobPortal.Models
 {
     public class AnalyticsViewModel
@@ -8,6 +10,7 @@ namespace JobPortal.Models
         public List<ApplicationOverTimeInfo> ApplicationsOverTime { get; set; } = new();
         public int TotalApplications { get; set; }
         public int TotalJobs { get; set; }
+        public List<UpcomingInterviewDto> UpcomingInterviews { get; set; } = new();
     }
 
     public class CandidateByStageInfo

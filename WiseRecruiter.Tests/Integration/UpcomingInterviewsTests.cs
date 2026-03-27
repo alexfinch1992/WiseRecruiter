@@ -126,16 +126,16 @@ namespace WiseRecruiter.Tests.Integration
             var controller = CreateAdminController(context);
 
             // Act
-            var result = await controller.UpcomingInterviews();
+            var result = await controller.Analytics();
 
             // Assert
             var viewResult = result.Should().BeOfType<ViewResult>().Subject;
-            var model = viewResult.Model.Should().BeAssignableTo<List<UpcomingInterviewDto>>().Subject;
+            var model = viewResult.Model.Should().BeAssignableTo<AnalyticsViewModel>().Subject;
 
-            model.Should().HaveCount(1);
-            model[0].InterviewId.Should().Be(upcomingInterview.Id);
-            model[0].CandidateName.Should().Be("Jane Smith");
-            model[0].JobTitle.Should().Be("Software Engineer");
+            model.UpcomingInterviews.Should().HaveCount(1);
+            model.UpcomingInterviews[0].InterviewId.Should().Be(upcomingInterview.Id);
+            model.UpcomingInterviews[0].CandidateName.Should().Be("Jane Smith");
+            model.UpcomingInterviews[0].JobTitle.Should().Be("Software Engineer");
         }
     }
 }
