@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace JobPortal.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260326163024_AddCandidateRefactorAndScorecardUi")]
-    partial class AddCandidateRefactorAndScorecardUi
+    [Migration("20260327030559_AddIsActiveAndDisplayOrderToFacet")]
+    partial class AddIsActiveAndDisplayOrderToFacet
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -117,6 +117,38 @@ namespace JobPortal.Migrations
                     b.ToTable("Candidates");
                 });
 
+            modelBuilder.Entity("JobPortal.Models.Category", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Categories");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "Technical"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "Soft Skills"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Name = "Leadership"
+                        });
+                });
+
             modelBuilder.Entity("JobPortal.Models.Document", b =>
                 {
                     b.Property<int>("Id")
@@ -150,6 +182,41 @@ namespace JobPortal.Migrations
                     b.ToTable("Documents");
                 });
 
+            modelBuilder.Entity("JobPortal.Models.Facet", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("CategoryId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NotesPlaceholder")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Facets");
+                });
+
             modelBuilder.Entity("JobPortal.Models.Job", b =>
                 {
                     b.Property<int>("Id")
@@ -159,11 +226,16 @@ namespace JobPortal.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("ScorecardTemplateId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ScorecardTemplateId");
 
                     b.ToTable("Jobs");
                 });
@@ -214,6 +286,41 @@ namespace JobPortal.Migrations
                     b.ToTable("Scorecards");
                 });
 
+            modelBuilder.Entity("JobPortal.Models.ScorecardFacet", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("CategoryId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NotesPlaceholder")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("ScorecardFacets");
+                });
+
             modelBuilder.Entity("JobPortal.Models.ScorecardResponse", b =>
                 {
                     b.Property<int>("Id")
@@ -238,6 +345,50 @@ namespace JobPortal.Migrations
                     b.HasIndex("ScorecardId");
 
                     b.ToTable("ScorecardResponses");
+                });
+
+            modelBuilder.Entity("JobPortal.Models.ScorecardTemplate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ScorecardTemplates");
+                });
+
+            modelBuilder.Entity("JobPortal.Models.ScorecardTemplateFacet", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("FacetId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ScorecardFacetId")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("ScorecardFacetId");
+
+                    b.Property<int>("ScorecardTemplateId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FacetId");
+
+                    b.HasIndex("ScorecardTemplateId", "FacetId")
+                        .IsUnique();
+
+                    b.ToTable("ScorecardTemplateFacets");
                 });
 
             modelBuilder.Entity("JobPortal.Models.Application", b =>
@@ -276,6 +427,26 @@ namespace JobPortal.Migrations
                     b.Navigation("Application");
                 });
 
+            modelBuilder.Entity("JobPortal.Models.Facet", b =>
+                {
+                    b.HasOne("JobPortal.Models.Category", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Category");
+                });
+
+            modelBuilder.Entity("JobPortal.Models.Job", b =>
+                {
+                    b.HasOne("JobPortal.Models.ScorecardTemplate", "ScorecardTemplate")
+                        .WithMany("Jobs")
+                        .HasForeignKey("ScorecardTemplateId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("ScorecardTemplate");
+                });
+
             modelBuilder.Entity("JobPortal.Models.JobStage", b =>
                 {
                     b.HasOne("JobPortal.Models.Job", "Job")
@@ -298,6 +469,16 @@ namespace JobPortal.Migrations
                     b.Navigation("Candidate");
                 });
 
+            modelBuilder.Entity("JobPortal.Models.ScorecardFacet", b =>
+                {
+                    b.HasOne("JobPortal.Models.Category", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Category");
+                });
+
             modelBuilder.Entity("JobPortal.Models.ScorecardResponse", b =>
                 {
                     b.HasOne("JobPortal.Models.Scorecard", "Scorecard")
@@ -307,6 +488,25 @@ namespace JobPortal.Migrations
                         .IsRequired();
 
                     b.Navigation("Scorecard");
+                });
+
+            modelBuilder.Entity("JobPortal.Models.ScorecardTemplateFacet", b =>
+                {
+                    b.HasOne("JobPortal.Models.Facet", "Facet")
+                        .WithMany()
+                        .HasForeignKey("FacetId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("JobPortal.Models.ScorecardTemplate", "ScorecardTemplate")
+                        .WithMany("TemplateFacets")
+                        .HasForeignKey("ScorecardTemplateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Facet");
+
+                    b.Navigation("ScorecardTemplate");
                 });
 
             modelBuilder.Entity("JobPortal.Models.Application", b =>
@@ -331,6 +531,13 @@ namespace JobPortal.Migrations
             modelBuilder.Entity("JobPortal.Models.Scorecard", b =>
                 {
                     b.Navigation("Responses");
+                });
+
+            modelBuilder.Entity("JobPortal.Models.ScorecardTemplate", b =>
+                {
+                    b.Navigation("Jobs");
+
+                    b.Navigation("TemplateFacets");
                 });
 #pragma warning restore 612, 618
         }

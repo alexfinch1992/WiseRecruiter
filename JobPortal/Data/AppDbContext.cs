@@ -27,8 +27,6 @@ namespace JobPortal.Data
 
         public DbSet<ScorecardResponse> ScorecardResponses { get; set; } = null!;
 
-        public DbSet<ScorecardFacet> ScorecardFacets { get; set; } = null!;  // Legacy — table preserved
-
         public DbSet<ScorecardTemplate> ScorecardTemplates { get; set; } = null!;
 
         public DbSet<ScorecardTemplateFacet> ScorecardTemplateFacets { get; set; } = null!;

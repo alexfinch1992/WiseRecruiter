@@ -8,7 +8,7 @@ namespace JobPortal.Helpers
     {
         public static void Initialize(AppDbContext context)
         {
-            SeedDefaultScorecardFacets(context);
+            // SeedDefaultScorecardFacets(context); // Disabled — Facet table is now used instead
             SeedDefaultScorecardTemplate(context);
             NullifyOrphanedScorecardTemplateIds(context);
 
@@ -79,29 +79,30 @@ namespace JobPortal.Helpers
 
         private static void SeedDefaultScorecardFacets(AppDbContext context)
         {
-            if (context.ScorecardFacets.Any())
-                return;
+            // Disabled — ScorecardFacets DbSet removed; Facet table is used instead
+            // if (context.ScorecardFacets.Any())
+            //     return;
 
-            var defaultFacets = new[]
-            {
-                "Communication",
-                "Quality",
-                "Speed",
-                "Problem Solving",
-                "Collaboration"
-            };
+            // var defaultFacets = new[]
+            // {
+            //     "Communication",
+            //     "Quality",
+            //     "Speed",
+            //     "Problem Solving",
+            //     "Collaboration"
+            // };
 
-            for (var index = 0; index < defaultFacets.Length; index++)
-            {
-                context.ScorecardFacets.Add(new ScorecardFacet
-                {
-                    Name = defaultFacets[index],
-                    IsActive = true,
-                    DisplayOrder = index + 1
-                });
-            }
+            // for (var index = 0; index < defaultFacets.Length; index++)
+            // {
+            //     context.ScorecardFacets.Add(new ScorecardFacet
+            //     {
+            //         Name = defaultFacets[index],
+            //         IsActive = true,
+            //         DisplayOrder = index + 1
+            //     });
+            // }
 
-            context.SaveChanges();
+            // context.SaveChanges();
         }
 
         private static void SeedDefaultScorecardTemplate(AppDbContext context)
@@ -117,7 +118,7 @@ namespace JobPortal.Helpers
                 context.SaveChanges();
             }
 
-            var activeFacets = context.ScorecardFacets
+            var activeFacets = context.Facets
                 .Where(f => f.IsActive)
                 .OrderBy(f => f.DisplayOrder)
                 .ToList();
@@ -134,6 +135,7 @@ namespace JobPortal.Helpers
                 context.ScorecardTemplateFacets.Add(new ScorecardTemplateFacet
                 {
                     ScorecardTemplateId = template.Id,
+                    FacetId = facet.Id,
                     ScorecardFacetId = facet.Id,
                     DisplayOrder = facet.DisplayOrder
                 });
