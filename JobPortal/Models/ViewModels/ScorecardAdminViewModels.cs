@@ -37,6 +37,16 @@ namespace JobPortal.Models.ViewModels
 
         public string? OverallRecommendation { get; set; }
 
+        public int? InterviewId { get; set; }
+
+        public List<InterviewSelectItem> AvailableInterviews { get; set; } = new();
+
         public List<ScorecardResponseInputViewModel> Responses { get; set; } = new();
+    }
+
+    public class InterviewSelectItem
+    {
+        public int Id { get; set; }
+        public string Label { get; set; } = string.Empty;
     }
 }

@@ -1,0 +1,11 @@
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".local-time").forEach(function (el) {
+        const utc = el.getAttribute("data-utc");
+        if (utc) {
+            const local = new Date(utc);
+            el.textContent = local.toLocaleString();
+        }
+    });
+});
+</script>

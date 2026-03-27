@@ -35,6 +35,7 @@ builder.Services.AddScoped<IScorecardTemplateService, ScorecardTemplateService>(
 builder.Services.AddScoped<IJobService, JobService>();
 builder.Services.AddScoped<IFileUploadService, LocalFileUploadService>();
 builder.Services.AddScoped<IScorecardAnalyticsService, ScorecardAnalyticsService>();
+builder.Services.AddScoped<IInterviewService, InterviewService>();
     
 var app = builder.Build();
 

@@ -20,6 +20,9 @@ namespace JobPortal.Models
         public bool IsArchived { get; set; } = false;
         public DateTime? ArchivedAt { get; set; }
 
+        public int? InterviewId { get; set; }
+        public Interview? Interview { get; set; }
+
         public ICollection<ScorecardResponse> Responses { get; set; } = new List<ScorecardResponse>();
     }
 }

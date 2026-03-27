@@ -43,7 +43,7 @@ namespace WiseRecruiter.Tests.Integration
                 context,
                 new Mock<IWebHostEnvironment>().Object,
                 applicationService, analyticsService, scorecardService,
-                templateService, jobService, scorecardAnalyticsService)
+                templateService, jobService, scorecardAnalyticsService, new InterviewService(context))
             {
                 TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>())
             };

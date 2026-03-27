@@ -35,6 +35,10 @@ namespace JobPortal.Data
 
         public DbSet<Facet> Facets { get; set; } = null!;
 
+        public DbSet<Interview> Interviews { get; set; } = null!;
+
+        public DbSet<InterviewInterviewer> InterviewInterviewers { get; set; } = null!;
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -105,6 +109,48 @@ namespace JobPortal.Data
                 new Category { Id = 2, Name = "Soft Skills" },
                 new Category { Id = 3, Name = "Leadership" }
             );
+
+            // Interview relationships
+            modelBuilder.Entity<Interview>()
+                .HasOne(i => i.Candidate)
+                .WithMany()
+                .HasForeignKey(i => i.CandidateId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Interview>()
+                .HasOne(i => i.Application)
+                .WithMany()
+                .HasForeignKey(i => i.ApplicationId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Interview>()
+                .HasOne(i => i.JobStage)
+                .WithMany()
+                .HasForeignKey(i => i.JobStageId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<InterviewInterviewer>()
+                .HasOne(ii => ii.Interview)
+                .WithMany(i => i.InterviewInterviewers)
+                .HasForeignKey(ii => ii.InterviewId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<InterviewInterviewer>()
+                .HasOne(ii => ii.AdminUser)
+                .WithMany()
+                .HasForeignKey(ii => ii.AdminUserId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Scorecard>()
+                .HasOne(s => s.Interview)
+                .WithMany(i => i.Scorecards)
+                .HasForeignKey(s => s.InterviewId)
+                .OnDelete(DeleteBehavior.SetNull);
         }
     }
 
