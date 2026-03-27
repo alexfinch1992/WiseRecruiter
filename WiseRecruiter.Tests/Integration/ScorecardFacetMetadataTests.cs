@@ -38,7 +38,7 @@ namespace WiseRecruiter.Tests.Integration
             IScorecardService scorecardService = new ScorecardService(context, templateService);
             IJobService jobService = new JobService(context);
             var env = new Mock<IWebHostEnvironment>().Object;
-            return new AdminController(context, env, applicationService, analyticsService, scorecardService, templateService, jobService);
+            return new AdminController(context, env, applicationService, analyticsService, scorecardService, templateService, jobService, new ScorecardAnalyticsService(context));
         }
 
         private async Task<(int applicationId, int facetId)> SeedApplicationWithFacetAsync(
@@ -345,6 +345,44 @@ namespace WiseRecruiter.Tests.Integration
             saved!.Description.Should().Be("Assess clarity");
             saved.NotesPlaceholder.Should().Be("e.g. concise answer");
             saved.CategoryId.Should().Be(category.Id);
+        }
+
+        // -------------------------------------------------------
+        // Suite 6 — Overall Recommendation
+        // -------------------------------------------------------
+
+        [Fact]
+        public async Task CreateScorecard_POST_PersistsOverallRecommendation()
+        {
+            using var context = CreateInMemoryContext();
+            var (applicationId, facetId) = await SeedApplicationWithFacetAsync(
+                context, "desc", "placeholder");
+
+            var controller = CreateAdminController(context);
+
+            var model = new CreateScorecardViewModel
+            {
+                ApplicationId = applicationId,
+                CandidateId = 0, // will be overridden by controller from DB
+                OverallRecommendation = "Strong hire — excellent problem-solving skills.",
+                Responses = new System.Collections.Generic.List<ScorecardResponseInputViewModel>
+                {
+                    new ScorecardResponseInputViewModel
+                    {
+                        FacetId = facetId,
+                        FacetName = "Test Facet",
+                        Score = 4.0m
+                    }
+                }
+            };
+
+            var result = await controller.CreateScorecard(model);
+
+            result.Should().BeOfType<RedirectToActionResult>();
+
+            var saved = await context.Scorecards.FirstOrDefaultAsync();
+            saved.Should().NotBeNull();
+            saved!.OverallRecommendation.Should().Be("Strong hire — excellent problem-solving skills.");
         }
     }
 }

@@ -33,7 +33,7 @@ namespace WiseRecruiter.Tests.Integration
             IAnalyticsService analyticsService = new AnalyticsService(context);
             IScorecardService scorecardService = new ScorecardService(context, templateService);
             IJobService jobService = new JobService(context);
-            return new AdminController(context, webHostEnvironment, applicationService, analyticsService, scorecardService, templateService, jobService);
+            return new AdminController(context, webHostEnvironment, applicationService, analyticsService, scorecardService, templateService, jobService, new ScorecardAnalyticsService(context));
         }
 
         [Fact]

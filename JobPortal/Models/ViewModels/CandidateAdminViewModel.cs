@@ -1,4 +1,5 @@
 using JobPortal.Models;
+using JobPortal.Services.Interfaces;
 
 namespace JobPortal.Models.ViewModels
 {
@@ -37,5 +38,8 @@ namespace JobPortal.Models.ViewModels
 
         // Scorecards
         public List<ScorecardSummaryViewModel> Scorecards { get; set; } = new();
+
+        // Analytics
+        public CandidateAnalyticsDto Analytics { get; set; } = new();
     }
 }

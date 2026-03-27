@@ -34,6 +34,7 @@ builder.Services.AddScoped<IFacetService, FacetService>();
 builder.Services.AddScoped<IScorecardTemplateService, ScorecardTemplateService>();
 builder.Services.AddScoped<IJobService, JobService>();
 builder.Services.AddScoped<IFileUploadService, LocalFileUploadService>();
+builder.Services.AddScoped<IScorecardAnalyticsService, ScorecardAnalyticsService>();
     
 var app = builder.Build();
 

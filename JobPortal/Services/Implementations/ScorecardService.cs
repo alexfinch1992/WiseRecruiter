@@ -182,6 +182,7 @@ namespace JobPortal.Services.Implementations
             {
                 Id = scorecard.Id,
                 CandidateId = scorecard.CandidateId,
+                OverallRecommendation = scorecard.OverallRecommendation,
                 Responses = orderedResponses
                     .Select(response => new ScorecardDetailDto.ScorecardResponseDto
                     {

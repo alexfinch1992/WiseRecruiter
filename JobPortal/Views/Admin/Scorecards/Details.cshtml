@@ -19,6 +19,16 @@
         </div>
     </div>
 
+    @if (!string.IsNullOrWhiteSpace(Model.OverallRecommendation))
+    {
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body">
+                <h5 class="card-title mb-2">Overall Recommendation</h5>
+                <p class="mb-0" style="white-space: pre-wrap;">@Model.OverallRecommendation</p>
+            </div>
+        </div>
+    }
+
     <div class="card shadow-sm border-0">
         <div class="card-body">
             @if (Model.Responses.Any())

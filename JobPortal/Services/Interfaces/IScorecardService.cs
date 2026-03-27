@@ -31,6 +31,7 @@ namespace JobPortal.Services.Interfaces
     {
         public int Id { get; set; }
         public int CandidateId { get; set; }
+        public string? OverallRecommendation { get; set; }
         public List<ScorecardResponseDto> Responses { get; set; } = new();
         public decimal AverageScore { get; set; }
 

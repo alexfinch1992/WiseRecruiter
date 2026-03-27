@@ -120,8 +120,7 @@ namespace JobPortal.Helpers
                 context.ScorecardTemplateFacets.Add(new ScorecardTemplateFacet
                 {
                     ScorecardTemplateId = template.Id,
-                    FacetId = facet.Id,
-                    ScorecardFacetId = facet.Id
+                    FacetId = facet.Id
                 });
             }
 
