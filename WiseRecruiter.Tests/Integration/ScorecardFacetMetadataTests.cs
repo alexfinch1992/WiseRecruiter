@@ -38,7 +38,7 @@ namespace WiseRecruiter.Tests.Integration
             IScorecardService scorecardService = new ScorecardService(context, templateService);
             IJobService jobService = new JobService(context);
             var env = new Mock<IWebHostEnvironment>().Object;
-            return new AdminController(context, env, applicationService, analyticsService, scorecardService, templateService, jobService, new ScorecardAnalyticsService(context));
+            return new AdminController(context, env, applicationService, analyticsService, scorecardService, templateService, jobService, new ScorecardAnalyticsService(context), new InterviewService(context));
         }
 
         private async Task<(int applicationId, int facetId)> SeedApplicationWithFacetAsync(

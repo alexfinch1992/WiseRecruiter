@@ -139,6 +139,130 @@
                 </div>
             }
 
+            <!-- Scheduled Interviews Section -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
+                    <h5 class="fw-bold mb-0 text-white"><i class="fas fa-calendar-alt me-2"></i>Scheduled Interviews</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Schedule Interview Form -->
+                    <form asp-controller="Admin" asp-action="CreateInterview" method="post" class="mb-4">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="candidateId" value="@Model.CandidateId" />
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-muted">Application</label>
+                                <select name="applicationId" class="form-select form-select-sm" required>
+                                    @foreach (var app in Model.Applications)
+                                    {
+                                        if (app.Id == Model.Id)
+                                        {
+                                            <option value="@app.Id" selected>@app.Job?.Title (@app.Id)</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@app.Id">@app.Job?.Title (@app.Id)</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-muted">Stage</label>
+                                <select name="jobStageId" class="form-select form-select-sm" required>
+                                    @foreach (var stage in Model.JobStages)
+                                    {
+                                        <option value="@stage.Id">@stage.Name</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold small text-muted">Date &amp; Time</label>
+                                <input type="datetime-local" name="scheduledAt" class="form-control form-control-sm" required />
+                            </div>
+                            @if (Model.AdminUsers.Any())
+                            {
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold small text-muted">Interviewers <span class="fw-normal">(optional)</span></label>
+                                    <select name="SelectedInterviewerIds" multiple class="form-select form-select-sm">
+                                        @foreach (var admin in Model.AdminUsers)
+                                        {
+                                            <option value="@admin.Id">@admin.Username</option>
+                                        }
+                                    </select>
+                                </div>
+                            }
+                            <div class="col-md-auto">
+                                <button type="submit" class="btn btn-sm btn-primary" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%); border: none; white-space: nowrap;">Schedule</button>
+                            </div>
+                        </div>
+                    </form>
+                    @if (Model.Interviews.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Date &amp; Time</th>
+                                        <th>Stage</th>
+                                        <th>Interviewers</th>
+                                        <th>Status</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var interview in Model.Interviews)
+                                    {
+                                        string interviewStatus;
+                                        string statusBadgeClass;
+                                        if (interview.IsCancelled)
+                                        {
+                                            interviewStatus = "Cancelled";
+                                            statusBadgeClass = "bg-secondary";
+                                        }
+                                        else if (interview.CompletedAt != null)
+                                        {
+                                            interviewStatus = "Completed";
+                                            statusBadgeClass = "bg-success";
+                                        }
+                                        else if (interview.ScheduledAt < DateTime.UtcNow)
+                                        {
+                                            interviewStatus = "Past Due";
+                                            statusBadgeClass = "bg-warning text-dark";
+                                        }
+                                        else
+                                        {
+                                            interviewStatus = "Upcoming";
+                                            statusBadgeClass = "bg-info text-dark";
+                                        }
+                                        <tr>
+                                            <td><span class="local-time" data-utc="@interview.ScheduledAt.ToString("o")"></span></td>
+                                            <td><span class="badge" style="background: #7B3FF2;">@interview.StageName</span></td>
+                                            <td class="text-muted small">@(interview.InterviewerNames.Any() ? string.Join(", ", interview.InterviewerNames) : "—")</td>
+                                            <td><span class="badge @statusBadgeClass">@interviewStatus</span></td>
+                                            <td class="text-end">
+                                                @if (!interview.IsCancelled && interview.CompletedAt == null)
+                                                {
+                                                    <form asp-controller="Admin" asp-action="CancelInterview" method="post" style="display:inline">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="interviewId" value="@interview.Id" />
+                                                        <input type="hidden" name="candidateId" value="@Model.CandidateId" />
+                                                        <button type="submit" class="btn btn-outline-danger btn-sm">Cancel</button>
+                                                    </form>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">No interviews scheduled.</p>
+                    }
+                </div>
+            </div>
+
             <!-- Scorecards Section -->
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
@@ -319,6 +443,8 @@
         </div>
     </div>
 </div>
+
+@await Html.PartialAsync("_LocalTimeScript")
 
 <script>
     async function uploadDocument() {

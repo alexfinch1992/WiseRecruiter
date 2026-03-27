@@ -67,6 +67,21 @@
 
                         <hr class="my-4" />
 
+                        @if (Model.AvailableInterviews.Any())
+                        {
+                            <div class="mb-3">
+                                <label asp-for="InterviewId" class="form-label fw-semibold">Link to Interview <span class="text-muted fw-normal">(optional)</span></label>
+                                <select asp-for="InterviewId" class="form-select">
+                                    <option value="">— None —</option>
+                                    @foreach (var interview in Model.AvailableInterviews)
+                                    {
+                                        <option value="@interview.Id">@interview.Label</option>
+                                    }
+                                </select>
+                                <div class="form-text">Selecting an interview will mark it as completed when this scorecard is saved.</div>
+                            </div>
+                        }
+
                         <div class="mb-3">
                             <label asp-for="OverallRecommendation" class="form-label fw-semibold">Overall Recommendation</label>
                             <textarea asp-for="OverallRecommendation" class="form-control" rows="4"

@@ -41,5 +41,24 @@ namespace JobPortal.Models.ViewModels
 
         // Analytics
         public CandidateAnalyticsDto Analytics { get; set; } = new();
+
+        // Interviews
+        public List<InterviewSummaryDto> Interviews { get; set; } = new();
+
+        // Interview scheduling form data
+        public List<Application> Applications { get; set; } = new();
+        public List<JobStage> JobStages { get; set; } = new();
+        public List<AdminUser> AdminUsers { get; set; } = new();
+        public List<int> SelectedInterviewerIds { get; set; } = new();
+    }
+
+    public class InterviewSummaryDto
+    {
+        public int Id { get; set; }
+        public DateTime ScheduledAt { get; set; }
+        public string StageName { get; set; } = string.Empty;
+        public bool IsCancelled { get; set; }
+        public DateTime? CompletedAt { get; set; }
+        public List<string> InterviewerNames { get; set; } = new();
     }
 }
