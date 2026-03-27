@@ -1,4 +1,5 @@
 @model JobPortal.Models.ViewModels.CandidateAdminViewModel
+@using JobPortal.Models
 
 @{
     ViewData["Title"] = $"{Model.Name} - Candidate Profile";
@@ -61,6 +62,114 @@
                             <p class="lead mb-0">@Model.AppliedDate.ToString("MMMM dd, yyyy")</p>
                         </div>
                     </div>
+                    <!-- Stage 1 Recommendation Status -->
+                    <div class="row">
+                        <div class="col-12">
+                            <label class="fw-bold text-muted small"><i class="fas fa-clipboard-check me-2"></i>Stage 1 Approval</label>
+                            <div class="mt-1">
+                                @if (Model.Stage1Recommendation == null)
+                                {
+                                    <span class="badge bg-secondary">Not Submitted</span>
+                                }
+                                else if (Model.Stage1Recommendation.Status == RecommendationStatus.Approved)
+                                {
+                                    <span class="badge bg-success">Approved</span>
+                                }
+                                else if (Model.Stage1Recommendation.Status == RecommendationStatus.Submitted)
+                                {
+                                    <span class="badge bg-warning text-dark">Pending Review</span>
+                                }
+                                else if (Model.Stage1Recommendation.Status == RecommendationStatus.NeedsRevision)
+                                {
+                                    <span class="badge bg-danger">Needs Revision</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Draft</span>
+                                }
+                                @if (Model.Stage1Recommendation != null && Model.Stage1Recommendation.BypassedApproval)
+                                {
+                                    <span class="badge bg-warning text-dark ms-1">&#9888; Proceeded Without Approval</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Application Stage Card -->
+            <div class="card shadow-sm border-0 mb-4" id="application-stage-card">
+                <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
+                    <h5 class="fw-bold mb-0 text-white"><i class="fas fa-layer-group me-2"></i>Application Stage</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="fw-bold text-muted small">Current Stage</label>
+                        <div class="mt-1">
+                            @{
+                                var stageBadgeClass = Model.ApplicationStage switch
+                                {
+                                    ApplicationStage.Applied   => "bg-secondary",
+                                    ApplicationStage.Screen    => "bg-info text-dark",
+                                    ApplicationStage.Interview => "bg-primary",
+                                    ApplicationStage.Offer     => "bg-warning text-dark",
+                                    ApplicationStage.Hired     => "bg-success",
+                                    ApplicationStage.Rejected  => "bg-danger",
+                                    _                          => "bg-secondary"
+                                };
+                            }
+                            <span class="badge @stageBadgeClass" style="font-size: 1rem;">@Model.ApplicationStage</span>
+                        </div>
+                    </div>
+
+                    <form id="update-stage-form" method="post" asp-controller="Admin" asp-action="UpdateApplicationStage">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="applicationId" value="@Model.Id" />
+                        <input type="hidden" name="proceedWithoutApproval" id="proceedWithoutApproval" value="false" />
+                        @if (Model.RequiresStageApprovalWarning)
+                        {
+                            <div class="alert alert-warning py-2 mt-2 mb-3">
+                                <div class="d-flex align-items-start gap-2">
+                                    <i class="fas fa-exclamation-triangle mt-1 flex-shrink-0"></i>
+                                    <div class="flex-grow-1">
+                                        <strong>Stage 1 recommendation has not been approved.</strong>
+                                        <div class="mt-2 form-check mb-0">
+                                            <input class="form-check-input" type="checkbox" id="stageBypassConfirm"
+                                                   onchange="document.getElementById('proceedWithoutApproval').value = this.checked ? 'true' : 'false'; document.getElementById('update-stage-btn').disabled = !this.checked;" />
+                                            <label class="form-check-label small fw-semibold" for="stageBypassConfirm">
+                                                Proceed without formal approval
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        <div class="d-flex align-items-end gap-2">
+                            <div>
+                                <label class="form-label fw-bold small text-muted">Move to Stage</label>
+                                <select name="newStage" id="newStageSelect" class="form-select form-select-sm">
+                                    @{
+                                        var effectiveStage = Model.PendingApplicationStage ?? Model.ApplicationStage;
+                                    }
+                                    @foreach (ApplicationStage s in Enum.GetValues(typeof(ApplicationStage)))
+                                    {
+                                        if (s == effectiveStage)
+                                        {
+                                            <option value="@s" selected="selected">@s</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@s">@s</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            <button type="submit" id="update-stage-btn" class="btn btn-sm btn-primary"
+                                    disabled="@(Model.RequiresStageApprovalWarning ? "disabled" : null)">
+                                <i class="fas fa-save me-1"></i>Update Stage
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
 
@@ -139,6 +248,68 @@
                 </div>
             }
 
+            <!-- Stage 1 Candidate Recommendation -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
+                    <h5 class="fw-bold mb-0 text-white"><i class="fas fa-star me-2"></i>Stage 1 Candidate Recommendation</h5>
+                </div>
+                <div class="card-body">
+                    <form asp-controller="Admin" asp-action="SaveStage1Recommendation" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="applicationId" value="@Model.Id" />
+
+                        <h6 class="fw-bold text-muted mb-3">Candidate Profile</h6>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted">Summary for Hiring Manager</label>
+                            <textarea name="summary" rows="3" class="form-control form-control-sm">@Model.Stage1Recommendation?.Summary</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted">Career Trajectory</label>
+                            <textarea name="careerTrajectory" rows="3" class="form-control form-control-sm">@Model.Stage1Recommendation?.CareerTrajectory</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted">Experience Fit</label>
+                            <textarea name="experienceFit" rows="3" class="form-control form-control-sm">@Model.Stage1Recommendation?.ExperienceFit</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted">Concerns / Areas to Explore</label>
+                            <textarea name="concerns" rows="3" class="form-control form-control-sm">@Model.Stage1Recommendation?.Concerns</textarea>
+                        </div>
+
+                        <hr />
+                        <h6 class="fw-bold text-muted mb-3">Testing Notes</h6>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted">Cognitive</label>
+                            <textarea name="cognitiveNotes" rows="2" class="form-control form-control-sm">@Model.Stage1Recommendation?.CognitiveNotes</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted">Personality</label>
+                            <textarea name="personalityNotes" rows="2" class="form-control form-control-sm">@Model.Stage1Recommendation?.PersonalityNotes</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted">Technical</label>
+                            <textarea name="technicalNotes" rows="2" class="form-control form-control-sm">@Model.Stage1Recommendation?.TechnicalNotes</textarea>
+                        </div>
+
+                        <hr />
+                        <h6 class="fw-bold text-muted mb-3">Interview Planning</h6>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted">Proposed Interviewers / Notes</label>
+                            <textarea name="proposedInterviewersNotes" rows="3" class="form-control form-control-sm">@Model.Stage1Recommendation?.ProposedInterviewersNotes</textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-sm btn-primary" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%); border: none;">
+                                <i class="fas fa-save me-1"></i>Save Draft
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <!-- Scheduled Interviews Section -->
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
@@ -193,8 +364,39 @@
                                 </div>
                             }
                             <div class="col-md-auto">
-                                <button type="submit" class="btn btn-sm btn-primary" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%); border: none; white-space: nowrap;">Schedule</button>
+                                @if (Model.RequiresStage1ApprovalWarning)
+                                {
+                                    <input type="hidden" name="proceedWithoutApproval" id="bypassHiddenInput" value="false" />
+                                }
                             </div>
+                        </div>
+                        @if (Model.RequiresStage1ApprovalWarning)
+                        {
+                            <div class="alert alert-warning py-2 mt-2 mb-2">
+                                <div class="d-flex align-items-start gap-2">
+                                    <i class="fas fa-exclamation-triangle mt-1 flex-shrink-0"></i>
+                                    <div class="flex-grow-1">
+                                        <strong>Stage 1 recommendation has not been approved.</strong>
+                                        <div class="mt-2 d-flex flex-wrap gap-3 align-items-start">
+                                            <div class="form-check mb-0">
+                                                <input class="form-check-input" type="checkbox" id="bypassCheckbox"
+                                                       onchange="document.getElementById('bypassHiddenInput').value = this.checked ? 'true' : 'false'; document.getElementById('scheduleSubmitBtn').disabled = !this.checked;" />
+                                                <label class="form-check-label small fw-semibold" for="bypassCheckbox">
+                                                    Proceed without formal approval
+                                                </label>
+                                            </div>
+                                            <input type="text" name="bypassReason"
+                                                   placeholder="Reason for proceeding (optional)"
+                                                   class="form-control form-control-sm" style="max-width: 300px;" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" id="scheduleSubmitBtn" class="btn btn-sm btn-primary"
+                                    disabled="@(Model.RequiresStage1ApprovalWarning ? "disabled" : null)"
+                                    style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%); border: none; white-space: nowrap;">Schedule</button>
                         </div>
                     </form>
                     @if (Model.Interviews.Any())
@@ -516,4 +718,5 @@
             alert('Delete failed: ' + error.message);
         }
     }
+
 </script>

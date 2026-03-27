@@ -38,7 +38,7 @@ namespace JobPortal.Data
         public DbSet<Interview> Interviews { get; set; } = null!;
 
         public DbSet<InterviewInterviewer> InterviewInterviewers { get; set; } = null!;
-
+        public DbSet<CandidateRecommendation> CandidateRecommendations { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -151,6 +151,13 @@ namespace JobPortal.Data
                 .WithMany(i => i.Scorecards)
                 .HasForeignKey(s => s.InterviewId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<CandidateRecommendation>()
+                .HasOne(r => r.Application)
+                .WithMany()
+                .HasForeignKey(r => r.ApplicationId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 

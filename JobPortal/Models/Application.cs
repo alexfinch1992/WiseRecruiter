@@ -2,6 +2,16 @@ using System.ComponentModel.DataAnnotations;
 
 namespace JobPortal.Models
 {
+    public enum ApplicationStage
+    {
+        Applied,
+        Screen,
+        Interview,
+        Offer,
+        Hired,
+        Rejected
+    }
+
     public class Application
     {
         public int Id { get; set; }
@@ -26,6 +36,8 @@ namespace JobPortal.Models
 
         // Admin-only sensitive field for interview feedback and notes
         public string? InterviewNotes { get; set; }
+
+        public ApplicationStage Stage { get; set; } = ApplicationStage.Applied;
 
         public Job? Job { get; set; }
 

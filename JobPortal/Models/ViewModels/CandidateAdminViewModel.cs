@@ -50,6 +50,15 @@ namespace JobPortal.Models.ViewModels
         public List<JobStage> JobStages { get; set; } = new();
         public List<AdminUser> AdminUsers { get; set; } = new();
         public List<int> SelectedInterviewerIds { get; set; } = new();
+
+        // Stage 1 recommendation
+        public CandidateRecommendation? Stage1Recommendation { get; set; }
+        public bool RequiresStage1ApprovalWarning { get; set; }
+
+        // Application pipeline stage
+        public ApplicationStage ApplicationStage { get; set; }
+        public bool RequiresStageApprovalWarning { get; set; }
+        public ApplicationStage? PendingApplicationStage { get; set; }
     }
 
     public class InterviewSummaryDto
