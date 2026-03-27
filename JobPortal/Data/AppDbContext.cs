@@ -27,13 +27,13 @@ namespace JobPortal.Data
 
         public DbSet<ScorecardResponse> ScorecardResponses { get; set; } = null!;
 
-        public DbSet<ScorecardFacet> ScorecardFacets { get; set; } = null!;
-
         public DbSet<ScorecardTemplate> ScorecardTemplates { get; set; } = null!;
 
         public DbSet<ScorecardTemplateFacet> ScorecardTemplateFacets { get; set; } = null!;
 
         public DbSet<Category> Categories { get; set; } = null!;
+
+        public DbSet<Facet> Facets { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -60,9 +60,22 @@ namespace JobPortal.Data
                 .IsRequired()
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // Legacy entity — unique name index kept for DB integrity
             modelBuilder.Entity<ScorecardFacet>()
                 .HasIndex(f => f.Name)
                 .IsUnique();
+
+            // Legacy: ScorecardFacet → Category FK (read-only; no longer managed via services)
+            modelBuilder.Entity<ScorecardFacet>()
+                .HasOne(f => f.Category)
+                .WithMany()
+                .HasForeignKey(f => f.CategoryId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // ScorecardFacetId is kept as a plain column (no FK managed by EF)
+            modelBuilder.Entity<ScorecardTemplateFacet>()
+                .Property(tf => tf.ScorecardFacetId)
+                .HasColumnName("ScorecardFacetId");
 
             modelBuilder.Entity<ScorecardTemplate>()
                 .HasMany(t => t.TemplateFacets)
@@ -71,15 +84,15 @@ namespace JobPortal.Data
                 .IsRequired()
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<ScorecardFacet>()
-                .HasMany(f => f.TemplateFacets)
-                .WithOne(tf => tf.ScorecardFacet)
-                .HasForeignKey(tf => tf.ScorecardFacetId)
+            modelBuilder.Entity<ScorecardTemplateFacet>()
+                .HasOne(tf => tf.Facet)
+                .WithMany()
+                .HasForeignKey(tf => tf.FacetId)
                 .IsRequired()
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<ScorecardTemplateFacet>()
-                .HasIndex(tf => new { tf.ScorecardTemplateId, tf.ScorecardFacetId })
+                .HasIndex(tf => new { tf.ScorecardTemplateId, tf.FacetId })
                 .IsUnique();
 
             modelBuilder.Entity<Job>()
@@ -88,17 +101,15 @@ namespace JobPortal.Data
                 .HasForeignKey(j => j.ScorecardTemplateId)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            modelBuilder.Entity<ScorecardTemplateFacet>()
-                .HasOne(tf => tf.Category)
-                .WithMany()
-                .HasForeignKey(tf => tf.CategoryId)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            modelBuilder.Entity<ScorecardFacet>()
+            modelBuilder.Entity<Facet>()
                 .HasOne(f => f.Category)
                 .WithMany()
                 .HasForeignKey(f => f.CategoryId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<Facet>()
+                .HasIndex(f => f.Name)
+                .IsUnique();
 
             // Seed initial categories
             modelBuilder.Entity<Category>().HasData(

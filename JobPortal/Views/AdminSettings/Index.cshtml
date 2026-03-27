@@ -1,4 +1,4 @@
-@model IEnumerable<JobPortal.Models.ScorecardFacet>
+@model IEnumerable<JobPortal.Models.Facet>
 
 @{
     ViewData["Title"] = "Settings - Scorecard Facets";
@@ -35,7 +35,7 @@
                         {
                             <tr>
                                 <td>@facet.Name</td>
-                                <td>@facet.DisplayOrder</td>
+                                <td>—</td>
                                 <td>
                                     @if (templateNamesByFacetId.TryGetValue(facet.Id, out var templateNames) && templateNames.Any())
                                     {

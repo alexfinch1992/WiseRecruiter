@@ -34,10 +34,10 @@ public class AdminSettingsController : Controller
             var templateFacets = await _templateService.GetFacetsForTemplate(template.Id);
             foreach (var templateFacet in templateFacets)
             {
-                if (templateFacet.ScorecardFacetId == 0)
+                if (templateFacet.FacetId == 0)
                     continue;
 
-                if (!templateNamesByFacetId.TryGetValue(templateFacet.ScorecardFacetId, out var names))
+                if (!templateNamesByFacetId.TryGetValue(templateFacet.FacetId, out var names))
                     continue;
 
                 if (!names.Contains(template.Name, StringComparer.OrdinalIgnoreCase))
@@ -70,7 +70,7 @@ public class AdminSettingsController : Controller
 
         try
         {
-            await _facetService.CreateFacet(name, displayOrder);
+            await _facetService.CreateFacet(name);
             return RedirectToAction(nameof(Index));
         }
         catch (ArgumentException exception)
@@ -80,10 +80,7 @@ public class AdminSettingsController : Controller
         }
         catch (InvalidOperationException exception)
         {
-            var modelStateKey = exception.Message.Contains("display order", StringComparison.OrdinalIgnoreCase)
-                ? nameof(displayOrder)
-                : nameof(name);
-            ModelState.AddModelError(modelStateKey, exception.Message);
+            ModelState.AddModelError(nameof(name), exception.Message);
             return View();
         }
     }
@@ -91,7 +88,7 @@ public class AdminSettingsController : Controller
     [HttpGet]
     public async Task<IActionResult> Edit(int id)
     {
-        var facet = (await _facetService.GetAllFacets()).FirstOrDefault(f => f.Id == id);
+        var facet = await _facetService.GetFacetById(id);
         if (facet == null)
             return NotFound();
 
@@ -107,18 +104,12 @@ public class AdminSettingsController : Controller
 
         if (!ModelState.IsValid)
         {
-            return View(new JobPortal.Models.ScorecardFacet
-            {
-                Id = id,
-                Name = name,
-                DisplayOrder = displayOrder,
-                IsActive = isActive
-            });
+            return View(new JobPortal.Models.Facet { Id = id, Name = name });
         }
 
         try
         {
-            await _facetService.UpdateFacet(id, name, displayOrder, isActive);
+            await _facetService.UpdateFacet(id, name, null, null, null);
             return RedirectToAction(nameof(Index));
         }
         catch (ArgumentException exception)
@@ -127,19 +118,10 @@ public class AdminSettingsController : Controller
         }
         catch (InvalidOperationException exception)
         {
-            var modelStateKey = exception.Message.Contains("display order", StringComparison.OrdinalIgnoreCase)
-                ? nameof(displayOrder)
-                : nameof(name);
-            ModelState.AddModelError(modelStateKey, exception.Message);
+            ModelState.AddModelError(nameof(name), exception.Message);
         }
 
-        return View(new JobPortal.Models.ScorecardFacet
-        {
-            Id = id,
-            Name = name,
-            DisplayOrder = displayOrder,
-            IsActive = isActive
-        });
+        return View(new JobPortal.Models.Facet { Id = id, Name = name });
     }
 
     [HttpGet]
@@ -290,11 +272,11 @@ public class AdminSettingsController : Controller
         var assignedFacets = postedFacets ?? (await _templateService.GetFacetsForTemplate(templateId))
             .Select(f => new TemplateFacetInput
             {
-                FacetId = f.ScorecardFacetId,
+                FacetId = f.FacetId,
                 DisplayOrder = f.DisplayOrder,
-                Description = f.Description,
-                NotesPlaceholder = f.NotesPlaceholder,
-                CategoryId = f.CategoryId
+                Description = f.Facet?.Description,
+                NotesPlaceholder = f.Facet?.NotesPlaceholder,
+                CategoryId = f.Facet?.CategoryId
             })
             .ToList();
 
@@ -310,7 +292,7 @@ public class AdminSettingsController : Controller
             TemplateName = template.Name,
             Categories = categories,
             Facets = allFacets
-                .OrderBy(f => f.DisplayOrder)
+                .OrderBy(f => f.Name)
                 .Select(f =>
                 {
                     assignedByFacetId.TryGetValue(f.Id, out var assigned);
@@ -319,10 +301,10 @@ public class AdminSettingsController : Controller
                         FacetId = f.Id,
                         FacetName = f.Name,
                         IsSelected = assigned != null,
-                        DisplayOrder = assigned?.DisplayOrder ?? f.DisplayOrder,
-                        Description = assigned?.Description,
-                        NotesPlaceholder = assigned?.NotesPlaceholder,
-                        CategoryId = assigned?.CategoryId
+                        DisplayOrder = assigned?.DisplayOrder ?? 0,
+                        Description = assigned?.Description ?? f.Description,
+                        NotesPlaceholder = assigned?.NotesPlaceholder ?? f.NotesPlaceholder,
+                        CategoryId = assigned?.CategoryId ?? f.CategoryId
                     };
                 })
                 .ToList()

@@ -93,10 +93,10 @@ namespace JobPortal.Services.Implementations
         private static List<ScorecardResponse> MapTemplateFacetsToDefaultResponses(List<ScorecardTemplateFacet> templateFacets)
         {
             return templateFacets
-                .Where(templateFacet => templateFacet.ScorecardFacet != null)
+                .Where(templateFacet => templateFacet.Facet != null)
                 .Select(templateFacet => new ScorecardResponse
                 {
-                    FacetName = templateFacet.ScorecardFacet!.Name,
+                    FacetName = templateFacet.Facet!.Name,
                     Score = 3.0m,
                     Notes = string.Empty
                 })

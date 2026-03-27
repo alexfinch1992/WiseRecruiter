@@ -41,49 +41,14 @@ namespace WiseRecruiter.Tests.Integration
         }
 
         [Fact]
-        public async Task Create_Post_WithDuplicateDisplayOrder_AddsModelStateErrorAndReturnsView()
-        {
-            using var context = CreateInMemoryContext();
-            IFacetService facetService = new FacetService(context);
-            IScorecardTemplateService templateService = new ScorecardTemplateService(context);
-            await facetService.CreateFacet("Communication", 1);
-
-            var controller = new AdminSettingsController(context, facetService, templateService);
-
-            var result = await controller.Create("Quality", 1);
-
-            result.Should().BeOfType<ViewResult>();
-            controller.ModelState.ContainsKey("displayOrder").Should().BeTrue();
-            controller.ModelState["displayOrder"]!.Errors.Should().NotBeEmpty();
-        }
-
-        [Fact]
-        public async Task Edit_Post_WithDuplicateDisplayOrder_AddsModelStateErrorAndReturnsView()
-        {
-            using var context = CreateInMemoryContext();
-            IFacetService facetService = new FacetService(context);
-            IScorecardTemplateService templateService = new ScorecardTemplateService(context);
-            var first = await facetService.CreateFacet("Communication", 1);
-            var second = await facetService.CreateFacet("Quality", 2);
-
-            var controller = new AdminSettingsController(context, facetService, templateService);
-
-            var result = await controller.Edit(second.Id, second.Name, first.DisplayOrder, second.IsActive);
-
-            result.Should().BeOfType<ViewResult>();
-            controller.ModelState.ContainsKey("displayOrder").Should().BeTrue();
-            controller.ModelState["displayOrder"]!.Errors.Should().NotBeEmpty();
-        }
-
-        [Fact]
         public async Task Index_Get_PopulatesTemplateNamesByFacetIdMapping()
         {
             using var context = CreateInMemoryContext();
             IFacetService facetService = new FacetService(context);
             IScorecardTemplateService templateService = new ScorecardTemplateService(context);
 
-            var communication = await facetService.CreateFacet("Communication", 1);
-            var quality = await facetService.CreateFacet("Quality", 2);
+            var communication = await facetService.CreateFacet("Communication");
+            var quality = await facetService.CreateFacet("Quality");
             var technicalTemplate = await templateService.CreateTemplate("Technical");
             var defaultTemplate = await templateService.CreateTemplate("Default Scorecard");
 
@@ -96,7 +61,7 @@ namespace WiseRecruiter.Tests.Integration
             var result = await controller.Index();
 
             var viewResult = result.Should().BeOfType<ViewResult>().Subject;
-            var model = viewResult.Model.Should().BeAssignableTo<IEnumerable<ScorecardFacet>>().Subject;
+            var model = viewResult.Model.Should().BeAssignableTo<IEnumerable<Facet>>().Subject;
             model.Should().HaveCount(2);
 
             var mapping = controller.ViewBag.TemplateNamesByFacetId as Dictionary<int, List<string>>;
@@ -112,7 +77,7 @@ namespace WiseRecruiter.Tests.Integration
             IFacetService facetService = new FacetService(context);
             IScorecardTemplateService templateService = new ScorecardTemplateService(context);
 
-            var facet = await facetService.CreateFacet("Communication", 1);
+            var facet = await facetService.CreateFacet("Communication");
             var template = await templateService.CreateTemplate("Hiring Template");
             await templateService.AddFacetToTemplate(template.Id, facet.Id, 1);
 
@@ -125,7 +90,7 @@ namespace WiseRecruiter.Tests.Integration
 
             var facetsAfterAttempt = await templateService.GetFacetsForTemplate(template.Id);
             facetsAfterAttempt.Should().HaveCount(1);
-            facetsAfterAttempt[0].ScorecardFacetId.Should().Be(facet.Id);
+            facetsAfterAttempt[0].FacetId.Should().Be(facet.Id);
         }
 
         [Fact]
@@ -135,7 +100,7 @@ namespace WiseRecruiter.Tests.Integration
             IFacetService facetService = new FacetService(context);
             IScorecardTemplateService templateService = new ScorecardTemplateService(context);
 
-            var facet = await facetService.CreateFacet("Technical Skill", 1);
+            var facet = await facetService.CreateFacet("Technical Skill");
             var template = await templateService.CreateTemplate("Engineering");
             var category = new JobPortal.Models.Category { Name = "Technical" };
             context.Categories.Add(category);
@@ -157,8 +122,8 @@ namespace WiseRecruiter.Tests.Integration
 
             result.Should().BeOfType<RedirectToActionResult>();
 
-            // Description, NotesPlaceholder, CategoryId are now stored on ScorecardFacet (globally)
-            var savedFacet = await context.ScorecardFacets.FirstAsync(f => f.Name == "Technical Skill");
+            // Description, NotesPlaceholder, CategoryId are stored on Facet (globally)
+            var savedFacet = await context.Facets.FirstAsync(f => f.Name == "Technical Skill");
 
             savedFacet.Description.Should().Be("Rate the candidate's technical depth.");
             savedFacet.NotesPlaceholder.Should().Be("e.g. Solved the system design challenge well");
