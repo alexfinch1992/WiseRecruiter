@@ -139,6 +139,7 @@ namespace JobPortal.Services.Implementations
                 return new ScorecardResponse
                 {
                     ScorecardId = scorecardId,
+                    FacetId = response.FacetId,
                     FacetName = response.FacetName,
                     Score = response.Score,
                     Notes = response.Notes
@@ -155,14 +156,17 @@ namespace JobPortal.Services.Implementations
 
         public async Task<Scorecard?> GetScorecardAsync(int scorecardId)
         {
-            return await _context.Scorecards.FirstOrDefaultAsync(s => s.Id == scorecardId);
+            return await _context.Scorecards
+                .Where(s => s.Id == scorecardId && !s.IsArchived)
+                .FirstOrDefaultAsync();
         }
 
         public async Task<Scorecard?> GetScorecardWithResponsesAsync(int scorecardId)
         {
             return await _context.Scorecards
                 .Include(s => s.Responses)
-                .FirstOrDefaultAsync(s => s.Id == scorecardId);
+                .Where(s => s.Id == scorecardId && !s.IsArchived)
+                .FirstOrDefaultAsync();
         }
 
         public async Task<ScorecardDetailDto?> GetScorecardById(int scorecardId)
@@ -183,6 +187,7 @@ namespace JobPortal.Services.Implementations
                 Id = scorecard.Id,
                 CandidateId = scorecard.CandidateId,
                 OverallRecommendation = scorecard.OverallRecommendation,
+                IsArchived = scorecard.IsArchived,
                 Responses = orderedResponses
                     .Select(response => new ScorecardDetailDto.ScorecardResponseDto
                     {
@@ -233,7 +238,7 @@ namespace JobPortal.Services.Implementations
         public async Task<List<Scorecard>> GetScorecardsByCandidateAsync(int candidateId)
         {
             return await _context.Scorecards
-                .Where(s => s.CandidateId == candidateId)
+                .Where(s => s.CandidateId == candidateId && !s.IsArchived)
                 .OrderByDescending(s => s.SubmittedAt)
                 .ToListAsync();
         }

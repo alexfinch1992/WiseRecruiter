@@ -42,6 +42,7 @@
                                         <tr>
                                             <td>
                                                 <input asp-for="Responses[@i].FacetName" type="hidden" />
+                                                <input asp-for="Responses[@i].FacetId" type="hidden" />
                                                 <span class="fw-semibold">@Model.Responses[i].FacetName</span>
                                                 @if (!string.IsNullOrEmpty(Model.Responses[i].Description))
                                                 {
