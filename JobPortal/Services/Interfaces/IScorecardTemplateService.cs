@@ -10,7 +10,7 @@ namespace JobPortal.Services.Interfaces
         Task<ScorecardTemplate> CreateTemplate(string name);
         Task<ScorecardTemplate> UpdateTemplateName(int id, string name);
         Task UpdateTemplateFacets(int templateId, List<TemplateFacetInput> facets);
-        Task<ScorecardTemplateFacet> AddFacetToTemplate(int templateId, int facetId, int displayOrder);
+        Task<ScorecardTemplateFacet> AddFacetToTemplate(int templateId, int facetId);
         Task RemoveFacetFromTemplate(int templateId, int facetId);
         Task<List<ScorecardTemplateFacet>> GetFacetsForTemplate(int templateId);
     }
@@ -18,10 +18,5 @@ namespace JobPortal.Services.Interfaces
     public class TemplateFacetInput
     {
         public int FacetId { get; set; }
-        public int DisplayOrder { get; set; }
-        // Optional fields — all nullable for backward compatibility
-        public string? Description { get; set; }
-        public string? NotesPlaceholder { get; set; }
-        public int? CategoryId { get; set; }
     }
 }

@@ -24,20 +24,20 @@ namespace WiseRecruiter.Tests.Integration
         }
 
         [Fact]
-        public void Create_Get_ReturnsViewWithoutException()
+        public async Task Create_Get_ReturnsViewWithoutException()
         {
             using var context = CreateInMemoryContext();
             IFacetService facetService = new FacetService(context);
             IScorecardTemplateService templateService = new ScorecardTemplateService(context);
             var controller = new AdminSettingsController(context, facetService, templateService);
 
-            Action act = () =>
+            Func<Task> act = async () =>
             {
-                var result = controller.Create();
+                var result = await controller.Create();
                 result.Should().BeOfType<ViewResult>();
             };
 
-            act.Should().NotThrow();
+            await act.Should().NotThrowAsync();
         }
 
         [Fact]
@@ -52,9 +52,9 @@ namespace WiseRecruiter.Tests.Integration
             var technicalTemplate = await templateService.CreateTemplate("Technical");
             var defaultTemplate = await templateService.CreateTemplate("Default Scorecard");
 
-            await templateService.AddFacetToTemplate(defaultTemplate.Id, communication.Id, 1);
-            await templateService.AddFacetToTemplate(defaultTemplate.Id, quality.Id, 2);
-            await templateService.AddFacetToTemplate(technicalTemplate.Id, quality.Id, 1);
+            await templateService.AddFacetToTemplate(defaultTemplate.Id, communication.Id);
+            await templateService.AddFacetToTemplate(defaultTemplate.Id, quality.Id);
+            await templateService.AddFacetToTemplate(technicalTemplate.Id, quality.Id);
 
             var controller = new AdminSettingsController(context, facetService, templateService);
 
@@ -79,7 +79,7 @@ namespace WiseRecruiter.Tests.Integration
 
             var facet = await facetService.CreateFacet("Communication");
             var template = await templateService.CreateTemplate("Hiring Template");
-            await templateService.AddFacetToTemplate(template.Id, facet.Id, 1);
+            await templateService.AddFacetToTemplate(template.Id, facet.Id);
 
             var controller = new AdminSettingsController(context, facetService, templateService);
 
@@ -91,43 +91,6 @@ namespace WiseRecruiter.Tests.Integration
             var facetsAfterAttempt = await templateService.GetFacetsForTemplate(template.Id);
             facetsAfterAttempt.Should().HaveCount(1);
             facetsAfterAttempt[0].FacetId.Should().Be(facet.Id);
-        }
-
-        [Fact]
-        public async Task EditTemplateFacets_Post_WithExtendedFields_PersistsDescriptionNotesAndCategory()
-        {
-            using var context = CreateInMemoryContext();
-            IFacetService facetService = new FacetService(context);
-            IScorecardTemplateService templateService = new ScorecardTemplateService(context);
-
-            var facet = await facetService.CreateFacet("Technical Skill");
-            var template = await templateService.CreateTemplate("Engineering");
-            var category = new JobPortal.Models.Category { Name = "Technical" };
-            context.Categories.Add(category);
-            await context.SaveChangesAsync();
-
-            var controller = new AdminSettingsController(context, facetService, templateService);
-
-            var result = await controller.EditTemplateFacets(template.Id, new List<TemplateFacetInput>
-            {
-                new TemplateFacetInput
-                {
-                    FacetId = facet.Id,
-                    DisplayOrder = 1,
-                    Description = "Rate the candidate's technical depth.",
-                    NotesPlaceholder = "e.g. Solved the system design challenge well",
-                    CategoryId = category.Id
-                }
-            });
-
-            result.Should().BeOfType<RedirectToActionResult>();
-
-            // Description, NotesPlaceholder, CategoryId are stored on Facet (globally)
-            var savedFacet = await context.Facets.FirstAsync(f => f.Name == "Technical Skill");
-
-            savedFacet.Description.Should().Be("Rate the candidate's technical depth.");
-            savedFacet.NotesPlaceholder.Should().Be("e.g. Solved the system design challenge well");
-            savedFacet.CategoryId.Should().Be(category.Id);
         }
     }
 }

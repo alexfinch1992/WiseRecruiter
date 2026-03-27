@@ -11,9 +11,6 @@ namespace JobPortal.Models
         // Legacy column — kept for DB compatibility, no longer used in code
         public int ScorecardFacetId { get; set; }
 
-        // Legacy column — kept for DB compatibility; ordering now uses Facet.Name
-        public int DisplayOrder { get; set; }
-
         public ScorecardTemplate? ScorecardTemplate { get; set; }
 
         public Facet? Facet { get; set; }

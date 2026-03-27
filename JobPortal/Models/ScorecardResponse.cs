@@ -8,6 +8,8 @@ namespace JobPortal.Models
 
         public int ScorecardId { get; set; }
 
+        public int FacetId { get; set; }
+
         [Required]
         public string FacetName { get; set; } = string.Empty;
 

@@ -21,9 +21,24 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="displayOrder" class="form-label fw-bold">Display Order</label>
-                            <input id="displayOrder" name="displayOrder" class="form-control" type="number" value="1" />
-                            @Html.ValidationMessage("displayOrder", null, new { @class = "text-danger small" })
+                            <label for="description" class="form-label fw-bold">Description</label>
+                            <textarea id="description" name="description" class="form-control" rows="3" maxlength="500"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notesPlaceholder" class="form-label fw-bold">Notes Placeholder</label>
+                            <input id="notesPlaceholder" name="notesPlaceholder" class="form-control" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="categoryId" class="form-label fw-bold">Category</label>
+                            <select id="categoryId" name="categoryId" class="form-select">
+                                <option value="">-- None --</option>
+                                @foreach (var cat in (IEnumerable<JobPortal.Models.Category>)ViewBag.Categories)
+                                {
+                                    <option value="@cat.Id">@cat.Name</option>
+                                }
+                            </select>
                         </div>
 
                         <div class="d-flex justify-content-end gap-2">

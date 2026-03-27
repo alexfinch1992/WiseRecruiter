@@ -81,8 +81,7 @@ namespace WiseRecruiter.Tests.Unit.Services
                 {
                     ScorecardTemplateId = template.Id,
                     FacetId = facet.Id,
-                    ScorecardFacetId = facet.Id,
-                    DisplayOrder = order
+                    ScorecardFacetId = facet.Id
                 });
                 await context.SaveChangesAsync();
             }
@@ -109,8 +108,7 @@ namespace WiseRecruiter.Tests.Unit.Services
                 {
                     ScorecardTemplateId = template.Id,
                     FacetId = facet.Id,
-                    ScorecardFacetId = facet.Id,
-                    DisplayOrder = order
+                    ScorecardFacetId = facet.Id
                 });
                 await context.SaveChangesAsync();
             }
@@ -552,8 +550,7 @@ namespace WiseRecruiter.Tests.Unit.Services
             {
                 ScorecardTemplateId = templateId,
                 FacetId = qualityFacet.Id,
-                ScorecardFacetId = qualityFacet.Id,
-                DisplayOrder = 1
+                ScorecardFacetId = qualityFacet.Id
             });
             await context.SaveChangesAsync();
 
