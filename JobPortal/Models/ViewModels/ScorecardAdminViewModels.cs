@@ -35,6 +35,8 @@ namespace JobPortal.Models.ViewModels
         public string CandidateName { get; set; } = string.Empty;
         public string JobTitle { get; set; } = string.Empty;
 
+        public string? OverallRecommendation { get; set; }
+
         public List<ScorecardResponseInputViewModel> Responses { get; set; } = new();
     }
 }

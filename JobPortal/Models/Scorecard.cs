@@ -15,6 +15,8 @@ namespace JobPortal.Models
 
         public Candidate? Candidate { get; set; }
 
+        public string? OverallRecommendation { get; set; }
+
         public ICollection<ScorecardResponse> Responses { get; set; } = new List<ScorecardResponse>();
     }
 }
