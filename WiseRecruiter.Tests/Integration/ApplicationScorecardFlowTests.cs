@@ -90,16 +90,16 @@ namespace WiseRecruiter.Tests.Integration
             try
             {
                 var template = new ScorecardTemplate { Name = "Engineering Template" };
-                var facet1 = new ScorecardFacet { Name = "Technical Skill", DisplayOrder = 1 };
-                var facet2 = new ScorecardFacet { Name = "Communication", DisplayOrder = 2 };
+                var facet1 = new Facet { Name = "Technical Skill" };
+                var facet2 = new Facet { Name = "Communication" };
 
                 context.ScorecardTemplates.Add(template);
-                context.ScorecardFacets.AddRange(facet1, facet2);
+                context.Facets.AddRange(facet1, facet2);
                 await context.SaveChangesAsync();
 
                 context.ScorecardTemplateFacets.AddRange(
-                    new ScorecardTemplateFacet { ScorecardTemplateId = template.Id, ScorecardFacetId = facet1.Id, DisplayOrder = 1 },
-                    new ScorecardTemplateFacet { ScorecardTemplateId = template.Id, ScorecardFacetId = facet2.Id, DisplayOrder = 2 });
+                    new ScorecardTemplateFacet { ScorecardTemplateId = template.Id, FacetId = facet1.Id, ScorecardFacetId = facet1.Id, DisplayOrder = 1 },
+                    new ScorecardTemplateFacet { ScorecardTemplateId = template.Id, FacetId = facet2.Id, ScorecardFacetId = facet2.Id, DisplayOrder = 2 });
                 await context.SaveChangesAsync();
 
                 var job = await SeedJobWithStageAsync(context, template.Id);

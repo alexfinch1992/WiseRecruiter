@@ -70,18 +70,17 @@ namespace WiseRecruiter.Tests.Unit.Services
 
             foreach (var (name, order) in facets)
             {
-                var facet = new ScorecardFacet
+                var facet = new Facet
                 {
-                    Name = name,
-                    IsActive = true,
-                    DisplayOrder = order
+                    Name = name
                 };
-                context.ScorecardFacets.Add(facet);
+                context.Facets.Add(facet);
                 await context.SaveChangesAsync();
 
                 context.ScorecardTemplateFacets.Add(new ScorecardTemplateFacet
                 {
                     ScorecardTemplateId = template.Id,
+                    FacetId = facet.Id,
                     ScorecardFacetId = facet.Id,
                     DisplayOrder = order
                 });
@@ -99,18 +98,17 @@ namespace WiseRecruiter.Tests.Unit.Services
 
             foreach (var (name, order) in facets)
             {
-                var facet = new ScorecardFacet
+                var facet = new Facet
                 {
-                    Name = $"{templateName}-{name}",
-                    IsActive = true,
-                    DisplayOrder = order
+                    Name = $"{templateName}-{name}"
                 };
-                context.ScorecardFacets.Add(facet);
+                context.Facets.Add(facet);
                 await context.SaveChangesAsync();
 
                 context.ScorecardTemplateFacets.Add(new ScorecardTemplateFacet
                 {
                     ScorecardTemplateId = template.Id,
+                    FacetId = facet.Id,
                     ScorecardFacetId = facet.Id,
                     DisplayOrder = order
                 });
@@ -549,10 +547,11 @@ namespace WiseRecruiter.Tests.Unit.Services
             using var context = CreateInMemoryContext();
             var templateId = await SeedDefaultTemplateWithFacetsAsync(context, ("Communication", 1), ("Quality", 2));
             // Manually add a duplicate DisplayOrder — no longer causes a throw since ordering is by name
-            var qualityFacet = await context.ScorecardFacets.SingleAsync(f => f.Name == "Quality");
+            var qualityFacet = await context.Facets.SingleAsync(f => f.Name == "Quality");
             context.ScorecardTemplateFacets.Add(new ScorecardTemplateFacet
             {
                 ScorecardTemplateId = templateId,
+                FacetId = qualityFacet.Id,
                 ScorecardFacetId = qualityFacet.Id,
                 DisplayOrder = 1
             });
@@ -658,11 +657,9 @@ namespace WiseRecruiter.Tests.Unit.Services
         {
             using var context = CreateInMemoryContext();
             await SeedDefaultTemplateWithFacetsAsync(context, ("Template Facet", 1));
-            context.ScorecardFacets.Add(new ScorecardFacet
+            context.Facets.Add(new Facet
             {
-                Name = "Active But Not In Template",
-                IsActive = true,
-                DisplayOrder = 0
+                Name = "Active But Not In Template"
             });
             await context.SaveChangesAsync();
 

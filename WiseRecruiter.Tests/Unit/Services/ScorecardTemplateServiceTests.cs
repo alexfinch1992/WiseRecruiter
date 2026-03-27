@@ -63,20 +63,20 @@ namespace WiseRecruiter.Tests.Unit.Services
             using var context = CreateInMemoryContext();
             var service = new ScorecardTemplateService(context);
             var template = await service.CreateTemplate("Default Scorecard");
-            var facet = new ScorecardFacet { Name = "Communication", IsActive = true, DisplayOrder = 1 };
-            context.ScorecardFacets.Add(facet);
+            var facet = new Facet { Name = "Communication" };
+            context.Facets.Add(facet);
             await context.SaveChangesAsync();
 
             var link = await service.AddFacetToTemplate(template.Id, facet.Id, 1);
 
             link.Should().NotBeNull();
             link.ScorecardTemplateId.Should().Be(template.Id);
-            link.ScorecardFacetId.Should().Be(facet.Id);
+            link.FacetId.Should().Be(facet.Id);
             link.DisplayOrder.Should().Be(1);
 
             var assigned = await service.GetFacetsForTemplate(template.Id);
             assigned.Should().HaveCount(1);
-            assigned.Single().ScorecardFacet!.Name.Should().Be("Communication");
+            assigned.Single().Facet!.Name.Should().Be("Communication");
         }
 
         [Fact]
@@ -85,8 +85,8 @@ namespace WiseRecruiter.Tests.Unit.Services
             using var context = CreateInMemoryContext();
             var service = new ScorecardTemplateService(context);
             var template = await service.CreateTemplate("Default Scorecard");
-            var facet = new ScorecardFacet { Name = "Communication", IsActive = true, DisplayOrder = 1 };
-            context.ScorecardFacets.Add(facet);
+            var facet = new Facet { Name = "Communication" };
+            context.Facets.Add(facet);
             await context.SaveChangesAsync();
             await service.AddFacetToTemplate(template.Id, facet.Id, 1);
 
@@ -101,8 +101,8 @@ namespace WiseRecruiter.Tests.Unit.Services
             using var context = CreateInMemoryContext();
             var service = new ScorecardTemplateService(context);
             var template = await service.CreateTemplate("Default Scorecard");
-            var facet = new ScorecardFacet { Name = "Communication", IsActive = true, DisplayOrder = 1 };
-            context.ScorecardFacets.Add(facet);
+            var facet = new Facet { Name = "Communication" };
+            context.Facets.Add(facet);
             await context.SaveChangesAsync();
             await service.AddFacetToTemplate(template.Id, facet.Id, 1);
 
@@ -118,9 +118,9 @@ namespace WiseRecruiter.Tests.Unit.Services
             using var context = CreateInMemoryContext();
             var service = new ScorecardTemplateService(context);
             var template = await service.CreateTemplate("Default Scorecard");
-            var facetA = new ScorecardFacet { Name = "A", IsActive = true, DisplayOrder = 10 };
-            var facetB = new ScorecardFacet { Name = "B", IsActive = true, DisplayOrder = 20 };
-            context.ScorecardFacets.AddRange(facetA, facetB);
+            var facetA = new Facet { Name = "A" };
+            var facetB = new Facet { Name = "B" };
+            context.Facets.AddRange(facetA, facetB);
             await context.SaveChangesAsync();
 
             await service.AddFacetToTemplate(template.Id, facetB.Id, 2);
@@ -128,7 +128,7 @@ namespace WiseRecruiter.Tests.Unit.Services
 
             var facets = await service.GetFacetsForTemplate(template.Id);
 
-            facets.Select(f => f.ScorecardFacet!.Name).Should().Equal("A", "B");
+            facets.Select(f => f.Facet!.Name).Should().Equal("A", "B");
         }
 
         [Fact]
@@ -136,8 +136,8 @@ namespace WiseRecruiter.Tests.Unit.Services
         {
             using var context = CreateInMemoryContext();
             var service = new ScorecardTemplateService(context);
-            var facet = new ScorecardFacet { Name = "Communication", IsActive = true, DisplayOrder = 1 };
-            context.ScorecardFacets.Add(facet);
+            var facet = new Facet { Name = "Communication" };
+            context.Facets.Add(facet);
             await context.SaveChangesAsync();
 
             Func<Task> act = async () => await service.AddFacetToTemplate(9999, facet.Id, 1);
@@ -178,9 +178,9 @@ namespace WiseRecruiter.Tests.Unit.Services
             using var context = CreateInMemoryContext();
             var service = new ScorecardTemplateService(context);
             var template = await service.CreateTemplate("Default Scorecard");
-            var communication = new ScorecardFacet { Name = "Communication", IsActive = true, DisplayOrder = 1 };
-            var quality = new ScorecardFacet { Name = "Quality", IsActive = true, DisplayOrder = 2 };
-            context.ScorecardFacets.AddRange(communication, quality);
+            var communication = new Facet { Name = "Communication" };
+            var quality = new Facet { Name = "Quality" };
+            context.Facets.AddRange(communication, quality);
             await context.SaveChangesAsync();
 
             await service.UpdateTemplateFacets(template.Id, new()
@@ -191,7 +191,7 @@ namespace WiseRecruiter.Tests.Unit.Services
 
             var assigned = await service.GetFacetsForTemplate(template.Id);
             assigned.Should().HaveCount(2);
-            assigned.Select(x => x.ScorecardFacetId).Should().Equal(communication.Id, quality.Id);
+            assigned.Select(x => x.FacetId).Should().Equal(communication.Id, quality.Id);
         }
 
         [Fact]
@@ -200,10 +200,10 @@ namespace WiseRecruiter.Tests.Unit.Services
             using var context = CreateInMemoryContext();
             var service = new ScorecardTemplateService(context);
             var template = await service.CreateTemplate("Default Scorecard");
-            var communication = new ScorecardFacet { Name = "Communication", IsActive = true, DisplayOrder = 1 };
-            var quality = new ScorecardFacet { Name = "Quality", IsActive = true, DisplayOrder = 2 };
-            var speed = new ScorecardFacet { Name = "Speed", IsActive = true, DisplayOrder = 3 };
-            context.ScorecardFacets.AddRange(communication, quality, speed);
+            var communication = new Facet { Name = "Communication" };
+            var quality = new Facet { Name = "Quality" };
+            var speed = new Facet { Name = "Speed" };
+            context.Facets.AddRange(communication, quality, speed);
             await context.SaveChangesAsync();
 
             await service.UpdateTemplateFacets(template.Id, new()
@@ -219,7 +219,7 @@ namespace WiseRecruiter.Tests.Unit.Services
 
             var assigned = await service.GetFacetsForTemplate(template.Id);
             assigned.Should().HaveCount(1);
-            assigned[0].ScorecardFacetId.Should().Be(speed.Id);
+            assigned[0].FacetId.Should().Be(speed.Id);
             assigned[0].DisplayOrder.Should().Be(1);
         }
 
@@ -229,10 +229,10 @@ namespace WiseRecruiter.Tests.Unit.Services
             using var context = CreateInMemoryContext();
             var service = new ScorecardTemplateService(context);
             var template = await service.CreateTemplate("Default Scorecard");
-            var communication = new ScorecardFacet { Name = "Communication", IsActive = true, DisplayOrder = 1 };
-            var quality = new ScorecardFacet { Name = "Quality", IsActive = true, DisplayOrder = 2 };
-            var speed = new ScorecardFacet { Name = "Speed", IsActive = true, DisplayOrder = 3 };
-            context.ScorecardFacets.AddRange(communication, quality, speed);
+            var communication = new Facet { Name = "Communication" };
+            var quality = new Facet { Name = "Quality" };
+            var speed = new Facet { Name = "Speed" };
+            context.Facets.AddRange(communication, quality, speed);
             await context.SaveChangesAsync();
 
             await service.UpdateTemplateFacets(template.Id, new()
@@ -251,9 +251,9 @@ namespace WiseRecruiter.Tests.Unit.Services
             var assigned = await service.GetFacetsForTemplate(template.Id);
 
             // Ordering is by facet name (alphabetical), not DisplayOrder
-            assigned.Select(x => x.ScorecardFacet!.Name).Should().Equal("Communication", "Speed");
+            assigned.Select(x => x.Facet!.Name).Should().Equal("Communication", "Speed");
             assigned.Select(x => x.DisplayOrder).Should().Equal(2, 1);
-            assigned.Select(x => x.ScorecardFacet!.Name).Should().NotContain("Quality");
+            assigned.Select(x => x.Facet!.Name).Should().NotContain("Quality");
         }
 
         [Fact]
@@ -262,8 +262,8 @@ namespace WiseRecruiter.Tests.Unit.Services
             using var context = CreateInMemoryContext();
             var service = new ScorecardTemplateService(context);
             var template = await service.CreateTemplate("Default Scorecard");
-            var communication = new ScorecardFacet { Name = "Communication", IsActive = true, DisplayOrder = 1 };
-            context.ScorecardFacets.Add(communication);
+            var communication = new Facet { Name = "Communication" };
+            context.Facets.Add(communication);
             await context.SaveChangesAsync();
 
             Func<Task> act = async () => await service.UpdateTemplateFacets(template.Id, new()
@@ -281,9 +281,9 @@ namespace WiseRecruiter.Tests.Unit.Services
             using var context = CreateInMemoryContext();
             var service = new ScorecardTemplateService(context);
             var template = await service.CreateTemplate("Default Scorecard");
-            var communication = new ScorecardFacet { Name = "Communication", IsActive = true, DisplayOrder = 1 };
-            var quality = new ScorecardFacet { Name = "Quality", IsActive = true, DisplayOrder = 2 };
-            context.ScorecardFacets.AddRange(communication, quality);
+            var communication = new Facet { Name = "Communication" };
+            var quality = new Facet { Name = "Quality" };
+            context.Facets.AddRange(communication, quality);
             await context.SaveChangesAsync();
 
             Func<Task> act = async () => await service.UpdateTemplateFacets(template.Id, new()
@@ -327,9 +327,9 @@ namespace WiseRecruiter.Tests.Unit.Services
             using var context = CreateInMemoryContext();
             var service = new ScorecardTemplateService(context);
             var template = await service.CreateTemplate("Default Scorecard");
-            var communication = new ScorecardFacet { Name = "Communication", IsActive = true, DisplayOrder = 1 };
-            var quality = new ScorecardFacet { Name = "Quality", IsActive = true, DisplayOrder = 2 };
-            context.ScorecardFacets.AddRange(communication, quality);
+            var communication = new Facet { Name = "Communication" };
+            var quality = new Facet { Name = "Quality" };
+            context.Facets.AddRange(communication, quality);
             await context.SaveChangesAsync();
 
             await service.UpdateTemplateFacets(template.Id, new()
@@ -340,7 +340,7 @@ namespace WiseRecruiter.Tests.Unit.Services
 
             var assigned = await service.GetFacetsForTemplate(template.Id);
             assigned.Select(x => x.DisplayOrder).Should().Equal(1, 2);
-            assigned.Select(x => x.ScorecardFacetId).Should().Equal(communication.Id, quality.Id);
+            assigned.Select(x => x.FacetId).Should().Equal(communication.Id, quality.Id);
         }
 
         [Fact]
@@ -349,8 +349,8 @@ namespace WiseRecruiter.Tests.Unit.Services
             using var context = CreateInMemoryContext();
             var service = new ScorecardTemplateService(context);
             var template = await service.CreateTemplate("Default Scorecard");
-            var communication = new ScorecardFacet { Name = "Communication", IsActive = true, DisplayOrder = 1 };
-            context.ScorecardFacets.Add(communication);
+            var communication = new Facet { Name = "Communication" };
+            context.Facets.Add(communication);
             await context.SaveChangesAsync();
             await service.UpdateTemplateFacets(template.Id, new()
             {
@@ -364,7 +364,7 @@ namespace WiseRecruiter.Tests.Unit.Services
 
             var assigned = await service.GetFacetsForTemplate(template.Id);
             assigned.Should().HaveCount(1);
-            assigned[0].ScorecardFacetId.Should().Be(communication.Id);
+            assigned[0].FacetId.Should().Be(communication.Id);
         }
 
         [Fact]
@@ -373,8 +373,8 @@ namespace WiseRecruiter.Tests.Unit.Services
             using var context = CreateInMemoryContext();
             var service = new ScorecardTemplateService(context);
             var template = await service.CreateTemplate("Default Scorecard");
-            var communication = new ScorecardFacet { Name = "Communication", IsActive = true, DisplayOrder = 1 };
-            context.ScorecardFacets.Add(communication);
+            var communication = new Facet { Name = "Communication" };
+            context.Facets.Add(communication);
             await context.SaveChangesAsync();
 
             Func<Task> act = async () => await service.UpdateTemplateFacets(template.Id, new()
@@ -419,8 +419,8 @@ namespace WiseRecruiter.Tests.Unit.Services
             using var context = CreateInMemoryContext();
             var service = new ScorecardTemplateService(context);
             var template = await service.CreateTemplate("Engineering");
-            var facet = new ScorecardFacet { Name = "Technical Skill", IsActive = true, DisplayOrder = 1 };
-            context.ScorecardFacets.Add(facet);
+            var facet = new Facet { Name = "Technical Skill" };
+            context.Facets.Add(facet);
             await context.SaveChangesAsync();
 
             await service.UpdateTemplateFacets(template.Id, new()
@@ -434,8 +434,8 @@ namespace WiseRecruiter.Tests.Unit.Services
                 }
             });
 
-            // Description and NotesPlaceholder are now stored on ScorecardFacet (globally)
-            var facetEntity = await context.ScorecardFacets.FirstAsync(f => f.Name == "Technical Skill");
+            // Description and NotesPlaceholder are stored on Facet (globally)
+            var facetEntity = await context.Facets.FirstAsync(f => f.Name == "Technical Skill");
 
             facetEntity.Description.Should().Be("Rate the candidate's core technical ability.");
             facetEntity.NotesPlaceholder.Should().Be("e.g. Solved the algorithm problem in O(n log n)");
@@ -448,9 +448,9 @@ namespace WiseRecruiter.Tests.Unit.Services
             using var context = CreateInMemoryContext();
             var service = new ScorecardTemplateService(context);
             var template = await service.CreateTemplate("Engineering");
-            var facet = new ScorecardFacet { Name = "Communication", IsActive = true, DisplayOrder = 1 };
+            var facet = new Facet { Name = "Communication" };
             var category = new Category { Name = "Soft Skills" };
-            context.ScorecardFacets.Add(facet);
+            context.Facets.Add(facet);
             context.Categories.Add(category);
             await context.SaveChangesAsync();
 
@@ -459,8 +459,8 @@ namespace WiseRecruiter.Tests.Unit.Services
                 new TemplateFacetInput { FacetId = facet.Id, DisplayOrder = 1, CategoryId = category.Id }
             });
 
-            // CategoryId is now stored on ScorecardFacet (globally)
-            var facetEntity = await context.ScorecardFacets.FirstAsync(f => f.Name == "Communication");
+            // CategoryId is stored on Facet (globally)
+            var facetEntity = await context.Facets.FirstAsync(f => f.Name == "Communication");
 
             facetEntity.CategoryId.Should().Be(category.Id);
         }
@@ -471,8 +471,8 @@ namespace WiseRecruiter.Tests.Unit.Services
             using var context = CreateInMemoryContext();
             var service = new ScorecardTemplateService(context);
             var template = await service.CreateTemplate("Minimal");
-            var facet = new ScorecardFacet { Name = "Ownership", IsActive = true, DisplayOrder = 1 };
-            context.ScorecardFacets.Add(facet);
+            var facet = new Facet { Name = "Ownership" };
+            context.Facets.Add(facet);
             await context.SaveChangesAsync();
 
             await service.UpdateTemplateFacets(template.Id, new()
@@ -480,8 +480,8 @@ namespace WiseRecruiter.Tests.Unit.Services
                 new TemplateFacetInput { FacetId = facet.Id, DisplayOrder = 1 }
             });
 
-            // Fields with no input values should remain null on ScorecardFacet
-            var facetEntity = await context.ScorecardFacets.FirstAsync(f => f.Name == "Ownership");
+            // Fields with no input values should remain null on Facet
+            var facetEntity = await context.Facets.FirstAsync(f => f.Name == "Ownership");
 
             facetEntity.Description.Should().BeNull();
             facetEntity.NotesPlaceholder.Should().BeNull();
@@ -491,26 +491,23 @@ namespace WiseRecruiter.Tests.Unit.Services
         // --- Part 7: Facet-level field and ordering tests ---
 
         [Fact]
-        public async Task ScorecardFacet_StoresDescription_NotesPlaceholder_CategoryId()
+        public async Task Facet_StoresDescription_NotesPlaceholder_CategoryId()
         {
             using var context = CreateInMemoryContext();
             var category = new Category { Name = "Technical" };
             context.Categories.Add(category);
             await context.SaveChangesAsync();
 
-            var facet = new ScorecardFacet
-            {
+            var facet = new Facet {
                 Name = "Problem Solving",
-                IsActive = true,
-                DisplayOrder = 1,
                 Description = "Assess systematic approach to problems.",
                 NotesPlaceholder = "e.g. Used divide and conquer",
                 CategoryId = category.Id
             };
-            context.ScorecardFacets.Add(facet);
+            context.Facets.Add(facet);
             await context.SaveChangesAsync();
 
-            var loaded = await context.ScorecardFacets
+            var loaded = await context.Facets
                 .Include(f => f.Category)
                 .FirstAsync(f => f.Id == facet.Id);
 
@@ -528,16 +525,14 @@ namespace WiseRecruiter.Tests.Unit.Services
             var category = new Category { Name = "Soft Skills" };
             context.Categories.Add(category);
 
-            var facet = new ScorecardFacet
+            var facet = new Facet
             {
                 Name = "Communication",
-                IsActive = true,
-                DisplayOrder = 1,
                 Description = "Global description from Facet.",
                 NotesPlaceholder = "Global placeholder.",
                 CategoryId = category.Id
             };
-            context.ScorecardFacets.Add(facet);
+            context.Facets.Add(facet);
             await context.SaveChangesAsync();
 
             var template = await service.CreateTemplate("Interview");
@@ -548,10 +543,10 @@ namespace WiseRecruiter.Tests.Unit.Services
             templateFacets.Should().HaveCount(1);
             var loaded = templateFacets.Single();
             // Values should come from the Facet entity, not ScorecardTemplateFacet
-            loaded.ScorecardFacet!.Description.Should().Be("Global description from Facet.");
-            loaded.ScorecardFacet.NotesPlaceholder.Should().Be("Global placeholder.");
-            loaded.ScorecardFacet.CategoryId.Should().Be(category.Id);
-            loaded.ScorecardFacet.Category!.Name.Should().Be("Soft Skills");
+            loaded.Facet!.Description.Should().Be("Global description from Facet.");
+            loaded.Facet.NotesPlaceholder.Should().Be("Global placeholder.");
+            loaded.Facet.CategoryId.Should().Be(category.Id);
+            loaded.Facet.Category!.Name.Should().Be("Soft Skills");
         }
 
         [Fact]
@@ -561,10 +556,10 @@ namespace WiseRecruiter.Tests.Unit.Services
             var service = new ScorecardTemplateService(context);
             var template = await service.CreateTemplate("Hiring");
 
-            var zebra = new ScorecardFacet { Name = "Zebra", IsActive = true, DisplayOrder = 1 };
-            var apple = new ScorecardFacet { Name = "Apple", IsActive = true, DisplayOrder = 2 };
-            var mango = new ScorecardFacet { Name = "Mango", IsActive = true, DisplayOrder = 3 };
-            context.ScorecardFacets.AddRange(zebra, apple, mango);
+            var zebra = new Facet { Name = "Zebra" };
+            var apple = new Facet { Name = "Apple" };
+            var mango = new Facet { Name = "Mango" };
+            context.Facets.AddRange(zebra, apple, mango);
             await context.SaveChangesAsync();
 
             await service.AddFacetToTemplate(template.Id, zebra.Id, 1);
@@ -573,7 +568,7 @@ namespace WiseRecruiter.Tests.Unit.Services
 
             var facets = await service.GetFacetsForTemplate(template.Id);
 
-            facets.Select(f => f.ScorecardFacet!.Name).Should().Equal("Apple", "Mango", "Zebra");
+            facets.Select(f => f.Facet!.Name).Should().Equal("Apple", "Mango", "Zebra");
         }
 
         [Fact]
@@ -584,8 +579,8 @@ namespace WiseRecruiter.Tests.Unit.Services
 
             // Simulate an existing template with facets that have no new fields set
             var template = await service.CreateTemplate("Legacy Template");
-            var facet = new ScorecardFacet { Name = "Legacy Facet", IsActive = true, DisplayOrder = 1 };
-            context.ScorecardFacets.Add(facet);
+            var facet = new Facet { Name = "Legacy Facet" };
+            context.Facets.Add(facet);
             await context.SaveChangesAsync();
             await service.AddFacetToTemplate(template.Id, facet.Id, 1);
 
@@ -595,9 +590,9 @@ namespace WiseRecruiter.Tests.Unit.Services
 
             var facets = await service.GetFacetsForTemplate(template.Id);
             facets.Should().HaveCount(1);
-            facets.Single().ScorecardFacet!.Description.Should().BeNull();
-            facets.Single().ScorecardFacet!.NotesPlaceholder.Should().BeNull();
-            facets.Single().ScorecardFacet!.CategoryId.Should().BeNull();
+            facets.Single().Facet!.Description.Should().BeNull();
+            facets.Single().Facet!.NotesPlaceholder.Should().BeNull();
+            facets.Single().Facet!.CategoryId.Should().BeNull();
         }
     }
 }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -12,10 +12,10 @@ namespace WiseRecruiter.Tests.Unit.Services
 {
     public class FacetServiceTests
     {
-        private AppDbContext CreateInMemoryContext(string dbName = "facet_db")
+        private AppDbContext CreateInMemoryContext()
         {
             var options = new DbContextOptionsBuilder<AppDbContext>()
-                .UseInMemoryDatabase(databaseName: dbName + Guid.NewGuid())
+                .UseInMemoryDatabase(databaseName: "facet_db_" + Guid.NewGuid())
                 .Options;
 
             return new AppDbContext(options);
@@ -27,13 +27,11 @@ namespace WiseRecruiter.Tests.Unit.Services
             using var context = CreateInMemoryContext();
             var service = new FacetService(context);
 
-            var facet = await service.CreateFacet("Communication", 1);
+            var facet = await service.CreateFacet("Communication");
 
             facet.Should().NotBeNull();
             facet.Id.Should().BeGreaterThan(0);
             facet.Name.Should().Be("Communication");
-            facet.DisplayOrder.Should().Be(1);
-            facet.IsActive.Should().BeTrue();
         }
 
         [Fact]
@@ -42,7 +40,7 @@ namespace WiseRecruiter.Tests.Unit.Services
             using var context = CreateInMemoryContext();
             var service = new FacetService(context);
 
-            Func<Task> act = async () => await service.CreateFacet("   ", 1);
+            Func<Task> act = async () => await service.CreateFacet("   ");
 
             await act.Should().ThrowAsync<ArgumentException>();
         }
@@ -52,149 +50,124 @@ namespace WiseRecruiter.Tests.Unit.Services
         {
             using var context = CreateInMemoryContext();
             var service = new FacetService(context);
-            await service.CreateFacet("Communication", 1);
+            await service.CreateFacet("Communication");
 
-            Func<Task> act = async () => await service.CreateFacet(" communication ", 2);
+            Func<Task> act = async () => await service.CreateFacet(" communication ");
 
             await act.Should().ThrowAsync<InvalidOperationException>();
         }
 
         [Fact]
-        public async Task CreateFacet_WithDuplicateDisplayOrder_ThrowsInvalidOperationException()
+        public async Task CreateFacet_PersistsDescriptionNotesPlaceholderAndCategory()
         {
             using var context = CreateInMemoryContext();
-            var service = new FacetService(context);
-            await service.CreateFacet("Communication", 1);
-
-            Func<Task> act = async () => await service.CreateFacet("Quality", 1);
-
-            await act.Should().ThrowAsync<InvalidOperationException>()
-                .WithMessage("*display order*");
-        }
-
-        [Fact]
-        public async Task CreateFacet_WithUniqueDisplayOrder_Succeeds()
-        {
-            using var context = CreateInMemoryContext();
-            var service = new FacetService(context);
-            await service.CreateFacet("Communication", 1);
-
-            var created = await service.CreateFacet("Quality", 2);
-
-            created.DisplayOrder.Should().Be(2);
-            created.Name.Should().Be("Quality");
-
-            var all = await service.GetAllFacets();
-            all.Select(f => f.Name).Should().Equal("Communication", "Quality");
-            all.Select(f => f.DisplayOrder).Should().Equal(1, 2);
-        }
-
-        [Fact]
-        public async Task GetActiveFacets_ReturnsOnlyActiveInDisplayOrder()
-        {
-            using var context = CreateInMemoryContext();
-            context.ScorecardFacets.AddRange(
-                new ScorecardFacet { Name = "Quality", DisplayOrder = 2, IsActive = true },
-                new ScorecardFacet { Name = "Archived", DisplayOrder = 1, IsActive = false },
-                new ScorecardFacet { Name = "Communication", DisplayOrder = 1, IsActive = true });
+            var category = new Category { Name = "Technical" };
+            context.Categories.Add(category);
             await context.SaveChangesAsync();
 
             var service = new FacetService(context);
-            var active = await service.GetActiveFacets();
+            var facet = await service.CreateFacet("Problem Solving");
+            await service.UpdateFacet(facet.Id, facet.Name,
+                "Assess structured thinking", "e.g. used divide-and-conquer", category.Id);
 
-            active.Should().HaveCount(2);
-            active.Select(f => f.Name).Should().Equal("Communication", "Quality");
+            var loaded = await service.GetFacetById(facet.Id);
+
+            loaded.Should().NotBeNull();
+            loaded!.Description.Should().Be("Assess structured thinking");
+            loaded.NotesPlaceholder.Should().Be("e.g. used divide-and-conquer");
+            loaded.CategoryId.Should().Be(category.Id);
+            loaded.Category!.Name.Should().Be("Technical");
         }
 
         [Fact]
-        public async Task UpdateFacet_UpdatesAllEditableFields()
+        public async Task GetAllFacets_ReturnsAllFacetsAlphabetically()
         {
             using var context = CreateInMemoryContext();
             var service = new FacetService(context);
-            var facet = await service.CreateFacet("Communication", 1);
+            await service.CreateFacet("Quality");
+            await service.CreateFacet("Communication");
+            await service.CreateFacet("Speed");
 
-            var updated = await service.UpdateFacet(facet.Id, "Problem Solving", 3, false);
+            var all = await service.GetAllFacets();
+
+            all.Select(f => f.Name).Should().Equal("Communication", "Quality", "Speed");
+        }
+
+        [Fact]
+        public async Task GetFacetById_ReturnsCorrectFacet()
+        {
+            using var context = CreateInMemoryContext();
+            var service = new FacetService(context);
+            var created = await service.CreateFacet("Communication");
+
+            var found = await service.GetFacetById(created.Id);
+
+            found.Should().NotBeNull();
+            found!.Name.Should().Be("Communication");
+        }
+
+        [Fact]
+        public async Task GetFacetById_WithInvalidId_ReturnsNull()
+        {
+            using var context = CreateInMemoryContext();
+            var service = new FacetService(context);
+
+            var result = await service.GetFacetById(9999);
+
+            result.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task UpdateFacet_UpdatesNameAndFields()
+        {
+            using var context = CreateInMemoryContext();
+            var service = new FacetService(context);
+            var facet = await service.CreateFacet("Communication");
+
+            var updated = await service.UpdateFacet(facet.Id, "Problem Solving",
+                "Rate their approach", "e.g. clear steps", null);
 
             updated.Name.Should().Be("Problem Solving");
-            updated.DisplayOrder.Should().Be(3);
-            updated.IsActive.Should().BeFalse();
+            updated.Description.Should().Be("Rate their approach");
+            updated.NotesPlaceholder.Should().Be("e.g. clear steps");
+            updated.CategoryId.Should().BeNull();
         }
 
         [Fact]
-        public async Task DeactivatedFacet_IsNotReturnedByGetActiveFacets()
+        public async Task UpdateFacet_WithDuplicateName_ThrowsInvalidOperationException()
         {
             using var context = CreateInMemoryContext();
             var service = new FacetService(context);
-            var facet = await service.CreateFacet("Collaboration", 1);
+            await service.CreateFacet("Communication");
+            var second = await service.CreateFacet("Quality");
 
-            await service.UpdateFacet(facet.Id, facet.Name, facet.DisplayOrder, false);
-            var active = await service.GetActiveFacets();
+            Func<Task> act = async () =>
+                await service.UpdateFacet(second.Id, "Communication", null, null, null);
 
-            active.Should().BeEmpty();
+            await act.Should().ThrowAsync<InvalidOperationException>();
         }
 
         [Fact]
-        public async Task UpdateFacet_ToDuplicateDisplayOrder_ThrowsInvalidOperationException()
+        public async Task UpdateFacet_WithInvalidId_ThrowsInvalidOperationException()
         {
             using var context = CreateInMemoryContext();
             var service = new FacetService(context);
-            var first = await service.CreateFacet("Communication", 1);
-            var second = await service.CreateFacet("Quality", 2);
 
-            Func<Task> act = async () => await service.UpdateFacet(second.Id, second.Name, 1, second.IsActive);
+            Func<Task> act = async () =>
+                await service.UpdateFacet(9999, "Name", null, null, null);
 
-            await act.Should().ThrowAsync<InvalidOperationException>()
-                .WithMessage("*display order*");
+            await act.Should().ThrowAsync<InvalidOperationException>();
         }
 
         [Fact]
-        public async Task UpdateFacet_ToUniqueDisplayOrder_Succeeds()
+        public async Task GetAllFacets_WithNoFacets_ReturnsEmpty()
         {
             using var context = CreateInMemoryContext();
             var service = new FacetService(context);
-            var first = await service.CreateFacet("Communication", 1);
-            var second = await service.CreateFacet("Quality", 2);
 
-            var updated = await service.UpdateFacet(second.Id, second.Name, 3, second.IsActive);
+            var facets = await service.GetAllFacets();
 
-            updated.DisplayOrder.Should().Be(3);
-            first.DisplayOrder.Should().Be(1);
-        }
-
-        [Fact]
-        public async Task GetAllFacets_MaintainsOrderingAfterDisplayOrderUpdates()
-        {
-            using var context = CreateInMemoryContext();
-            var service = new FacetService(context);
-            var communication = await service.CreateFacet("Communication", 1);
-            var quality = await service.CreateFacet("Quality", 2);
-            var speed = await service.CreateFacet("Speed", 3);
-
-            await service.UpdateFacet(quality.Id, quality.Name, 4, quality.IsActive);
-            await service.UpdateFacet(speed.Id, speed.Name, 2, speed.IsActive);
-
-            var ordered = await service.GetAllFacets();
-
-            ordered.Select(f => f.Name).Should().Equal("Communication", "Speed", "Quality");
-            ordered.Select(f => f.DisplayOrder).Should().Equal(1, 2, 4);
-        }
-
-        [Fact]
-        public async Task GetActiveFacets_AfterDeactivationAndReorder_ExcludesInactiveAndKeepsOrder()
-        {
-            using var context = CreateInMemoryContext();
-            var service = new FacetService(context);
-            var communication = await service.CreateFacet("Communication", 1);
-            var quality = await service.CreateFacet("Quality", 2);
-            var speed = await service.CreateFacet("Speed", 3);
-
-            await service.UpdateFacet(quality.Id, quality.Name, 4, false);
-            await service.UpdateFacet(speed.Id, speed.Name, 2, true);
-
-            var active = await service.GetActiveFacets();
-
-            active.Select(f => f.Name).Should().Equal("Communication", "Speed");
-            active.Select(f => f.DisplayOrder).Should().Equal(1, 2);
+            facets.Should().BeEmpty();
         }
     }
 }
