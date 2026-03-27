@@ -10,6 +10,7 @@ namespace JobPortal.Helpers
         {
             // SeedDefaultFacets uses Facet table (ScorecardFacets removed)
             SeedDefaultFacets(context);
+            BackfillDefaultFacetCategories(context); // assign CategoryId to seeded facets that were created without one
             SeedDefaultScorecardTemplate(context);
             NullifyOrphanedScorecardTemplateIds(context);
 
@@ -112,12 +113,50 @@ namespace JobPortal.Helpers
         {
             if (context.Facets.Any()) return;
 
+            // Categories come from HasData in AppDbContext and are always present after migrations.
+            var technical = context.Categories.FirstOrDefault(c => c.Name == "Technical");
+            var softSkills = context.Categories.FirstOrDefault(c => c.Name == "Soft Skills");
+
             context.Facets.AddRange(
-                new Facet { Name = "Technical Skills" },
-                new Facet { Name = "Communication" },
-                new Facet { Name = "Problem Solving" }
+                new Facet { Name = "Technical Skills", CategoryId = technical?.Id },
+                new Facet { Name = "Communication", CategoryId = softSkills?.Id },
+                new Facet { Name = "Problem Solving", CategoryId = technical?.Id }
             );
             context.SaveChanges();
+        }
+
+        /// <summary>
+        /// Assigns categories to the default seeded facets on databases where they were
+        /// originally inserted without a CategoryId (e.g. existing Render deployments).
+        /// Idempotent: only updates rows where CategoryId is null.
+        /// </summary>
+        private static void BackfillDefaultFacetCategories(AppDbContext context)
+        {
+            var categoryLookup = context.Categories
+                .ToDictionary(c => c.Name, StringComparer.OrdinalIgnoreCase);
+
+            var assignments = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "Technical Skills", "Technical" },
+                { "Communication", "Soft Skills" },
+                { "Problem Solving", "Technical" }
+            };
+
+            var changed = false;
+            foreach (var (facetName, categoryName) in assignments)
+            {
+                if (!categoryLookup.TryGetValue(categoryName, out var category)) continue;
+
+                var facet = context.Facets
+                    .FirstOrDefault(f => f.Name == facetName && f.CategoryId == null);
+                if (facet == null) continue;
+
+                facet.CategoryId = category.Id;
+                changed = true;
+            }
+
+            if (changed)
+                context.SaveChanges();
         }
 
         private static void SeedDefaultScorecardTemplate(AppDbContext context)
