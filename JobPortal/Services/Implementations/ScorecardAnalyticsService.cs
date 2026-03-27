@@ -24,7 +24,7 @@ namespace JobPortal.Services.Implementations
                 return new CandidateAnalyticsDto();
 
             var scorecards = await _context.Scorecards
-                .Where(s => s.CandidateId == candidateId)
+                .Where(s => s.CandidateId == candidateId && !s.IsArchived)
                 .Include(s => s.Responses)
                 .ToListAsync();
 

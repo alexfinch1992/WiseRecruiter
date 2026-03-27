@@ -17,6 +17,9 @@ namespace JobPortal.Models
 
         public string? OverallRecommendation { get; set; }
 
+        public bool IsArchived { get; set; } = false;
+        public DateTime? ArchivedAt { get; set; }
+
         public ICollection<ScorecardResponse> Responses { get; set; } = new List<ScorecardResponse>();
     }
 }

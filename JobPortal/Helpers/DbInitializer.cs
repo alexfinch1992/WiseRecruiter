@@ -69,8 +69,38 @@ namespace JobPortal.Helpers
                 var jobs = context.Jobs.Include(j => j.Stages).ToList();
                 if (jobs.Any())
                 {
-                    var candidates = GenerateDummyCandidates(jobs);
-                    context.Applications.AddRange(candidates);
+                    var applications = GenerateDummyCandidates(jobs);
+
+                    // Create Candidates BEFORE Applications to satisfy the FK constraint
+                    // (Application.CandidateId is a required FK; inserting with CandidateId=0 fails with FK checks on)
+                    var candidatesByEmail = new Dictionary<string, Candidate>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var app in applications)
+                    {
+                        var email = app.Email ?? string.Empty;
+                        if (candidatesByEmail.ContainsKey(email))
+                            continue;
+
+                        var (firstName, lastName) = SplitName(app.Name);
+                        var candidate = new Candidate
+                        {
+                            FirstName = firstName,
+                            LastName = lastName,
+                            Email = email,
+                            CreatedAt = DateTime.UtcNow
+                        };
+                        context.Candidates.Add(candidate);
+                        candidatesByEmail[email] = candidate;
+                    }
+                    context.SaveChanges(); // persist all candidates at once to get their Ids
+
+                    foreach (var app in applications)
+                    {
+                        var email = app.Email ?? string.Empty;
+                        if (candidatesByEmail.TryGetValue(email, out var candidate))
+                            app.CandidateId = candidate.Id;
+                    }
+
+                    context.Applications.AddRange(applications);
                     context.SaveChanges();
                 }
             }
@@ -110,9 +140,10 @@ namespace JobPortal.Helpers
 
             foreach (var facet in activeFacets)
             {
+                // Use FacetId (not ScorecardFacetId — legacy column, always 0 on new inserts)
                 var existingLink = context.ScorecardTemplateFacets.Any(tf =>
                     tf.ScorecardTemplateId == template.Id &&
-                    tf.ScorecardFacetId == facet.Id);
+                    tf.FacetId == facet.Id);
 
                 if (existingLink)
                     continue;
@@ -130,57 +161,92 @@ namespace JobPortal.Helpers
         private static void BackfillCandidateRelationships(AppDbContext context)
         {
             var applications = context.Applications.ToList();
+
+            // Collect all applications needing a Candidate, batch-create missing ones, save once
+            var newCandidatesByEmail = new Dictionary<string, Candidate>(StringComparer.OrdinalIgnoreCase);
             foreach (var application in applications)
             {
                 if (application.CandidateId > 0)
                     continue;
 
                 var email = application.Email ?? string.Empty;
+                if (newCandidatesByEmail.ContainsKey(email))
+                    continue;
+
                 var existingCandidate = context.Candidates.FirstOrDefault(c => c.Email == email);
-                if (existingCandidate == null)
+                if (existingCandidate != null)
+                {
+                    newCandidatesByEmail[email] = existingCandidate;
+                }
+                else
                 {
                     var (firstName, lastName) = SplitName(application.Name);
-                    existingCandidate = new Candidate
+                    var candidate = new Candidate
                     {
                         FirstName = firstName,
                         LastName = lastName,
                         Email = email,
                         CreatedAt = DateTime.UtcNow
                     };
-                    context.Candidates.Add(existingCandidate);
-                    context.SaveChanges();
+                    context.Candidates.Add(candidate);
+                    newCandidatesByEmail[email] = candidate;
                 }
+            }
+            context.SaveChanges(); // persist all new candidates at once
 
-                application.CandidateId = existingCandidate.Id;
+            foreach (var application in applications)
+            {
+                if (application.CandidateId > 0)
+                    continue;
+
+                var email = application.Email ?? string.Empty;
+                if (newCandidatesByEmail.TryGetValue(email, out var candidate))
+                    application.CandidateId = candidate.Id;
             }
             context.SaveChanges();
 
             var scorecards = context.Scorecards.ToList();
+            var validCandidateIds = context.Candidates.Select(c => c.Id).ToHashSet();
+
+            // First pass: remap legacy scorecards (CandidateId used to store Application.Id)
             foreach (var scorecard in scorecards)
             {
-                var candidateExists = context.Candidates.Any(c => c.Id == scorecard.CandidateId);
-                if (candidateExists)
+                if (validCandidateIds.Contains(scorecard.CandidateId))
                     continue;
 
-                // Legacy mapping: CandidateId previously pointed to Application.Id.
                 var legacyApplication = context.Applications.FirstOrDefault(a => a.Id == scorecard.CandidateId);
                 if (legacyApplication != null && legacyApplication.CandidateId > 0)
-                {
                     scorecard.CandidateId = legacyApplication.CandidateId;
-                    continue;
-                }
-
-                var placeholder = new Candidate
-                {
-                    FirstName = "Legacy",
-                    LastName = "Candidate",
-                    Email = $"legacy-candidate-{scorecard.Id}@local.invalid",
-                    CreatedAt = DateTime.UtcNow
-                };
-                context.Candidates.Add(placeholder);
-                context.SaveChanges();
-                scorecard.CandidateId = placeholder.Id;
             }
+
+            // Second pass: create placeholder Candidates for any still-orphaned scorecards (batched)
+            var orphanedScorecards = scorecards
+                .Where(s => !validCandidateIds.Contains(s.CandidateId))
+                .ToList();
+
+            if (orphanedScorecards.Any())
+            {
+                var placeholderPairs = orphanedScorecards.Select(s => new
+                {
+                    Scorecard = s,
+                    Placeholder = new Candidate
+                    {
+                        FirstName = "Legacy",
+                        LastName = "Candidate",
+                        Email = $"legacy-candidate-{s.Id}@local.invalid",
+                        CreatedAt = DateTime.UtcNow
+                    }
+                }).ToList();
+
+                foreach (var pair in placeholderPairs)
+                    context.Candidates.Add(pair.Placeholder);
+
+                context.SaveChanges(); // persist all placeholders at once to get their Ids
+
+                foreach (var pair in placeholderPairs)
+                    pair.Scorecard.CandidateId = pair.Placeholder.Id;
+            }
+
             context.SaveChanges();
         }
 
