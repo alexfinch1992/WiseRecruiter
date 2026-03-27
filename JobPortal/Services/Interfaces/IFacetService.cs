@@ -4,9 +4,9 @@ namespace JobPortal.Services.Interfaces
 {
     public interface IFacetService
     {
-        Task<List<ScorecardFacet>> GetActiveFacets();
-        Task<List<ScorecardFacet>> GetAllFacets();
-        Task<ScorecardFacet> CreateFacet(string name, int displayOrder);
-        Task<ScorecardFacet> UpdateFacet(int id, string name, int displayOrder, bool isActive);
+        Task<List<Facet>> GetAllFacets();
+        Task<Facet?> GetFacetById(int id);
+        Task<Facet> CreateFacet(string name);
+        Task<Facet> UpdateFacet(int id, string name, string? description, string? notesPlaceholder, int? categoryId);
     }
 }

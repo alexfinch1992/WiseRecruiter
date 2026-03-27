@@ -6,22 +6,16 @@ namespace JobPortal.Models
 
         public int ScorecardTemplateId { get; set; }
 
+        public int FacetId { get; set; }
+
+        // Legacy column — kept for DB compatibility, no longer used in code
         public int ScorecardFacetId { get; set; }
 
+        // Legacy column — kept for DB compatibility; ordering now uses Facet.Name
         public int DisplayOrder { get; set; }
-
-        // Optional guidance text shown to reviewers (soft limit ~500 chars)
-        public string? Description { get; set; }
-
-        // Optional UI hint for the notes input field
-        public string? NotesPlaceholder { get; set; }
-
-        // Optional category for analytics grouping
-        public int? CategoryId { get; set; }
-        public Category? Category { get; set; }
 
         public ScorecardTemplate? ScorecardTemplate { get; set; }
 
-        public ScorecardFacet? ScorecardFacet { get; set; }
+        public Facet? Facet { get; set; }
     }
 }

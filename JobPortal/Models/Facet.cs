@@ -2,20 +2,15 @@ using System.ComponentModel.DataAnnotations;
 
 namespace JobPortal.Models
 {
-    // Legacy entity — table preserved for data safety; no longer used in application code.
-    // Use Facet instead.
-    public class ScorecardFacet
+    public class Facet
     {
         public int Id { get; set; }
 
         [Required]
-        public string Name { get; set; } = string.Empty;
-
-        public bool IsActive { get; set; } = true;
-
-        public int DisplayOrder { get; set; }
+        public string Name { get; set; } = null!;
 
         public string? Description { get; set; }
+
         public string? NotesPlaceholder { get; set; }
 
         public int? CategoryId { get; set; }

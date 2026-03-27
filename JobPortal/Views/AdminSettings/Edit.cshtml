@@ -1,4 +1,4 @@
-@model JobPortal.Models.ScorecardFacet
+@model JobPortal.Models.Facet
 
 @{
     ViewData["Title"] = "Edit Facet";
@@ -22,18 +22,6 @@
                             <label for="name" class="form-label fw-bold">Name</label>
                             <input id="name" name="name" class="form-control" value="@Model.Name" />
                             @Html.ValidationMessage("name", null, new { @class = "text-danger small" })
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="displayOrder" class="form-label fw-bold">Display Order</label>
-                            <input id="displayOrder" name="displayOrder" class="form-control" type="number" value="@Model.DisplayOrder" />
-                            @Html.ValidationMessage("displayOrder", null, new { @class = "text-danger small" })
-                        </div>
-
-                        <div class="form-check mb-4">
-                            <input class="form-check-input" type="checkbox" id="isActive" name="isActive" value="true" @(Model.IsActive ? "checked" : string.Empty) />
-                            <input type="hidden" name="isActive" value="false" />
-                            <label class="form-check-label" for="isActive">Active</label>
                         </div>
 
                         <div class="d-flex justify-content-end gap-2">

@@ -14,71 +14,48 @@ namespace JobPortal.Services.Implementations
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        public async Task<List<ScorecardFacet>> GetActiveFacets()
+        public async Task<List<Facet>> GetAllFacets()
         {
-            return await _context.ScorecardFacets
+            return await _context.Facets
                 .Include(f => f.Category)
-                .Where(f => f.IsActive)
-                .OrderBy(f => f.DisplayOrder)
+                .OrderBy(f => f.Name)
                 .ToListAsync();
         }
 
-        public async Task<List<ScorecardFacet>> GetAllFacets()
+        public async Task<Facet?> GetFacetById(int id)
         {
-            return await _context.ScorecardFacets
+            return await _context.Facets
                 .Include(f => f.Category)
-                .OrderBy(f => f.DisplayOrder)
-                .ToListAsync();
+                .FirstOrDefaultAsync(f => f.Id == id);
         }
 
-        public async Task<ScorecardFacet> CreateFacet(string name, int displayOrder)
+        public async Task<Facet> CreateFacet(string name)
         {
             var normalizedName = NormalizeName(name);
 
-            var duplicateExists = await _context.ScorecardFacets
-                .AnyAsync(f => f.Name.ToLower() == normalizedName.ToLower());
-            if (duplicateExists)
-                throw new InvalidOperationException("A scorecard facet with this name already exists.");
+            if (await _context.Facets.AnyAsync(f => f.Name.ToLower() == normalizedName.ToLower()))
+                throw new InvalidOperationException("A facet with this name already exists.");
 
-            var duplicateDisplayOrderExists = await _context.ScorecardFacets
-                .AnyAsync(f => f.DisplayOrder == displayOrder);
-            if (duplicateDisplayOrderExists)
-                throw new InvalidOperationException("A scorecard facet with this display order already exists.");
-
-            var facet = new ScorecardFacet
-            {
-                Name = normalizedName,
-                DisplayOrder = displayOrder,
-                IsActive = true
-            };
-
-            _context.ScorecardFacets.Add(facet);
+            var facet = new Facet { Name = normalizedName };
+            _context.Facets.Add(facet);
             await _context.SaveChangesAsync();
             return facet;
         }
 
-        public async Task<ScorecardFacet> UpdateFacet(int id, string name, int displayOrder, bool isActive)
+        public async Task<Facet> UpdateFacet(int id, string name, string? description, string? notesPlaceholder, int? categoryId)
         {
-            var facet = await _context.ScorecardFacets.FirstOrDefaultAsync(f => f.Id == id);
-            if (facet == null)
-                throw new InvalidOperationException("Scorecard facet not found.");
+            var facet = await _context.Facets.FirstOrDefaultAsync(f => f.Id == id)
+                ?? throw new InvalidOperationException("Facet not found.");
 
             var normalizedName = NormalizeName(name);
 
-            var duplicateExists = await _context.ScorecardFacets
-                .AnyAsync(f => f.Id != id && f.Name.ToLower() == normalizedName.ToLower());
-            if (duplicateExists)
-                throw new InvalidOperationException("A scorecard facet with this name already exists.");
-
-            var duplicateDisplayOrderExists = await _context.ScorecardFacets
-                .AnyAsync(f => f.Id != id && f.DisplayOrder == displayOrder);
-            if (duplicateDisplayOrderExists)
-                throw new InvalidOperationException("A scorecard facet with this display order already exists.");
+            if (await _context.Facets.AnyAsync(f => f.Id != id && f.Name.ToLower() == normalizedName.ToLower()))
+                throw new InvalidOperationException("A facet with this name already exists.");
 
             facet.Name = normalizedName;
-            facet.DisplayOrder = displayOrder;
-            facet.IsActive = isActive;
-
+            facet.Description = description;
+            facet.NotesPlaceholder = notesPlaceholder;
+            facet.CategoryId = categoryId;
             await _context.SaveChangesAsync();
             return facet;
         }
@@ -87,7 +64,6 @@ namespace JobPortal.Services.Implementations
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("Facet name is required.", nameof(name));
-
             return name.Trim();
         }
     }
