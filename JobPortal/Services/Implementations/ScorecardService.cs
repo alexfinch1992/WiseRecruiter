@@ -96,6 +96,7 @@ namespace JobPortal.Services.Implementations
                 .Where(templateFacet => templateFacet.Facet != null)
                 .Select(templateFacet => new ScorecardResponse
                 {
+                    FacetId = templateFacet.FacetId,
                     FacetName = templateFacet.Facet!.Name,
                     Score = 3.0m,
                     Notes = string.Empty

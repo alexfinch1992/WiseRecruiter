@@ -19,16 +19,17 @@
                 @Html.AntiForgeryToken()
                 <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
+                <div class="alert alert-info">
+                    <strong>Note:</strong> To edit facet details (Description, Notes Placeholder, Category), go to the
+                    <a asp-controller="AdminSettings" asp-action="Index">Facets</a> page.
+                </div>
+
                 <div class="table-responsive">
                     <table class="table table-sm align-middle">
                         <thead>
                             <tr>
                                 <th>Include</th>
                                 <th>Facet Name</th>
-                                <th>Order</th>
-                                <th>Description</th>
-                                <th>Notes Placeholder</th>
-                                <th>Category</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -39,45 +40,9 @@
                                         <input type="checkbox"
                                                class="form-check-input facet-include"
                                                data-facet-id="@Model.Facets[i].FacetId"
-                                               data-order-input-id="facet-order-@Model.Facets[i].FacetId"
                                                @(Model.Facets[i].IsSelected ? "checked" : string.Empty) />
                                     </td>
                                     <td>@Model.Facets[i].FacetName</td>
-                                    <td>
-                                        <input id="facet-order-@Model.Facets[i].FacetId"
-                                               type="number"
-                                               min="1"
-                                               class="form-control"
-                                               value="@Model.Facets[i].DisplayOrder" />
-                                    </td>
-                                    <td>
-                                        <textarea id="facet-description-@Model.Facets[i].FacetId"
-                                                  class="form-control"
-                                                  maxlength="500"
-                                                  rows="2">@Model.Facets[i].Description</textarea>
-                                    </td>
-                                    <td>
-                                        <input id="facet-notes-@Model.Facets[i].FacetId"
-                                               type="text"
-                                               class="form-control"
-                                               value="@Model.Facets[i].NotesPlaceholder" />
-                                    </td>
-                                    <td>
-                                        <select id="facet-category-@Model.Facets[i].FacetId" class="form-control">
-                                            <option value="">-- Select Category --</option>
-                                            @foreach (var category in Model.Categories)
-                                            {
-                                                if (Model.Facets[i].CategoryId == category.Id)
-                                                {
-                                                    <option value="@category.Id" selected>@category.Name</option>
-                                                }
-                                                else
-                                                {
-                                                    <option value="@category.Id">@category.Name</option>
-                                                }
-                                            }
-                                        </select>
-                                    </td>
                                 </tr>
                             }
                         </tbody>
@@ -87,6 +52,7 @@
                 <div id="selected-facets-container"></div>
 
                 <div class="d-flex justify-content-end gap-2 mt-3">
+                    <small class="text-muted me-auto align-self-center">Edit facet details (Description, Notes, Category) from the <a asp-controller="AdminSettings" asp-action="Index">Facets</a> page.</small>
                     <a asp-action="Templates" class="btn btn-secondary">Cancel</a>
                     <button type="submit" class="btn btn-primary">Save Facets</button>
                 </div>
@@ -103,20 +69,6 @@
             const container = document.getElementById('selected-facets-container');
             const checkboxes = Array.from(document.querySelectorAll('.facet-include'));
 
-            const syncOrderInputStates = () => {
-                checkboxes.forEach((checkbox) => {
-                    const orderInputId = checkbox.getAttribute('data-order-input-id');
-                    const orderInput = document.getElementById(orderInputId);
-                    if (orderInput) {
-                        orderInput.disabled = !checkbox.checked;
-                    }
-                });
-            };
-
-            checkboxes.forEach((checkbox) => {
-                checkbox.addEventListener('change', syncOrderInputStates);
-            });
-
             form.addEventListener('submit', () => {
                 container.innerHTML = '';
 
@@ -127,9 +79,6 @@
                     }
 
                     const facetId = checkbox.getAttribute('data-facet-id');
-                    const orderInputId = checkbox.getAttribute('data-order-input-id');
-                    const orderInput = document.getElementById(orderInputId);
-                    const displayOrder = orderInput ? orderInput.value : '';
 
                     const facetIdInput = document.createElement('input');
                     facetIdInput.type = 'hidden';
@@ -137,38 +86,9 @@
                     facetIdInput.value = facetId;
                     container.appendChild(facetIdInput);
 
-                    const displayOrderInput = document.createElement('input');
-                    displayOrderInput.type = 'hidden';
-                    displayOrderInput.name = `facets[${index}].DisplayOrder`;
-                    displayOrderInput.value = displayOrder;
-                    container.appendChild(displayOrderInput);
-
-                    const descriptionEl = document.getElementById(`facet-description-${facetId}`);
-                    const descriptionHidden = document.createElement('input');
-                    descriptionHidden.type = 'hidden';
-                    descriptionHidden.name = `facets[${index}].Description`;
-                    descriptionHidden.value = descriptionEl ? descriptionEl.value : '';
-                    container.appendChild(descriptionHidden);
-
-                    const notesEl = document.getElementById(`facet-notes-${facetId}`);
-                    const notesHidden = document.createElement('input');
-                    notesHidden.type = 'hidden';
-                    notesHidden.name = `facets[${index}].NotesPlaceholder`;
-                    notesHidden.value = notesEl ? notesEl.value : '';
-                    container.appendChild(notesHidden);
-
-                    const categoryEl = document.getElementById(`facet-category-${facetId}`);
-                    const categoryHidden = document.createElement('input');
-                    categoryHidden.type = 'hidden';
-                    categoryHidden.name = `facets[${index}].CategoryId`;
-                    categoryHidden.value = categoryEl ? categoryEl.value : '';
-                    container.appendChild(categoryHidden);
-
                     index++;
                 });
             });
-
-            syncOrderInputStates();
         })();
     </script>
 }

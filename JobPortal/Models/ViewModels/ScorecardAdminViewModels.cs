@@ -15,10 +15,17 @@ namespace JobPortal.Models.ViewModels
         [Required]
         public string FacetName { get; set; } = string.Empty;
 
+        public int FacetId { get; set; }
+
         [Range(1.0, 5.0)]
         public decimal Score { get; set; }
 
         public string? Notes { get; set; }
+
+        // Display-only metadata sourced from Facet entity
+        public string? Description { get; set; }
+        public string? NotesPlaceholder { get; set; }
+        public string? CategoryName { get; set; }
     }
 
     public class CreateScorecardViewModel

@@ -98,8 +98,8 @@ namespace WiseRecruiter.Tests.Integration
                 await context.SaveChangesAsync();
 
                 context.ScorecardTemplateFacets.AddRange(
-                    new ScorecardTemplateFacet { ScorecardTemplateId = template.Id, FacetId = facet1.Id, ScorecardFacetId = facet1.Id, DisplayOrder = 1 },
-                    new ScorecardTemplateFacet { ScorecardTemplateId = template.Id, FacetId = facet2.Id, ScorecardFacetId = facet2.Id, DisplayOrder = 2 });
+                    new ScorecardTemplateFacet { ScorecardTemplateId = template.Id, FacetId = facet1.Id, ScorecardFacetId = facet1.Id },
+                    new ScorecardTemplateFacet { ScorecardTemplateId = template.Id, FacetId = facet2.Id, ScorecardFacetId = facet2.Id });
                 await context.SaveChangesAsync();
 
                 var job = await SeedJobWithStageAsync(context, template.Id);

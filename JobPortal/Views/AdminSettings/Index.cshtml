@@ -23,7 +23,9 @@
                 <thead>
                     <tr>
                         <th>Name</th>
-                        <th>Order</th>
+                        <th>Description</th>
+                        <th>Notes Placeholder</th>
+                        <th>Category</th>
                         <th>Used In</th>
                         <th class="text-center">Actions</th>
                     </tr>
@@ -35,7 +37,9 @@
                         {
                             <tr>
                                 <td>@facet.Name</td>
-                                <td>—</td>
+                                <td>@(facet.Description != null && facet.Description.Length > 80 ? facet.Description.Substring(0, 80) + "…" : facet.Description)</td>
+                                <td>@facet.NotesPlaceholder</td>
+                                <td>@(facet.Category != null ? facet.Category.Name : "—")</td>
                                 <td>
                                     @if (templateNamesByFacetId.TryGetValue(facet.Id, out var templateNames) && templateNames.Any())
                                     {
@@ -55,7 +59,7 @@
                     else
                     {
                         <tr>
-                            <td colspan="4" class="text-center text-muted py-4">No facets configured.</td>
+                            <td colspan="6" class="text-center text-muted py-4">No facets configured.</td>
                         </tr>
                     }
                 </tbody>

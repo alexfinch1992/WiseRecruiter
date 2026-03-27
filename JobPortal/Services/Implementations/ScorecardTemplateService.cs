@@ -84,14 +84,8 @@ namespace JobPortal.Services.Implementations
             if (facets.Count == 0)
                 throw new InvalidOperationException(AtLeastOneFacetMessage);
 
-            if (facets.Any(f => f.DisplayOrder <= 0))
-                throw new InvalidOperationException("Display order must be a positive integer.");
-
             if (facets.GroupBy(f => f.FacetId).Any(group => group.Count() > 1))
                 throw new InvalidOperationException("Duplicate facet assignments are not allowed.");
-
-            if (facets.GroupBy(f => f.DisplayOrder).Any(group => group.Count() > 1))
-                throw new InvalidOperationException("Duplicate display order values are not allowed within a template.");
 
             var requestedFacetIds = facets
                 .Select(f => f.FacetId)
@@ -121,44 +115,16 @@ namespace JobPortal.Services.Implementations
                 {
                     ScorecardTemplateId = templateId,
                     FacetId = facet.FacetId,
-                    ScorecardFacetId = facet.FacetId, // Legacy column — kept in sync for DB compatibility
-                    DisplayOrder = facet.DisplayOrder
-                    // Description, NotesPlaceholder, CategoryId are now stored on Facet (global)
+                    ScorecardFacetId = facet.FacetId // Legacy column — kept in sync for DB compatibility
                 });
 
                 _context.ScorecardTemplateFacets.AddRange(replacements);
             }
 
-            // Apply facet-level configuration globally to each Facet
-            var facetsWithFields = facets
-                .Where(f => f.Description != null || f.NotesPlaceholder != null || f.CategoryId.HasValue)
-                .ToList();
-
-            if (facetsWithFields.Count > 0)
-            {
-                var facetIds = facetsWithFields.Select(f => f.FacetId).Distinct().ToList();
-                var facetEntities = await _context.Facets
-                    .Where(f => facetIds.Contains(f.Id))
-                    .ToDictionaryAsync(f => f.Id);
-
-                foreach (var input in facetsWithFields)
-                {
-                    if (facetEntities.TryGetValue(input.FacetId, out var facetEntity))
-                    {
-                        if (input.Description != null)
-                            facetEntity.Description = input.Description;
-                        if (input.NotesPlaceholder != null)
-                            facetEntity.NotesPlaceholder = input.NotesPlaceholder;
-                        if (input.CategoryId.HasValue)
-                            facetEntity.CategoryId = input.CategoryId;
-                    }
-                }
-            }
-
             await _context.SaveChangesAsync();
         }
 
-        public async Task<ScorecardTemplateFacet> AddFacetToTemplate(int templateId, int facetId, int displayOrder)
+        public async Task<ScorecardTemplateFacet> AddFacetToTemplate(int templateId, int facetId)
         {
             var templateExists = await _context.ScorecardTemplates.AnyAsync(t => t.Id == templateId);
             if (!templateExists)
@@ -177,8 +143,7 @@ namespace JobPortal.Services.Implementations
             {
                 ScorecardTemplateId = templateId,
                 FacetId = facetId,
-                ScorecardFacetId = facetId, // Legacy column — kept in sync
-                DisplayOrder = displayOrder
+                ScorecardFacetId = facetId // Legacy column — kept in sync
             };
 
             _context.ScorecardTemplateFacets.Add(templateFacet);

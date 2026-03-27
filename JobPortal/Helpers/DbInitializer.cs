@@ -8,7 +8,8 @@ namespace JobPortal.Helpers
     {
         public static void Initialize(AppDbContext context)
         {
-            // SeedDefaultScorecardFacets(context); // Disabled — Facet table is now used instead
+            // SeedDefaultFacets uses Facet table (ScorecardFacets removed)
+            SeedDefaultFacets(context);
             SeedDefaultScorecardTemplate(context);
             NullifyOrphanedScorecardTemplateIds(context);
 
@@ -77,32 +78,16 @@ namespace JobPortal.Helpers
             BackfillCandidateRelationships(context);
         }
 
-        private static void SeedDefaultScorecardFacets(AppDbContext context)
+        private static void SeedDefaultFacets(AppDbContext context)
         {
-            // Disabled — ScorecardFacets DbSet removed; Facet table is used instead
-            // if (context.ScorecardFacets.Any())
-            //     return;
+            if (context.Facets.Any()) return;
 
-            // var defaultFacets = new[]
-            // {
-            //     "Communication",
-            //     "Quality",
-            //     "Speed",
-            //     "Problem Solving",
-            //     "Collaboration"
-            // };
-
-            // for (var index = 0; index < defaultFacets.Length; index++)
-            // {
-            //     context.ScorecardFacets.Add(new ScorecardFacet
-            //     {
-            //         Name = defaultFacets[index],
-            //         IsActive = true,
-            //         DisplayOrder = index + 1
-            //     });
-            // }
-
-            // context.SaveChanges();
+            context.Facets.AddRange(
+                new Facet { Name = "Technical Skills" },
+                new Facet { Name = "Communication" },
+                new Facet { Name = "Problem Solving" }
+            );
+            context.SaveChanges();
         }
 
         private static void SeedDefaultScorecardTemplate(AppDbContext context)
@@ -120,7 +105,7 @@ namespace JobPortal.Helpers
 
             var activeFacets = context.Facets
                 .Where(f => f.IsActive)
-                .OrderBy(f => f.DisplayOrder)
+                .OrderBy(f => f.Name)
                 .ToList();
 
             foreach (var facet in activeFacets)
@@ -136,8 +121,7 @@ namespace JobPortal.Helpers
                 {
                     ScorecardTemplateId = template.Id,
                     FacetId = facet.Id,
-                    ScorecardFacetId = facet.Id,
-                    DisplayOrder = facet.DisplayOrder
+                    ScorecardFacetId = facet.Id
                 });
             }
 

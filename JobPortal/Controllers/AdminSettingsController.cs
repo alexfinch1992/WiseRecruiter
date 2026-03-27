@@ -53,36 +53,42 @@ public class AdminSettingsController : Controller
     }
 
     [HttpGet]
-    public IActionResult Create()
+    public async Task<IActionResult> Create()
     {
+        ViewBag.Categories = await _context.Categories.OrderBy(c => c.Name).ToListAsync();
         return View();
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(string name, int displayOrder)
+    public async Task<IActionResult> Create(string name, string? description, string? notesPlaceholder, int? categoryId)
     {
         if (string.IsNullOrWhiteSpace(name))
             ModelState.AddModelError(nameof(name), "Name is required.");
 
         if (!ModelState.IsValid)
+        {
+            ViewBag.Categories = await _context.Categories.OrderBy(c => c.Name).ToListAsync();
             return View();
+        }
 
         try
         {
-            await _facetService.CreateFacet(name);
+            var facet = await _facetService.CreateFacet(name);
+            await _facetService.UpdateFacet(facet.Id, facet.Name, description, notesPlaceholder, categoryId);
             return RedirectToAction(nameof(Index));
         }
         catch (ArgumentException exception)
         {
             ModelState.AddModelError(nameof(name), exception.Message);
-            return View();
         }
         catch (InvalidOperationException exception)
         {
             ModelState.AddModelError(nameof(name), exception.Message);
-            return View();
         }
+
+        ViewBag.Categories = await _context.Categories.OrderBy(c => c.Name).ToListAsync();
+        return View();
     }
 
     [HttpGet]
@@ -92,24 +98,26 @@ public class AdminSettingsController : Controller
         if (facet == null)
             return NotFound();
 
+        ViewBag.Categories = await _context.Categories.OrderBy(c => c.Name).ToListAsync();
         return View(facet);
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, string name, int displayOrder, bool isActive)
+    public async Task<IActionResult> Edit(int id, string name, string? description, string? notesPlaceholder, int? categoryId)
     {
         if (string.IsNullOrWhiteSpace(name))
             ModelState.AddModelError(nameof(name), "Name is required.");
 
         if (!ModelState.IsValid)
         {
-            return View(new JobPortal.Models.Facet { Id = id, Name = name });
+            ViewBag.Categories = await _context.Categories.OrderBy(c => c.Name).ToListAsync();
+            return View(new JobPortal.Models.Facet { Id = id, Name = name, Description = description, NotesPlaceholder = notesPlaceholder, CategoryId = categoryId });
         }
 
         try
         {
-            await _facetService.UpdateFacet(id, name, null, null, null);
+            await _facetService.UpdateFacet(id, name, description, notesPlaceholder, categoryId);
             return RedirectToAction(nameof(Index));
         }
         catch (ArgumentException exception)
@@ -121,7 +129,8 @@ public class AdminSettingsController : Controller
             ModelState.AddModelError(nameof(name), exception.Message);
         }
 
-        return View(new JobPortal.Models.Facet { Id = id, Name = name });
+        ViewBag.Categories = await _context.Categories.OrderBy(c => c.Name).ToListAsync();
+        return View(new JobPortal.Models.Facet { Id = id, Name = name, Description = description, NotesPlaceholder = notesPlaceholder, CategoryId = categoryId });
     }
 
     [HttpGet]
@@ -223,12 +232,6 @@ public class AdminSettingsController : Controller
         if (facets.GroupBy(f => f.FacetId).Any(group => group.Count() > 1))
             ModelState.AddModelError(string.Empty, "Duplicate facets are not allowed.");
 
-        if (facets.GroupBy(f => f.DisplayOrder).Any(group => group.Count() > 1))
-            ModelState.AddModelError(string.Empty, "Duplicate display order values are not allowed.");
-
-        if (facets.Any(f => f.DisplayOrder <= 0))
-            ModelState.AddModelError(string.Empty, "Display order must be a positive integer.");
-
         if (!ModelState.IsValid)
         {
             var invalidModel = await BuildTemplateFacetEditorViewModel(templateId, facets);
@@ -270,27 +273,17 @@ public class AdminSettingsController : Controller
 
         var allFacets = await _facetService.GetAllFacets();
         var assignedFacets = postedFacets ?? (await _templateService.GetFacetsForTemplate(templateId))
-            .Select(f => new TemplateFacetInput
-            {
-                FacetId = f.FacetId,
-                DisplayOrder = f.DisplayOrder,
-                Description = f.Facet?.Description,
-                NotesPlaceholder = f.Facet?.NotesPlaceholder,
-                CategoryId = f.Facet?.CategoryId
-            })
+            .Select(f => new TemplateFacetInput { FacetId = f.FacetId })
             .ToList();
 
         var assignedByFacetId = assignedFacets
             .GroupBy(f => f.FacetId)
             .ToDictionary(group => group.Key, group => group.First());
 
-        var categories = await _context.Categories.OrderBy(c => c.Name).ToListAsync();
-
         return new EditTemplateFacetsViewModel
         {
             TemplateId = template.Id,
             TemplateName = template.Name,
-            Categories = categories,
             Facets = allFacets
                 .OrderBy(f => f.Name)
                 .Select(f =>
@@ -300,11 +293,7 @@ public class AdminSettingsController : Controller
                     {
                         FacetId = f.Id,
                         FacetName = f.Name,
-                        IsSelected = assigned != null,
-                        DisplayOrder = assigned?.DisplayOrder ?? 0,
-                        Description = assigned?.Description ?? f.Description,
-                        NotesPlaceholder = assigned?.NotesPlaceholder ?? f.NotesPlaceholder,
-                        CategoryId = assigned?.CategoryId ?? f.CategoryId
+                        IsSelected = assigned != null
                     };
                 })
                 .ToList()

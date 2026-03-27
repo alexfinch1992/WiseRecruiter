@@ -60,18 +60,6 @@ namespace JobPortal.Data
                 .IsRequired()
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Legacy entity — unique name index kept for DB integrity
-            modelBuilder.Entity<ScorecardFacet>()
-                .HasIndex(f => f.Name)
-                .IsUnique();
-
-            // Legacy: ScorecardFacet → Category FK (read-only; no longer managed via services)
-            modelBuilder.Entity<ScorecardFacet>()
-                .HasOne(f => f.Category)
-                .WithMany()
-                .HasForeignKey(f => f.CategoryId)
-                .OnDelete(DeleteBehavior.SetNull);
-
             // ScorecardFacetId is kept as a plain column (no FK managed by EF)
             modelBuilder.Entity<ScorecardTemplateFacet>()
                 .Property(tf => tf.ScorecardFacetId)
