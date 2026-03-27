@@ -1,0 +1,170 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - WiseRecruiter</title>
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/JobPortal.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark wr-navbar border-bottom box-shadow mb-3">
+            <div class="container-fluid">
+                <a class="navbar-brand fw-bold" asp-area="" asp-controller="Home" asp-action="Index"><i class="fas fa-briefcase me-2"></i>WiseRecruiter</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        @{
+                            var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+                            var isAdminNavigation = currentController == "Admin" || currentController == "AdminSettings";
+                        }
+                        @if (isAdminNavigation)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="" asp-controller="Admin" asp-action="Index">
+                                    <i class="fas fa-home me-1"></i>Manage Jobs
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="" asp-controller="Admin" asp-action="Analytics">
+                                    <i class="fas fa-chart-bar me-1"></i>Analytics
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="" asp-controller="AdminSettings" asp-action="Index">
+                                    <i class="fas fa-sliders-h me-1"></i>Settings
+                                </a>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="" asp-controller="Job" asp-action="Index">Browse Jobs</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="" asp-controller="Applications" asp-action="Index">My Applications</a>
+                            </li>
+                        }
+                    </ul>
+                    @if (isAdminNavigation)
+                    {
+                        <form asp-action="SearchCandidates" asp-controller="Admin" method="get" class="d-flex ms-auto position-relative" style="max-width: 350px; z-index: 1010;">
+                            <div class="flex-grow-1 position-relative">
+                                <input type="text" name="searchQuery" class="form-control form-control-sm" 
+                                       id="navSearchInput"
+                                       placeholder="Search candidates..." 
+                                       aria-label="Search candidates"
+                                       autocomplete="off" />
+                                <div class="position-absolute w-100 bg-white border border-top-0 rounded-bottom shadow-sm" 
+                                     id="navSearchResults" 
+                                     style="display: none; max-height: 400px; overflow-y: auto; top: 100%; left: 0; right: 0;">
+                                </div>
+                            </div>
+                            <button class="btn btn-outline-light btn-sm ms-2" type="submit">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="wr-footer border-top mt-5 py-4 text-white">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="fw-bold"><i class="fas fa-briefcase me-2"></i>WiseRecruiter</h6>
+                    <p class="text-white-50 small">Do you have bold ideas and a passion to build bold products?</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <p class="small text-white-50">&copy; 2026 WiseRecruiter. All rights reserved.</p>
+                    <p><a href="@Url.Action("Privacy", "Home")" class="text-white-50 small">Privacy Policy</a></p>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        // Live search autocomplete for navbar
+        document.getElementById('navSearchInput')?.addEventListener('input', async function(e) {
+            const searchQuery = e.target.value.trim();
+            const resultsContainer = document.getElementById('navSearchResults');
+            
+            if (!searchQuery) {
+                resultsContainer.style.display = 'none';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`@Url.Action("SearchCandidatesApi", "Admin")?searchQuery=${encodeURIComponent(searchQuery)}`);
+                const results = await response.json();
+                
+                if (results.length === 0) {
+                    resultsContainer.innerHTML = '<div class="p-3 text-muted text-center small">No candidates found</div>';
+                } else {
+                    resultsContainer.innerHTML = results.map(candidate => `
+                        <a href="@Url.Action("Details", "Applications")?id=` + candidate.id + `" 
+                           class="d-block p-2 text-decoration-none border-bottom hover-light-nav"
+                           style="transition: background-color 0.2s; font-size: 0.9rem;">
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <div class="flex-grow-1" style="min-width: 0;">
+                                    <div class="fw-500 text-truncate" style="color: #1E1765;">` + candidate.name + `</div>
+                                    <small class="text-muted text-truncate d-block">` + candidate.email + `</small>
+                                    <small class="text-muted">` + candidate.job + `</small>
+                                </div>
+                                <span class="badge" style="background: #7B3FF2; font-size: 0.7rem; white-space: nowrap;">` + candidate.stage + `</span>
+                            </div>
+                        </a>
+                    `).join('');
+                }
+                
+                resultsContainer.style.display = 'block';
+            } catch (error) {
+                console.error('Search failed:', error);
+            }
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            const searchInput = document.getElementById('navSearchInput');
+            const resultsContainer = document.getElementById('navSearchResults');
+            
+            if (searchInput && !searchInput.contains(e.target) && !resultsContainer?.contains(e.target)) {
+                resultsContainer.style.display = 'none';
+            }
+        });
+        
+        // Add hover effect to dropdown items
+        document.addEventListener('mouseover', function(e) {
+            if (e.target.classList.contains('hover-light-nav') || e.target.closest('.hover-light-nav')) {
+                e.target.closest('.hover-light-nav').style.backgroundColor = '#f8f9fa';
+            }
+        }, true);
+        
+        document.addEventListener('mouseout', function(e) {
+            if (e.target.classList.contains('hover-light-nav') || e.target.closest('.hover-light-nav')) {
+                e.target.closest('.hover-light-nav').style.backgroundColor = 'white';
+            }
+        }, true);
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

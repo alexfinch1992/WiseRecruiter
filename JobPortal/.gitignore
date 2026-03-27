@@ -1,0 +1,33 @@
+# Build results
+bin/
+obj/
+*.dll
+*.exe
+*.pdb
+
+# NuGet
+.nuget/
+*.nupkg
+*.snupkg
+project.nuget.cache
+
+# Visual Studio
+.vs/
+.vscode/
+*.user
+*.suo
+.vs/
+
+# Database
+*.db
+*.db-*
+
+# Static web assets
+wwwroot/staticwebassets.json
+
+# User-specific files
+appsettings.Development.json
+
+# Environment
+.env
+.env.local

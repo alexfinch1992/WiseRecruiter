@@ -1,0 +1,337 @@
+@model JobPortal.Models.ViewModels.CandidateAdminViewModel
+
+@{
+    ViewData["Title"] = $"{Model.Name} - Candidate Profile";
+}
+
+<div class="container-fluid py-5">
+    <div class="row mb-5">
+        <div class="col-md-8">
+            <a href="javascript:history.back()" class="btn btn-outline-secondary mb-4">
+                <i class="fas fa-arrow-left me-2"></i>Back
+            </a>
+            <h1 class="fw-bold mb-3" style="color: #1E1765;">
+                <i class="fas fa-user-circle me-3"></i>@Model.Name
+            </h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Contact Information Card -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
+                    <h5 class="fw-bold mb-0 text-white"><i class="fas fa-phone me-2"></i>Contact Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="fw-bold text-muted small"><i class="fas fa-envelope me-2"></i>Email</label>
+                            <p class="lead mb-0">
+                                <a href="mailto:@Model.Email">@Model.Email</a>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="fw-bold text-muted small"><i class="fas fa-map-marker-alt me-2"></i>City</label>
+                            <p class="lead mb-0">
+                                <span class="badge" style="background: #7B3FF2; font-size: 1rem;">@Model.City</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Application Details Card -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
+                    <h5 class="fw-bold mb-0 text-white"><i class="fas fa-briefcase me-2"></i>Application Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="fw-bold text-muted small"><i class="fas fa-briefcase me-2"></i>Position</label>
+                            <p class="lead mb-0">
+                                <a asp-action="JobDetail" asp-route-id="@Model.JobId" style="color: #1E1765; text-decoration: none;" class="fw-bold">
+                                    @Model.JobTitle
+                                </a>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="fw-bold text-muted small"><i class="fas fa-calendar me-2"></i>Applied Date</label>
+                            <p class="lead mb-0">@Model.AppliedDate.ToString("MMMM dd, yyyy")</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interview Stage Card -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
+                    <h5 class="fw-bold mb-0 text-white"><i class="fas fa-tasks me-2"></i>Interview Stage</h5>
+                </div>
+                <div class="card-body">
+                    <div class="progress" style="height: 30px;">
+                        <div class="progress-bar fw-bold" role="progressbar" 
+                             style="width: @Model.ProgressPercentage%; background: linear-gradient(90deg, #1E1765, #7B3FF2);" 
+                             aria-valuenow="@((int)Model.ProgressPercentage)" aria-valuemin="0" aria-valuemax="100">
+                            @Model.CurrentStageName (@Model.ProgressPercentage.ToString("F0")%)
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <p class="fw-bold mb-2">Stage Indicators:</p>
+                        <div class="d-flex justify-content-between flex-wrap gap-2">
+                            @for (int i = 0; i < Model.StageProgression.Count; i++)
+                            {
+                                var isActive = i <= Model.CurrentStageIndex;
+                                var badgeClass = isActive ? "badge-success" : "badge-secondary";
+                                <span class="badge @badgeClass" style="font-size: 0.9rem;">
+                                    <i class="fas @(isActive ? "fa-check-circle" : "fa-circle") me-1"></i>@Model.StageProgression[i].Name
+                                </span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scorecards Section -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="fw-bold mb-0 text-white"><i class="fas fa-clipboard-check me-2"></i>Scorecards</h5>
+                        <a asp-action="CreateScorecard" asp-route-applicationId="@Model.Id" class="btn btn-light btn-sm">
+                            <i class="fas fa-plus me-1"></i>Add Scorecard
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (Model.Scorecards.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Submitted By</th>
+                                        <th>Submitted At</th>
+                                        <th>Average Score</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var scorecard in Model.Scorecards)
+                                    {
+                                        <tr>
+                                            <td>@scorecard.SubmittedBy</td>
+                                            <td>@scorecard.SubmittedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                                            <td>
+                                                <span class="badge bg-primary">@scorecard.AverageScore.ToString("0.0")</span>
+                                            </td>
+                                            <td class="text-end">
+                                                <a asp-action="ScorecardDetails" asp-route-id="@scorecard.Id" class="btn btn-outline-primary btn-sm">View Details</a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">No scorecards yet.</p>
+                    }
+                </div>
+            </div>
+
+            <!-- Resume Card -->
+            @if (!string.IsNullOrEmpty(Model.ResumePath))
+            {
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
+                        <h5 class="fw-bold mb-0 text-white"><i class="fas fa-file-alt me-2"></i>Resume</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex gap-2">
+                            <a href="@Model.ResumePath" target="_blank" class="btn btn-outline-primary">
+                                <i class="fas fa-eye me-2"></i>View Resume
+                            </a>
+                            <a asp-action="DownloadResume" asp-route-id="@Model.Id" class="btn btn-outline-success">
+                                <i class="fas fa-download me-2"></i>Download Resume
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Documents Card - Admin View -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
+                    <h5 class="fw-bold mb-0 text-white"><i class="fas fa-folder me-2"></i>Documents</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Upload Section -->
+                    <div class="mb-4 pb-4 border-bottom">
+                        <p class="fw-bold mb-3"><i class="fas fa-cloud-upload-alt me-2"></i>Upload Document</p>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="documentFile" class="form-label">Select File (PDF, DOCX, TXT)</label>
+                                    <input type="file" class="form-control" id="documentFile" accept=".pdf,.docx,.txt" />
+                                    <small class="text-muted">Max 5MB</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="documentType" class="form-label">Document Type</label>
+                                    <select class="form-select" id="documentType">
+                                        <option value="0">Resume</option>
+                                        <option value="1">Cover Letter</option>
+                                        <option value="2">Test Scores</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-primary" onclick="uploadDocument()" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%); border: none;">
+                            <i class="fas fa-upload me-2"></i>Upload
+                        </button>
+                    </div>
+
+                    <!-- Documents List -->
+                    <p class="fw-bold mb-3"><i class="fas fa-list me-2"></i>Uploaded Documents</p>
+                    @if (Model.Documents != null && Model.Documents.Any())
+                    {
+                        <div id="documentsList">
+                            @foreach (var doc in Model.Documents)
+                            {
+                                <div class="d-flex justify-content-between align-items-center mb-2 p-3 rounded" style="background-color: #f8f9fa; border-left: 4px solid #7B3FF2;">
+                                    <div class="flex-grow-1">
+                                        <p class="mb-1">
+                                            <strong>@doc.FileName</strong>
+                                        </p>
+                                        <small class="text-muted">
+                                            Type: <span class="badge bg-info">@doc.Type.ToString()</span>
+                                            | Size: @(doc.FileSize / 1024)KB | Uploaded: @doc.UploadDate.ToString("MMM dd, yyyy")
+                                        </small>
+                                    </div>
+                                    <div class="ms-3">
+                                        <a href="@doc.FilePath" target="_blank" class="btn btn-sm btn-outline-primary" title="Download">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteDocument(@doc.Id)" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info" role="alert">
+                            <i class="fas fa-info-circle me-2"></i>No documents uploaded yet.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Sidebar -->
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 sticky-top" style="top: 20px;">
+                <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
+                    <h5 class="fw-bold mb-0 text-white"><i class="fas fa-tools me-2"></i>Candidate Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <small class="fw-bold text-muted">APPLICATION ID</small>
+                        <p class="lead">@Model.Id</p>
+                    </div>
+                    <div class="mb-4">
+                        <small class="fw-bold text-muted">CURRENT STAGE</small>
+                        <p class="lead">
+                            <span class="badge" style="background: #7B3FF2; font-size: 0.9rem;">
+                                @Model.CurrentStageName
+                            </span>
+                        </p>
+                    </div>
+                    <div class="mb-4">
+                        <small class="fw-bold text-muted">TIME IN SYSTEM</small>
+                        <p class="lead">@Model.TimeInSystemDisplay</p>
+                    </div>
+                    <hr />
+                    <div>
+                        <small class="fw-bold text-muted">ACTIONS</small>
+                        <div class="d-grid gap-2">
+                            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-edit me-2"></i>Edit Application
+                            </a>
+                            <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-sm btn-outline-danger">
+                                <i class="fas fa-trash me-2"></i>Delete Application
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function uploadDocument() {
+        const fileInput = document.getElementById('documentFile');
+        const typeSelect = document.getElementById('documentType');
+        const file = fileInput.files[0];
+
+        if (!file) {
+            alert('Please select a file');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('applicationId', @Model.Id);
+        formData.append('document', file);
+        formData.append('documentType', typeSelect.value);
+
+        try {
+            const response = await fetch('@Url.Action("UploadDocument", "Applications")', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                alert(data.message);
+                fileInput.value = '';
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        } catch (error) {
+            alert('Upload failed: ' + error.message);
+        }
+    }
+
+    async function deleteDocument(documentId) {
+        if (!confirm('Are you sure you want to delete this document?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch('@Url.Action("DeleteDocument", "Applications")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ documentId: documentId })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        } catch (error) {
+            alert('Delete failed: ' + error.message);
+        }
+    }
+</script>
