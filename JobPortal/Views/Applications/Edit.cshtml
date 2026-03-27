@@ -1,0 +1,96 @@
+@model JobPortal.Models.Application
+
+@{
+    ViewData["Title"] = $"Edit {Model.Name}";
+}
+
+<div class="container-fluid py-5">
+    <div class="row mb-5">
+        <div class="col-md-8">
+            <a href="javascript:history.back()" class="btn btn-outline-secondary mb-4">
+                <i class="fas fa-arrow-left me-2"></i>Back
+            </a>
+            <h1 class="fw-bold mb-3" style="color: #1E1765;">
+                <i class="fas fa-edit me-3"></i>Edit Candidate Profile
+            </h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <form asp-action="Edit" method="post" id="editForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="JobId" />
+                <input type="hidden" asp-for="ResumePath" />
+
+                <!-- Contact Information Card -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
+                        <h5 class="fw-bold mb-0 text-white"><i class="fas fa-phone me-2"></i>Contact Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Name" class="form-label fw-bold"><i class="fas fa-user me-2"></i>Name</label>
+                                    <input asp-for="Name" class="form-control form-control-lg" placeholder="Full Name" />
+                                    <span asp-validation-for="Name" class="text-danger small"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Email" class="form-label fw-bold"><i class="fas fa-envelope me-2"></i>Email</label>
+                                    <input asp-for="Email" type="email" class="form-control form-control-lg" placeholder="email@example.com" />
+                                    <span asp-validation-for="Email" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="City" class="form-label fw-bold"><i class="fas fa-map-marker-alt me-2"></i>City</label>
+                                    <input asp-for="City" class="form-control form-control-lg" placeholder="City" />
+                                    <span asp-validation-for="City" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Application Details Card -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
+                        <h5 class="fw-bold mb-0 text-white"><i class="fas fa-briefcase me-2"></i>Application Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label class="form-label fw-bold"><i class="fas fa-briefcase me-2"></i>Position</label>
+                                    <input type="text" class="form-control form-control-lg" value="@Model.Job?.Title" disabled />
+                                    <small class="text-muted">Position cannot be changed</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="d-flex gap-2 mb-5">
+                    <button type="submit" class="btn btn-lg btn-primary" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%); border: none;">
+                        <i class="fas fa-save me-2"></i>Save Changes
+                    </button>
+                    <a href="javascript:history.back()" class="btn btn-lg btn-outline-secondary">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

@@ -1,0 +1,291 @@
+using JobPortal.Data;
+using JobPortal.Models;
+using Microsoft.EntityFrameworkCore;
+
+namespace JobPortal.Helpers
+{
+    public static class DbInitializer
+    {
+        public static void Initialize(AppDbContext context)
+        {
+            SeedDefaultScorecardFacets(context);
+            SeedDefaultScorecardTemplate(context);
+            NullifyOrphanedScorecardTemplateIds(context);
+
+            // Seed admin user
+            if (!context.AdminUsers.Any())
+            {
+                var adminUser = new AdminUser
+                {
+                    Username = "admin",
+                    PasswordHash = PasswordHasher.Hash("admin123")
+                };
+                context.AdminUsers.Add(adminUser);
+                context.SaveChanges();
+            }
+
+            // Seed sample jobs
+            if (!context.Jobs.Any())
+            {
+                var jobs = new[]
+                {
+                    new Job
+                    {
+                        Title = "Senior Software Engineer",
+                        Description = "We are looking for an experienced Senior Software Engineer to join our growing team. You will work on challenging projects using modern technologies including .NET, React, and cloud services. Ideal candidates will have 5+ years of experience and strong problem-solving skills."
+                    },
+                    new Job
+                    {
+                        Title = "Full Stack Developer",
+                        Description = "Join us as a Full Stack Developer and help build amazing web applications. We're looking for someone with expertise in both frontend (React/Vue) and backend (Node.js/Python) technologies. You'll work in an agile environment with a talented team of developers."
+                    }
+                };
+                context.Jobs.AddRange(jobs);
+                context.SaveChanges();
+                
+                // Seed default stages for each job
+                var allJobs = context.Jobs.ToList();
+                var defaultStages = new[] { "Application", "Screen", "Interview", "Offer" };
+                
+                foreach (var job in allJobs)
+                {
+                    for (int i = 0; i < defaultStages.Length; i++)
+                    {
+                        context.JobStages.Add(new JobStage
+                        {
+                            JobId = job.Id,
+                            Name = defaultStages[i],
+                            Order = i
+                        });
+                    }
+                }
+                context.SaveChanges();
+            }
+
+            // Seed dummy candidates
+            if (!context.Applications.Any())
+            {
+                var jobs = context.Jobs.Include(j => j.Stages).ToList();
+                if (jobs.Any())
+                {
+                    var candidates = GenerateDummyCandidates(jobs);
+                    context.Applications.AddRange(candidates);
+                    context.SaveChanges();
+                }
+            }
+
+            BackfillCandidateRelationships(context);
+        }
+
+        private static void SeedDefaultScorecardFacets(AppDbContext context)
+        {
+            if (context.ScorecardFacets.Any())
+                return;
+
+            var defaultFacets = new[]
+            {
+                "Communication",
+                "Quality",
+                "Speed",
+                "Problem Solving",
+                "Collaboration"
+            };
+
+            for (var index = 0; index < defaultFacets.Length; index++)
+            {
+                context.ScorecardFacets.Add(new ScorecardFacet
+                {
+                    Name = defaultFacets[index],
+                    IsActive = true,
+                    DisplayOrder = index + 1
+                });
+            }
+
+            context.SaveChanges();
+        }
+
+        private static void SeedDefaultScorecardTemplate(AppDbContext context)
+        {
+            var template = context.ScorecardTemplates.FirstOrDefault(t => t.Name == "Default Scorecard");
+            if (template == null)
+            {
+                template = new ScorecardTemplate
+                {
+                    Name = "Default Scorecard"
+                };
+                context.ScorecardTemplates.Add(template);
+                context.SaveChanges();
+            }
+
+            var activeFacets = context.ScorecardFacets
+                .Where(f => f.IsActive)
+                .OrderBy(f => f.DisplayOrder)
+                .ToList();
+
+            foreach (var facet in activeFacets)
+            {
+                var existingLink = context.ScorecardTemplateFacets.Any(tf =>
+                    tf.ScorecardTemplateId == template.Id &&
+                    tf.ScorecardFacetId == facet.Id);
+
+                if (existingLink)
+                    continue;
+
+                context.ScorecardTemplateFacets.Add(new ScorecardTemplateFacet
+                {
+                    ScorecardTemplateId = template.Id,
+                    ScorecardFacetId = facet.Id,
+                    DisplayOrder = facet.DisplayOrder
+                });
+            }
+
+            context.SaveChanges();
+        }
+
+        private static void BackfillCandidateRelationships(AppDbContext context)
+        {
+            var applications = context.Applications.ToList();
+            foreach (var application in applications)
+            {
+                if (application.CandidateId > 0)
+                    continue;
+
+                var email = application.Email ?? string.Empty;
+                var existingCandidate = context.Candidates.FirstOrDefault(c => c.Email == email);
+                if (existingCandidate == null)
+                {
+                    var (firstName, lastName) = SplitName(application.Name);
+                    existingCandidate = new Candidate
+                    {
+                        FirstName = firstName,
+                        LastName = lastName,
+                        Email = email,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    context.Candidates.Add(existingCandidate);
+                    context.SaveChanges();
+                }
+
+                application.CandidateId = existingCandidate.Id;
+            }
+            context.SaveChanges();
+
+            var scorecards = context.Scorecards.ToList();
+            foreach (var scorecard in scorecards)
+            {
+                var candidateExists = context.Candidates.Any(c => c.Id == scorecard.CandidateId);
+                if (candidateExists)
+                    continue;
+
+                // Legacy mapping: CandidateId previously pointed to Application.Id.
+                var legacyApplication = context.Applications.FirstOrDefault(a => a.Id == scorecard.CandidateId);
+                if (legacyApplication != null && legacyApplication.CandidateId > 0)
+                {
+                    scorecard.CandidateId = legacyApplication.CandidateId;
+                    continue;
+                }
+
+                var placeholder = new Candidate
+                {
+                    FirstName = "Legacy",
+                    LastName = "Candidate",
+                    Email = $"legacy-candidate-{scorecard.Id}@local.invalid",
+                    CreatedAt = DateTime.UtcNow
+                };
+                context.Candidates.Add(placeholder);
+                context.SaveChanges();
+                scorecard.CandidateId = placeholder.Id;
+            }
+            context.SaveChanges();
+        }
+
+        private static (string firstName, string lastName) SplitName(string? fullName)
+        {
+            if (string.IsNullOrWhiteSpace(fullName))
+                return ("Unknown", "Candidate");
+
+            var parts = fullName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 1)
+                return (parts[0], "Candidate");
+
+            return (parts[0], string.Join(' ', parts.Skip(1)));
+        }
+
+        private static List<Application> GenerateDummyCandidates(List<Job> jobs)
+        {
+            var applications = new List<Application>();
+            var cities = new[] { "New York", "San Francisco", "Los Angeles", "Chicago", "Boston", "Seattle", "Austin", "Denver", "Portland", "Miami" };
+
+            var candidateNames = new[]
+            {
+                ("Alice Johnson", "alice.johnson@email.com"),
+                ("Bob Smith", "bob.smith@email.com"),
+                ("Carol Williams", "carol.williams@email.com"),
+                ("David Brown", "david.brown@email.com"),
+                ("Emma Davis", "emma.davis@email.com"),
+                ("Frank Wilson", "frank.wilson@email.com"),
+                ("Grace Lee", "grace.lee@email.com"),
+                ("Henry Martinez", "henry.martinez@email.com"),
+                ("Iris Chen", "iris.chen@email.com"),
+                ("Jack Anderson", "jack.anderson@email.com"),
+                ("Karen Taylor", "karen.taylor@email.com"),
+                ("Leo Thomas", "leo.thomas@email.com"),
+                ("Monica Garcia", "monica.garcia@email.com"),
+                ("Nathan Robinson", "nathan.robinson@email.com"),
+                ("Olivia Clark", "olivia.clark@email.com")
+            };
+
+            var random = new Random(42); // Fixed seed for consistency
+
+            foreach (var job in jobs)
+            {
+                var jobStages = job.Stages?.OrderBy(s => s.Order).ToList() ?? new List<JobStage>();
+                
+                if (!jobStages.Any())
+                    continue; // Skip if no stages for this job
+
+                // Add 7-8 candidates per job
+                int candidatesPerJob = random.Next(7, 9);
+                
+                for (int i = 0; i < candidatesPerJob; i++)
+                {
+                    var (name, email) = candidateNames[applications.Count % candidateNames.Length];
+                    var cityIndex = (applications.Count + i) % cities.Length;
+                    var stageIndex = (applications.Count + i) % jobStages.Count;
+                    var daysAgo = random.Next(1, 30);
+
+                    applications.Add(new Application
+                    {
+                        Name = name,
+                        Email = $"{name.ToLower().Replace(" ", ".")}.{applications.Count}@email.com",
+                        City = cities[cityIndex],
+                        JobId = job.Id,
+                        CurrentJobStageId = jobStages[stageIndex].Id,
+                        AppliedDate = DateTime.UtcNow.AddDays(-daysAgo),
+                        ResumePath = null // In real scenario, would be actual resume files
+                    });
+                }
+            }
+
+            return applications;
+        }
+
+        private static void NullifyOrphanedScorecardTemplateIds(AppDbContext context)
+        {
+            var validTemplateIds = context.ScorecardTemplates.Select(t => t.Id).ToHashSet();
+            var orphanedJobs = context.Jobs
+                .Where(j => j.ScorecardTemplateId != null)
+                .ToList()
+                .Where(j => !validTemplateIds.Contains(j.ScorecardTemplateId!.Value))
+                .ToList();
+
+            if (!orphanedJobs.Any())
+                return;
+
+            foreach (var job in orphanedJobs)
+                job.ScorecardTemplateId = null;
+
+            context.SaveChanges();
+        }
+    }
+}
