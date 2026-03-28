@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using JobPortal.Data;
+using JobPortal.Domain.Recommendations;
 using JobPortal.Helpers;
 using JobPortal.Services.Interfaces;
 using JobPortal.Services.Implementations;
@@ -36,6 +37,10 @@ builder.Services.AddScoped<IJobService, JobService>();
 builder.Services.AddScoped<IFileUploadService, LocalFileUploadService>();
 builder.Services.AddScoped<IScorecardAnalyticsService, ScorecardAnalyticsService>();
 builder.Services.AddScoped<IInterviewService, InterviewService>();
+builder.Services.AddScoped<IStageAuthorizationService, StageAuthorizationService>();
+builder.Services.AddScoped<IStageStateMachine<Stage1TransitionContext>, Stage1StateMachine>();
+builder.Services.AddScoped<IRecommendationService, RecommendationService>();
+builder.Services.AddScoped<IApplicationStageService, ApplicationStageService>();
     
 var app = builder.Build();
 

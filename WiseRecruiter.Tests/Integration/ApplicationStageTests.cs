@@ -40,7 +40,7 @@ namespace WiseRecruiter.Tests.Integration
                 context,
                 new Mock<IWebHostEnvironment>().Object,
                 applicationService, analyticsService, scorecardService,
-                templateService, jobService, scorecardAnalyticsService, interviewService)
+                templateService, jobService, scorecardAnalyticsService, interviewService, new RecommendationService(context), new ApplicationStageService(context, new RecommendationService(context)))
             {
                 TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>())
             };
@@ -292,6 +292,53 @@ namespace WiseRecruiter.Tests.Integration
                 .Model.Should().BeAssignableTo<CandidateAdminViewModel>().Subject;
             model.RequiresStageApprovalWarning.Should().BeFalse();
             model.PendingApplicationStage.Should().BeNull();
+        }
+
+        // --- 6. Draft recommendation still blocks stage advance ---
+
+        [Fact]
+        public async Task UpdateApplicationStage_ToInterview_AfterSavingDraftViaService_StillRequiresApproval()
+        {
+            using var context = CreateInMemoryContext();
+            var application = await SeedApplicationAsync(context);
+
+            // Save as Draft via service (exactly what RecommendationController does)
+            var recService = new RecommendationService(context);
+            await recService.SaveStage1DraftAsync(application.Id, "Good candidate", "Strong skills", null, true);
+
+            var controller = CreateAdminController(context);
+            var result = await controller.UpdateApplicationStage(application.Id, ApplicationStage.Interview, proceedWithoutApproval: false);
+
+            // Stage still blocked
+            var redirect = result.Should().BeOfType<RedirectToActionResult>().Subject;
+            redirect.ActionName.Should().Be("CandidateDetails");
+            controller.TempData["StageApprovalWarning"].Should().Be(application.Id);
+
+            var unchanged = await context.Applications.FindAsync(application.Id);
+            unchanged!.Stage.Should().Be(ApplicationStage.Applied);
+        }
+
+        [Fact]
+        public async Task UpdateApplicationStage_ToInterview_WithBypass_WhenDraftRecommendationExists_AdvancesStage()
+        {
+            using var context = CreateInMemoryContext();
+            var application = await SeedApplicationAsync(context);
+
+            // Seed an existing Draft recommendation
+            context.CandidateRecommendations.Add(new CandidateRecommendation
+            {
+                ApplicationId = application.Id,
+                Stage = RecommendationStage.Stage1,
+                Status = RecommendationStatus.Draft,
+                LastUpdatedUtc = DateTime.UtcNow
+            });
+            await context.SaveChangesAsync();
+
+            var controller = CreateAdminController(context);
+            await controller.UpdateApplicationStage(application.Id, ApplicationStage.Interview, proceedWithoutApproval: true);
+
+            var updated = await context.Applications.FindAsync(application.Id);
+            updated!.Stage.Should().Be(ApplicationStage.Interview);
         }
     }
 }

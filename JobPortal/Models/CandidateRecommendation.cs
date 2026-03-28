@@ -31,6 +31,11 @@ namespace JobPortal.Models
         public DateTime? ReviewedUtc { get; set; }
         public DateTime LastUpdatedUtc { get; set; } = DateTime.UtcNow;
 
+        // Approval metadata (set when Status transitions to Approved)
+        public int? ApprovedByUserId { get; set; }
+        public DateTime? ApprovedUtc { get; set; }
+        public string? ApprovalFeedback { get; set; }
+
         // Bypass tracking
         public bool BypassedApproval { get; set; } = false;
         public string? BypassReason { get; set; }
@@ -42,6 +47,7 @@ namespace JobPortal.Models
         public string? CareerTrajectory { get; set; }
         public string? ExperienceFit { get; set; }
         public string? Concerns { get; set; }
+        public bool? HireRecommendation { get; set; }
 
         public string? CognitiveNotes { get; set; }
         public string? PersonalityNotes { get; set; }

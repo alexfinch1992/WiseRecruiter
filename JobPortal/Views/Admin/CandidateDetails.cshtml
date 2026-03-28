@@ -250,64 +250,52 @@
 
             <!-- Stage 1 Candidate Recommendation -->
             <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
+                <div class="card-header d-flex align-items-center justify-content-between" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
                     <h5 class="fw-bold mb-0 text-white"><i class="fas fa-star me-2"></i>Stage 1 Candidate Recommendation</h5>
+                    @if (Model.Stage1Recommendation != null)
+                    {
+                        var recBadge = Model.Stage1Recommendation.Status switch
+                        {
+                            RecommendationStatus.Draft     => ("bg-secondary",      "Draft"),
+                            RecommendationStatus.Submitted => ("bg-warning text-dark", "Submitted — Pending Review"),
+                            RecommendationStatus.Approved  => ("bg-success",        "Approved"),
+                            RecommendationStatus.Rejected  => ("bg-danger",         "Rejected"),
+                            _                              => ("bg-secondary",       Model.Stage1Recommendation.Status.ToString())
+                        };
+                        <span class="badge @recBadge.Item1">@recBadge.Item2</span>
+                    }
                 </div>
-                <div class="card-body">
-                    <form asp-controller="Admin" asp-action="SaveStage1Recommendation" method="post">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="applicationId" value="@Model.Id" />
-
-                        <h6 class="fw-bold text-muted mb-3">Candidate Profile</h6>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-bold small text-muted">Summary for Hiring Manager</label>
-                            <textarea name="summary" rows="3" class="form-control form-control-sm">@Model.Stage1Recommendation?.Summary</textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-bold small text-muted">Career Trajectory</label>
-                            <textarea name="careerTrajectory" rows="3" class="form-control form-control-sm">@Model.Stage1Recommendation?.CareerTrajectory</textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-bold small text-muted">Experience Fit</label>
-                            <textarea name="experienceFit" rows="3" class="form-control form-control-sm">@Model.Stage1Recommendation?.ExperienceFit</textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-bold small text-muted">Concerns / Areas to Explore</label>
-                            <textarea name="concerns" rows="3" class="form-control form-control-sm">@Model.Stage1Recommendation?.Concerns</textarea>
-                        </div>
-
-                        <hr />
-                        <h6 class="fw-bold text-muted mb-3">Testing Notes</h6>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-bold small text-muted">Cognitive</label>
-                            <textarea name="cognitiveNotes" rows="2" class="form-control form-control-sm">@Model.Stage1Recommendation?.CognitiveNotes</textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-bold small text-muted">Personality</label>
-                            <textarea name="personalityNotes" rows="2" class="form-control form-control-sm">@Model.Stage1Recommendation?.PersonalityNotes</textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-bold small text-muted">Technical</label>
-                            <textarea name="technicalNotes" rows="2" class="form-control form-control-sm">@Model.Stage1Recommendation?.TechnicalNotes</textarea>
-                        </div>
-
-                        <hr />
-                        <h6 class="fw-bold text-muted mb-3">Interview Planning</h6>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-bold small text-muted">Proposed Interviewers / Notes</label>
-                            <textarea name="proposedInterviewersNotes" rows="3" class="form-control form-control-sm">@Model.Stage1Recommendation?.ProposedInterviewersNotes</textarea>
-                        </div>
-
-                        <div class="d-flex justify-content-end">
-                            <button type="submit" class="btn btn-sm btn-primary" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%); border: none;">
-                                <i class="fas fa-save me-1"></i>Save Draft
+                <div class="card-body d-flex gap-2 flex-wrap align-items-center">
+                    <a asp-controller="Recommendation"
+                       asp-action="Stage1"
+                       asp-route-applicationId="@Model.Id"
+                       class="btn btn-primary btn-sm">
+                        <i class="fas fa-edit me-1"></i>Create / Edit Recommendation
+                    </a>
+                    @if (Model.Stage1Recommendation != null && Model.Stage1Recommendation.Status == RecommendationStatus.Draft)
+                    {
+                        <form asp-controller="Recommendation" asp-action="SubmitStage1" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="applicationId" value="@Model.Id" />
+                            <button type="submit" class="btn btn-success btn-sm">
+                                <i class="fas fa-paper-plane me-1"></i>Submit for Approval
                             </button>
-                        </div>
-                    </form>
+                        </form>
+                    }
+                    @if (Model.Stage1Recommendation != null && Model.Stage1Recommendation.Status == RecommendationStatus.Submitted)
+                    {
+                        <span class="text-muted small"><i class="fas fa-clock me-1"></i>Awaiting admin review</span>
+                    }
                 </div>
+                @if (Model.Stage1Recommendation != null &&
+                     Model.Stage1Recommendation.Status == RecommendationStatus.Approved &&
+                     !string.IsNullOrWhiteSpace(Model.Stage1Recommendation.ApprovalFeedback))
+                {
+                    <div class="card-footer bg-success bg-opacity-10 border-0">
+                        <p class="fw-semibold text-success small mb-1"><i class="fas fa-comment-alt me-1"></i>Manager Feedback</p>
+                        <p class="mb-0 small">@Model.Stage1Recommendation.ApprovalFeedback</p>
+                    </div>
+                }
             </div>
 
             <!-- Scheduled Interviews Section -->

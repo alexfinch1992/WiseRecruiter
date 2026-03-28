@@ -41,7 +41,7 @@ namespace WiseRecruiter.Tests.Integration
                 context,
                 new Mock<IWebHostEnvironment>().Object,
                 applicationService, analyticsService, scorecardService,
-                templateService, jobService, scorecardAnalyticsService, interviewService)
+                templateService, jobService, scorecardAnalyticsService, interviewService, new RecommendationService(context), new ApplicationStageService(context, new RecommendationService(context)))
             {
                 TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>())
             };
@@ -234,22 +234,21 @@ namespace WiseRecruiter.Tests.Integration
         }
 
         [Fact]
-        public async Task SaveStage1Recommendation_CreatesRecord_WhenNoneExists()
+        public async Task Stage1Recommendation_CreatesRecord_WhenNoneExists()
         {
             using var context = CreateInMemoryContext();
             var (_, application, _) = await SeedAsync(context);
-            var controller = CreateAdminController(context);
+            var controller = new RecommendationController(new RecommendationService(context));
 
-            var result = await controller.SaveStage1Recommendation(
-                applicationId: application.Id,
-                summary: "Strong candidate",
-                careerTrajectory: "Upward trajectory",
-                experienceFit: "Good fit",
-                concerns: "None",
-                cognitiveNotes: "High cognitive score",
-                personalityNotes: "Collaborative",
-                technicalNotes: "Solid C# skills",
-                proposedInterviewersNotes: "Alex and Taylor");
+            var model = new Stage1RecommendationViewModel
+            {
+                Notes = "Strong candidate",
+                Strengths = "Good fit",
+                Concerns = "None",
+                HireRecommendation = true
+            };
+
+            var result = await controller.Stage1(application.Id, model);
 
             result.Should().BeOfType<RedirectToActionResult>();
 
@@ -259,17 +258,13 @@ namespace WiseRecruiter.Tests.Integration
             rec.Should().NotBeNull();
             rec!.Status.Should().Be(RecommendationStatus.Draft);
             rec.Summary.Should().Be("Strong candidate");
-            rec.CareerTrajectory.Should().Be("Upward trajectory");
             rec.ExperienceFit.Should().Be("Good fit");
             rec.Concerns.Should().Be("None");
-            rec.CognitiveNotes.Should().Be("High cognitive score");
-            rec.PersonalityNotes.Should().Be("Collaborative");
-            rec.TechnicalNotes.Should().Be("Solid C# skills");
-            rec.ProposedInterviewersNotes.Should().Be("Alex and Taylor");
+            rec.HireRecommendation.Should().BeTrue();
         }
 
         [Fact]
-        public async Task SaveStage1Recommendation_UpdatesExistingRecord()
+        public async Task Stage1Recommendation_UpdatesExistingRecord()
         {
             using var context = CreateInMemoryContext();
             var (_, application, _) = await SeedAsync(context);
@@ -285,18 +280,17 @@ namespace WiseRecruiter.Tests.Integration
             });
             await context.SaveChangesAsync();
 
-            var controller = CreateAdminController(context);
+            var controller = new RecommendationController(new RecommendationService(context));
 
-            await controller.SaveStage1Recommendation(
-                applicationId: application.Id,
-                summary: "Updated summary",
-                careerTrajectory: "New trajectory",
-                experienceFit: null,
-                concerns: null,
-                cognitiveNotes: null,
-                personalityNotes: null,
-                technicalNotes: null,
-                proposedInterviewersNotes: null);
+            var model = new Stage1RecommendationViewModel
+            {
+                Notes = "Updated summary",
+                Strengths = "New trajectory",
+                Concerns = null,
+                HireRecommendation = null
+            };
+
+            await controller.Stage1(application.Id, model);
 
             var recs = await context.CandidateRecommendations
                 .Where(r => r.ApplicationId == application.Id && r.Stage == RecommendationStage.Stage1)
@@ -305,7 +299,7 @@ namespace WiseRecruiter.Tests.Integration
             // No duplicate created
             recs.Should().HaveCount(1);
             recs[0].Summary.Should().Be("Updated summary");
-            recs[0].CareerTrajectory.Should().Be("New trajectory");
+            recs[0].ExperienceFit.Should().Be("New trajectory");
             recs[0].Status.Should().Be(RecommendationStatus.Draft); // status unchanged
         }
     }
