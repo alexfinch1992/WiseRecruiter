@@ -1,0 +1,57 @@
+@using JobPortal.Models
+@model List<JobPortal.Models.ViewModels.PendingRecommendationDto>
+@{
+    ViewData["Title"] = "Pending Recommendations";
+}
+<div class="container-fluid py-4">
+    <div class="d-flex align-items-center mb-4">
+        <h2 class="fw-bold mb-0"><i class="fas fa-inbox me-2"></i>Pending Recommendations</h2>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">
+            <i class="fas fa-check-circle me-2"></i>No recommendations are awaiting approval.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Candidate</th>
+                        <th>Email</th>
+                        <th>Summary</th>
+                        <th>Status</th>
+                        <th>Submitted By</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@item.CandidateName</td>
+                            <td class="text-muted">@item.CandidateEmail</td>
+                            <td>@(item.Summary?.Length > 80 ? item.Summary[..80] + "…" : item.Summary)</td>
+                            <td>
+                                <span class="badge @(item.Status == RecommendationStatus.Submitted ? "bg-warning text-dark" : "bg-secondary")">
+                                    @item.Status
+                                </span>
+                            </td>
+                            <td>@(item.SubmittedByUsername ?? "—")</td>
+                            <td>
+                                <a asp-controller="RecommendationAdmin" asp-action="Review"
+                                   asp-route-applicationId="@item.ApplicationId"
+                                   class="btn btn-sm btn-outline-primary">
+                                    Review
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

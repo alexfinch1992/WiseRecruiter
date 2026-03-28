@@ -1,4 +1,5 @@
 using JobPortal.Data;
+using JobPortal.Models;
 using JobPortal.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -55,7 +56,7 @@ namespace JobPortal.Services.Implementations
         /// Then average those per-scorecard values across all scorecards.
         /// Responses with Score == 0 (unset default) are excluded.
         /// </summary>
-        private static decimal? ComputeOverallAverage(List<Models.Scorecard> scorecards)
+        private static decimal? ComputeOverallAverage(List<Scorecard> scorecards)
         {
             var perScorecardAverages = scorecards
                 .Select(s =>
@@ -78,8 +79,8 @@ namespace JobPortal.Services.Implementations
         /// then computes a flat average — not an average of per-scorecard averages.
         /// </summary>
         private static List<CategoryAverageDto> ComputeCategoryAverages(
-            List<Models.ScorecardResponse> responses,
-            Dictionary<int, Models.Facet> facetLookup)
+            List<ScorecardResponse> responses,
+            Dictionary<int, Facet> facetLookup)
         {
             var responsesWithFacets = responses
                 .Where(r => r.Score > 0)

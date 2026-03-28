@@ -3,6 +3,7 @@ using System;
 using JobPortal.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace JobPortal.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260328022601_AddHireRecommendation")]
+    partial class AddHireRecommendation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.13");
@@ -125,15 +128,6 @@ namespace JobPortal.Migrations
 
                     b.Property<int>("ApplicationId")
                         .HasColumnType("INTEGER");
-
-                    b.Property<string>("ApprovalFeedback")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int?>("ApprovedByUserId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime?>("ApprovedUtc")
-                        .HasColumnType("TEXT");
 
                     b.Property<string>("BypassReason")
                         .HasColumnType("TEXT");
