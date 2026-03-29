@@ -40,7 +40,7 @@ namespace WiseRecruiter.Tests.Integration
                 context,
                 new Mock<IWebHostEnvironment>().Object,
                 applicationService, analyticsService, scorecardService,
-                templateService, jobService, scorecardAnalyticsService, interviewService, new RecommendationService(context), new ApplicationStageService(context, new RecommendationService(context)))
+                templateService, jobService, scorecardAnalyticsService, interviewService, new RecommendationService(context, new StageOrderService()), new ApplicationStageService(context, new RecommendationService(context, new StageOrderService())), new HiringPipelineService(), new GlobalSearchService(context))
             {
                 TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>())
             };
@@ -294,6 +294,37 @@ namespace WiseRecruiter.Tests.Integration
             model.PendingApplicationStage.Should().BeNull();
         }
 
+        // --- Pipeline visual: ApplicationStage is the source of truth, not CurrentJobStageId ---
+
+        [Fact]
+        public async Task CandidateDetails_PipelineStageReflectsApplicationStage_NotCurrentJobStageId()
+        {
+            // Regression test: the Hiring Pipeline card was previously driven by CurrentJobStageId
+            // (a job-specific interview stage), which is independent from Application.Stage.
+            // This test verifies that CandidateDetails returns the correct ApplicationStage in the
+            // viewmodel regardless of what CurrentJobStageId is set to.
+            using var context = CreateInMemoryContext();
+            var application = await SeedApplicationAsync(context);
+
+            // Seed a job stage and assign it to the application (simulating a hiring-stage assignment)
+            var jobStage = new JobStage { JobId = application.JobId, Name = "Technical Round", Order = 1 };
+            context.JobStages.Add(jobStage);
+            await context.SaveChangesAsync();
+
+            application.CurrentJobStageId = jobStage.Id;
+            application.Stage = ApplicationStage.Interview; // application-level pipeline stage
+            await context.SaveChangesAsync();
+
+            var controller = CreateAdminController(context);
+            var result = await controller.CandidateDetails(application.Id);
+
+            var model = result.Should().BeOfType<ViewResult>().Subject
+                .Model.Should().BeAssignableTo<CandidateAdminViewModel>().Subject;
+
+            // The pipeline visual must reflect Application.Stage
+            model.ApplicationStage.Should().Be(ApplicationStage.Interview);
+        }
+
         // --- 6. Draft recommendation still blocks stage advance ---
 
         [Fact]
@@ -303,7 +334,7 @@ namespace WiseRecruiter.Tests.Integration
             var application = await SeedApplicationAsync(context);
 
             // Save as Draft via service (exactly what RecommendationController does)
-            var recService = new RecommendationService(context);
+            var recService = new RecommendationService(context, new StageOrderService());
             await recService.SaveStage1DraftAsync(application.Id, "Good candidate", "Strong skills", null, true);
 
             var controller = CreateAdminController(context);

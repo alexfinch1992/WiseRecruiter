@@ -10,5 +10,6 @@ namespace JobPortal.Models.ViewModels
         public string? SubmittedByUsername { get; set; }
         public string? Summary { get; set; }
         public RecommendationStatus Status { get; set; }
+        public RecommendationStage Stage { get; set; }
     }
 }

@@ -26,7 +26,7 @@ namespace WiseRecruiter.Tests.Integration
 
         private static RecommendationAdminController CreateController(AppDbContext context, int adminId = 1)
         {
-            var controller = new RecommendationAdminController(new RecommendationService(context));
+            var controller = new RecommendationAdminController(new RecommendationService(context, new StageOrderService()));
             controller.ControllerContext = new ControllerContext
             {
                 HttpContext = new DefaultHttpContext
@@ -117,17 +117,18 @@ namespace WiseRecruiter.Tests.Integration
             model.Should().BeEmpty();
         }
 
-        // GET Review: returns view with full recommendation context
+        // GET Review: returns view with full recommendation context (Stage 1)
         [Fact]
-        public async Task Review_WithValidId_ReturnsViewWithModel()
+        public async Task Review_WithStage1_ReturnsStage1ViewAndModel()
         {
             using var context = CreateInMemoryContext();
             var (application, _) = await SeedAsync(context);
             var controller = CreateController(context);
 
-            var result = await controller.Review(application.Id);
+            var result = await controller.Review(application.Id, RecommendationStage.Stage1);
 
             var view = result.Should().BeOfType<ViewResult>().Subject;
+            view.ViewName.Should().Be("Stage1Review");
             var model = view.Model.Should().BeOfType<Stage1ReviewViewModel>().Subject;
             model.ApplicationId.Should().Be(application.Id);
             model.CandidateName.Should().Be("Jane Smith");
@@ -141,14 +142,115 @@ namespace WiseRecruiter.Tests.Integration
             using var context = CreateInMemoryContext();
             var controller = CreateController(context);
 
-            var result = await controller.Review(applicationId: 9999);
+            var result = await controller.Review(applicationId: 9999, RecommendationStage.Stage1);
 
             result.Should().BeOfType<NotFoundResult>();
         }
 
-        // POST Approve: approves Submitted rec and redirects to Pending
+        // GET Review: Stage 2 returns Stage 2 view and model
         [Fact]
-        public async Task Approve_WithValidId_ApprovesAndRedirectsToPending()
+        public async Task Review_WithStage2_ReturnsStage2ViewAndModel()
+        {
+            using var context = CreateInMemoryContext();
+            var (application, _) = await SeedStage2Async(context, RecommendationStatus.Submitted);
+            var controller = CreateController(context);
+
+            var result = await controller.Review(application.Id, RecommendationStage.Stage2);
+
+            var view = result.Should().BeOfType<ViewResult>().Subject;
+            view.ViewName.Should().Be("Stage2Review");
+            var model = view.Model.Should().BeOfType<Stage2ReviewViewModel>().Subject;
+            model.ApplicationId.Should().Be(application.Id);
+            model.CandidateName.Should().Be("Stage2 Candidate");
+            model.Recommendation.Should().NotBeNull();
+        }
+
+        // GET Review: Stage 2 with non-existent application returns NotFound
+        [Fact]
+        public async Task Review_WithStage2_InvalidId_ReturnsNotFound()
+        {
+            using var context = CreateInMemoryContext();
+            var controller = CreateController(context);
+
+            var result = await controller.Review(applicationId: 9999, RecommendationStage.Stage2);
+
+            result.Should().BeOfType<NotFoundResult>();
+        }
+
+        // GET Review: Stage 1 does NOT return Stage 2 view
+        [Fact]
+        public async Task Review_WithStage1_DoesNotReturnStage2View()
+        {
+            using var context = CreateInMemoryContext();
+            var (application, _) = await SeedAsync(context);
+            var controller = CreateController(context);
+
+            var result = await controller.Review(application.Id, RecommendationStage.Stage1);
+
+            var view = result.Should().BeOfType<ViewResult>().Subject;
+            view.ViewName.Should().NotBe("Stage2Review");
+        }
+
+        // GET Review: Stage 2 does NOT return Stage 1 view
+        [Fact]
+        public async Task Review_WithStage2_DoesNotReturnStage1View()
+        {
+            using var context = CreateInMemoryContext();
+            var (application, _) = await SeedStage2Async(context, RecommendationStatus.Submitted);
+            var controller = CreateController(context);
+
+            var result = await controller.Review(application.Id, RecommendationStage.Stage2);
+
+            var view = result.Should().BeOfType<ViewResult>().Subject;
+            view.ViewName.Should().NotBe("Stage1Review");
+        }
+
+        // REGRESSION: missing stage parameter returns BadRequest (no silent fallback to Stage 1)
+        [Fact]
+        public async Task Review_WithNullStage_ReturnsBadRequest()
+        {
+            using var context = CreateInMemoryContext();
+            var (application, _) = await SeedAsync(context);
+            var controller = CreateController(context);
+
+            var result = await controller.Review(application.Id, stage: null);
+
+            result.Should().BeOfType<BadRequestObjectResult>();
+        }
+
+        // REGRESSION: Stage 2 review must open Stage2Review view, never Stage1Review
+        [Fact]
+        public async Task Review_WithStage2_NeverOpensStage1ReviewView()
+        {
+            using var context = CreateInMemoryContext();
+            var (application, _) = await SeedStage2Async(context, RecommendationStatus.Submitted);
+            var controller = CreateController(context);
+
+            var result = await controller.Review(application.Id, RecommendationStage.Stage2);
+
+            var view = result.Should().BeOfType<ViewResult>().Subject;
+            view.ViewName.Should().Be("Stage2Review");
+            view.Model.Should().BeOfType<Stage2ReviewViewModel>();
+        }
+
+        // REGRESSION: Stage 1 review must open Stage1Review view, never Stage2Review
+        [Fact]
+        public async Task Review_WithStage1_NeverOpensStage2ReviewView()
+        {
+            using var context = CreateInMemoryContext();
+            var (application, _) = await SeedAsync(context, RecommendationStatus.Submitted);
+            var controller = CreateController(context);
+
+            var result = await controller.Review(application.Id, RecommendationStage.Stage1);
+
+            var view = result.Should().BeOfType<ViewResult>().Subject;
+            view.ViewName.Should().Be("Stage1Review");
+            view.Model.Should().BeOfType<Stage1ReviewViewModel>();
+        }
+
+        // POST Approve: approves Submitted rec and redirects to CandidateDetails admin page
+        [Fact]
+        public async Task Approve_WithValidId_ApprovesAndRedirectsToCandidateDetails()
         {
             using var context = CreateInMemoryContext();
             var (application, _) = await SeedAsync(context, RecommendationStatus.Submitted);
@@ -157,7 +259,8 @@ namespace WiseRecruiter.Tests.Integration
             var result = await controller.Approve(application.Id);
 
             var redirect = result.Should().BeOfType<RedirectToActionResult>().Subject;
-            redirect.ActionName.Should().Be("Pending");
+            redirect.ActionName.Should().Be("CandidateDetails");
+            redirect.ControllerName.Should().Be("Admin");
 
             var rec = await context.CandidateRecommendations
                 .FirstAsync(r => r.ApplicationId == application.Id);
@@ -220,7 +323,7 @@ namespace WiseRecruiter.Tests.Integration
             var (_, application, _) = await SeedApplicationAsync(context);
 
             // Step 2: move to Interview with bypass (no prior recommendation)
-            var recommendationService = new RecommendationService(context);
+            var recommendationService = new RecommendationService(context, new StageOrderService());
             var stageService = new ApplicationStageService(context, recommendationService);
             await stageService.UpdateStageAsync(
                 application.Id, ApplicationStage.Interview, proceedWithoutApproval: true, userId: "1");
@@ -301,7 +404,7 @@ namespace WiseRecruiter.Tests.Integration
             var (application, _) = await SeedAsync(context, RecommendationStatus.Submitted);
 
             var controller = new RecommendationAdminController(
-                new RecommendationService(context, authService: new DenyAllAuthService()));
+                new RecommendationService(context, new StageOrderService(), authService: new DenyAllAuthService()));
             controller.ControllerContext = new ControllerContext
             {
                 HttpContext = new DefaultHttpContext
@@ -391,10 +494,156 @@ namespace WiseRecruiter.Tests.Integration
             model[0].CandidateName.Should().Be("Submitted Candidate");
         }
 
+        // Pending includes Stage 2 submitted recommendations
+        [Fact]
+        public async Task Pending_IncludesSubmittedStage2Recommendations()
+        {
+            using var context = CreateInMemoryContext();
+            var (_, _) = await SeedStage2Async(context, RecommendationStatus.Submitted);
+            var controller = CreateController(context);
+
+            var result = await controller.Pending();
+
+            var view = result.Should().BeOfType<ViewResult>().Subject;
+            var model = view.Model.Should().BeAssignableTo<List<PendingRecommendationDto>>().Subject;
+
+            model.Should().HaveCount(1);
+            model[0].Stage.Should().Be(RecommendationStage.Stage2);
+            model[0].CandidateName.Should().Be("Stage2 Candidate");
+        }
+
+        // Pending includes both Stage 1 and Stage 2 submitted at the same time
+        [Fact]
+        public async Task Pending_IncludesBothStage1AndStage2_WhenBothSubmitted()
+        {
+            using var context = CreateInMemoryContext();
+            await SeedAsync(context, RecommendationStatus.Submitted);
+            await SeedStage2Async(context, RecommendationStatus.Submitted);
+            var controller = CreateController(context);
+
+            var result = await controller.Pending();
+
+            var view = result.Should().BeOfType<ViewResult>().Subject;
+            var model = view.Model.Should().BeAssignableTo<List<PendingRecommendationDto>>().Subject;
+
+            model.Should().HaveCount(2);
+            model.Should().Contain(m => m.Stage == RecommendationStage.Stage1);
+            model.Should().Contain(m => m.Stage == RecommendationStage.Stage2);
+        }
+
+        // Stage 2 Draft is excluded from pending
+        [Fact]
+        public async Task Pending_ExcludesStage2DraftRecommendations()
+        {
+            using var context = CreateInMemoryContext();
+            await SeedStage2Async(context, RecommendationStatus.Draft);
+            var controller = CreateController(context);
+
+            var result = await controller.Pending();
+
+            var view = result.Should().BeOfType<ViewResult>().Subject;
+            var model = view.Model.Should().BeAssignableTo<List<PendingRecommendationDto>>().Subject;
+            model.Should().BeEmpty();
+        }
+
         private sealed class DenyAllAuthService : IStageAuthorizationService
         {
             public bool CanApproveStage1(int userId) => false;
             public bool CanApproveStage2(int userId) => false;
+        }
+
+        private static async Task<(Application application, CandidateRecommendation rec)> SeedStage2Async(
+            AppDbContext context, RecommendationStatus status = RecommendationStatus.Submitted)
+        {
+            var candidate = new Candidate
+            {
+                FirstName = "Stage2",
+                LastName = "Candidate",
+                Email = $"s2_{Guid.NewGuid()}@example.com",
+                CreatedAt = DateTime.UtcNow
+            };
+            context.Candidates.Add(candidate);
+            await context.SaveChangesAsync();
+
+            var job = new Job { Title = "Senior Engineer" };
+            context.Jobs.Add(job);
+            await context.SaveChangesAsync();
+
+            var stage = new JobStage { JobId = job.Id, Name = "Applied", Order = 1 };
+            context.JobStages.Add(stage);
+            await context.SaveChangesAsync();
+
+            var application = new Application
+            {
+                CandidateId = candidate.Id,
+                JobId = job.Id,
+                Name = "Stage2 Candidate",
+                Email = candidate.Email,
+                City = "Melbourne",
+                CurrentJobStageId = stage.Id
+            };
+            context.Applications.Add(application);
+            await context.SaveChangesAsync();
+
+            var rec = new CandidateRecommendation
+            {
+                ApplicationId = application.Id,
+                Stage = RecommendationStage.Stage2,
+                Status = status,
+                Summary = "Strong Stage 2 candidate",
+                LastUpdatedUtc = DateTime.UtcNow
+            };
+            context.CandidateRecommendations.Add(rec);
+            await context.SaveChangesAsync();
+
+            return (application, rec);
+        }
+
+        // Stage 2 — POST ApproveStage2: authorized manager approves and redirects to CandidateDetails
+        [Fact]
+        public async Task ApproveStage2_WhenAuthorized_ApprovesAndRedirectsToCandidateDetails()
+        {
+            using var context = CreateInMemoryContext();
+            var (application, _) = await SeedStage2Async(context, RecommendationStatus.Submitted);
+            var controller = CreateController(context, adminId: 55);
+
+            var result = await controller.ApproveStage2(application.Id);
+
+            var redirect = result.Should().BeOfType<RedirectToActionResult>().Subject;
+            redirect.ActionName.Should().Be("CandidateDetails");
+            redirect.ControllerName.Should().Be("Admin");
+
+            var rec = await context.CandidateRecommendations
+                .FirstAsync(r => r.ApplicationId == application.Id && r.Stage == RecommendationStage.Stage2);
+            rec.Status.Should().Be(RecommendationStatus.Approved);
+            rec.ReviewedByUserId.Should().Be(55);
+        }
+
+        // Stage 2 — POST ApproveStage2: unauthorized (DenyAll) returns 403
+        [Fact]
+        public async Task ApproveStage2_WhenForbidden_Returns403()
+        {
+            using var context = CreateInMemoryContext();
+            var (application, _) = await SeedStage2Async(context, RecommendationStatus.Submitted);
+
+            var controller = new RecommendationAdminController(
+                new RecommendationService(context, new StageOrderService(), authService: new DenyAllAuthService()));
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext
+                {
+                    User = new ClaimsPrincipal(new ClaimsIdentity(
+                        new[] { new Claim("AdminId", "1") }, "AdminAuth"))
+                }
+            };
+
+            var result = await controller.ApproveStage2(application.Id);
+
+            result.Should().BeOfType<ForbidResult>();
+
+            var rec = await context.CandidateRecommendations
+                .FirstAsync(r => r.ApplicationId == application.Id && r.Stage == RecommendationStage.Stage2);
+            rec.Status.Should().Be(RecommendationStatus.Submitted);
         }
     }
 }

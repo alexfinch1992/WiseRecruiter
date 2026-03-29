@@ -63,23 +63,26 @@
                         </div>
                     </div>
                     <!-- Stage 1 Recommendation Status -->
+                    @{
+                        var s1Rec = Model.Recommendations.FirstOrDefault(r => r.Stage == RecommendationStage.Stage1);
+                    }
                     <div class="row">
                         <div class="col-12">
                             <label class="fw-bold text-muted small"><i class="fas fa-clipboard-check me-2"></i>Stage 1 Approval</label>
                             <div class="mt-1">
-                                @if (Model.Stage1Recommendation == null)
+                                @if (s1Rec == null)
                                 {
                                     <span class="badge bg-secondary">Not Submitted</span>
                                 }
-                                else if (Model.Stage1Recommendation.Status == RecommendationStatus.Approved)
+                                else if (s1Rec.Status == RecommendationStatus.Approved)
                                 {
                                     <span class="badge bg-success">Approved</span>
                                 }
-                                else if (Model.Stage1Recommendation.Status == RecommendationStatus.Submitted)
+                                else if (s1Rec.Status == RecommendationStatus.Submitted)
                                 {
                                     <span class="badge bg-warning text-dark">Pending Review</span>
                                 }
-                                else if (Model.Stage1Recommendation.Status == RecommendationStatus.NeedsRevision)
+                                else if (s1Rec.Status == RecommendationStatus.NeedsRevision)
                                 {
                                     <span class="badge bg-danger">Needs Revision</span>
                                 }
@@ -87,7 +90,7 @@
                                 {
                                     <span class="badge bg-secondary">Draft</span>
                                 }
-                                @if (Model.Stage1Recommendation != null && Model.Stage1Recommendation.BypassedApproval)
+                                @if (s1Rec != null && s1Rec.BypassedApproval)
                                 {
                                     <span class="badge bg-warning text-dark ms-1">&#9888; Proceeded Without Approval</span>
                                 }
@@ -97,31 +100,50 @@
                 </div>
             </div>
 
-            <!-- Application Stage Card -->
-            <div class="card shadow-sm border-0 mb-4" id="application-stage-card">
+            <!-- Hiring Pipeline Card -->
+            <div class="card shadow-sm border-0 mb-4" id="hiring-pipeline-card">
                 <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
-                    <h5 class="fw-bold mb-0 text-white"><i class="fas fa-layer-group me-2"></i>Application Stage</h5>
+                    <h5 class="fw-bold mb-0 text-white"><i class="fas fa-stream me-2"></i>Hiring Pipeline</h5>
                 </div>
                 <div class="card-body">
-                    <div class="mb-3">
-                        <label class="fw-bold text-muted small">Current Stage</label>
-                        <div class="mt-1">
-                            @{
-                                var stageBadgeClass = Model.ApplicationStage switch
-                                {
-                                    ApplicationStage.Applied   => "bg-secondary",
-                                    ApplicationStage.Screen    => "bg-info text-dark",
-                                    ApplicationStage.Interview => "bg-primary",
-                                    ApplicationStage.Offer     => "bg-warning text-dark",
-                                    ApplicationStage.Hired     => "bg-success",
-                                    ApplicationStage.Rejected  => "bg-danger",
-                                    _                          => "bg-secondary"
-                                };
+                    <!-- Stage pipeline list — driven by IHiringPipelineService (system stages + dynamic job stages) -->
+                    <div class="d-flex align-items-center flex-wrap gap-1 mb-4">
+                        @for (int i = 0; i < Model.Pipeline.Count; i++)
+                        {
+                            var stage = Model.Pipeline[i];
+                            if (i > 0)
+                            {
+                                <i class="fas fa-chevron-right text-muted" style="font-size: 0.75rem;"></i>
                             }
-                            <span class="badge @stageBadgeClass" style="font-size: 1rem;">@Model.ApplicationStage</span>
-                        </div>
+                            if (stage.IsCurrent)
+                            {
+                                <span class="badge fw-bold px-3 py-2" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%); font-size: 0.9rem;">
+                                    @stage.Name
+                                </span>
+                            }
+                            else if (stage.IsCompleted)
+                            {
+                                <span class="badge bg-success px-2 py-1" style="font-size: 0.85rem;">
+                                    <i class="fas fa-check me-1"></i>@stage.Name
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-light text-muted border px-2 py-1" style="font-size: 0.85rem;">
+                                    @stage.Name
+                                </span>
+                            }
+                        }
+                        @if (Model.ApplicationStage == ApplicationStage.Rejected)
+                        {
+                            <i class="fas fa-chevron-right text-muted" style="font-size: 0.75rem;"></i>
+                            <span class="badge bg-danger px-2 py-1" style="font-size: 0.85rem;">
+                                <i class="fas fa-times me-1"></i>Rejected
+                            </span>
+                        }
                     </div>
 
+                    <!-- Move stage form -->
                     <form id="update-stage-form" method="post" asp-controller="Admin" asp-action="UpdateApplicationStage">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="applicationId" value="@Model.Id" />
@@ -173,35 +195,6 @@
                 </div>
             </div>
 
-            <!-- Interview Stage Card -->
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
-                    <h5 class="fw-bold mb-0 text-white"><i class="fas fa-tasks me-2"></i>Interview Stage</h5>
-                </div>
-                <div class="card-body">
-                    <div class="progress" style="height: 30px;">
-                        <div class="progress-bar fw-bold" role="progressbar" 
-                             style="width: @Model.ProgressPercentage%; background: linear-gradient(90deg, #1E1765, #7B3FF2);" 
-                             aria-valuenow="@((int)Model.ProgressPercentage)" aria-valuemin="0" aria-valuemax="100">
-                            @Model.CurrentStageName (@Model.ProgressPercentage.ToString("F0")%)
-                        </div>
-                    </div>
-                    <div class="mt-3">
-                        <p class="fw-bold mb-2">Stage Indicators:</p>
-                        <div class="d-flex justify-content-between flex-wrap gap-2">
-                            @for (int i = 0; i < Model.StageProgression.Count; i++)
-                            {
-                                var isActive = i <= Model.CurrentStageIndex;
-                                var badgeClass = isActive ? "badge-success" : "badge-secondary";
-                                <span class="badge @badgeClass" style="font-size: 0.9rem;">
-                                    <i class="fas @(isActive ? "fa-check-circle" : "fa-circle") me-1"></i>@Model.StageProgression[i].Name
-                                </span>
-                            }
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Interview Summary (requires ≥2 scorecards) -->
             @if (Model.Analytics.ScorecardCount >= 2)
             {
@@ -248,55 +241,89 @@
                 </div>
             }
 
-            <!-- Stage 1 Candidate Recommendation -->
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header d-flex align-items-center justify-content-between" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
-                    <h5 class="fw-bold mb-0 text-white"><i class="fas fa-star me-2"></i>Stage 1 Candidate Recommendation</h5>
-                    @if (Model.Stage1Recommendation != null)
-                    {
-                        var recBadge = Model.Stage1Recommendation.Status switch
-                        {
-                            RecommendationStatus.Draft     => ("bg-secondary",      "Draft"),
-                            RecommendationStatus.Submitted => ("bg-warning text-dark", "Submitted — Pending Review"),
-                            RecommendationStatus.Approved  => ("bg-success",        "Approved"),
-                            RecommendationStatus.Rejected  => ("bg-danger",         "Rejected"),
-                            _                              => ("bg-secondary",       Model.Stage1Recommendation.Status.ToString())
-                        };
-                        <span class="badge @recBadge.Item1">@recBadge.Item2</span>
-                    }
-                </div>
-                <div class="card-body d-flex gap-2 flex-wrap align-items-center">
-                    <a asp-controller="Recommendation"
-                       asp-action="Stage1"
-                       asp-route-applicationId="@Model.Id"
-                       class="btn btn-primary btn-sm">
-                        <i class="fas fa-edit me-1"></i>Create / Edit Recommendation
-                    </a>
-                    @if (Model.Stage1Recommendation != null && Model.Stage1Recommendation.Status == RecommendationStatus.Draft)
-                    {
-                        <form asp-controller="Recommendation" asp-action="SubmitStage1" method="post" class="d-inline">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="applicationId" value="@Model.Id" />
-                            <button type="submit" class="btn btn-success btn-sm">
-                                <i class="fas fa-paper-plane me-1"></i>Submit for Approval
-                            </button>
-                        </form>
-                    }
-                    @if (Model.Stage1Recommendation != null && Model.Stage1Recommendation.Status == RecommendationStatus.Submitted)
-                    {
-                        <span class="text-muted small"><i class="fas fa-clock me-1"></i>Awaiting admin review</span>
-                    }
-                </div>
-                @if (Model.Stage1Recommendation != null &&
-                     Model.Stage1Recommendation.Status == RecommendationStatus.Approved &&
-                     !string.IsNullOrWhiteSpace(Model.Stage1Recommendation.ApprovalFeedback))
+            <!-- Candidate Recommendations -->
+            @foreach (var rec in Model.Recommendations)
+            {
+                var stageLabel = rec.Stage == RecommendationStage.Stage1
+                    ? "Stage 1 Candidate Recommendation"
+                    : "Stage 2 Candidate Recommendation";
+                var stageIcon = rec.Stage == RecommendationStage.Stage1
+                    ? "fa-star"
+                    : "fa-star-half-alt";
+                var recBadge = rec.Status switch
                 {
-                    <div class="card-footer bg-success bg-opacity-10 border-0">
-                        <p class="fw-semibold text-success small mb-1"><i class="fas fa-comment-alt me-1"></i>Manager Feedback</p>
-                        <p class="mb-0 small">@Model.Stage1Recommendation.ApprovalFeedback</p>
+                    RecommendationStatus.Draft     => ("bg-secondary",         "Draft"),
+                    RecommendationStatus.Submitted => ("bg-warning text-dark",  "Submitted — Pending Review"),
+                    RecommendationStatus.Approved  => ("bg-success",            "Approved"),
+                    RecommendationStatus.Rejected  => ("bg-danger",             "Rejected"),
+                    _                              => ("bg-secondary",           rec.Status.ToString())
+                };
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header d-flex align-items-center justify-content-between" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
+                        <h5 class="fw-bold mb-0 text-white"><i class="fas @stageIcon me-2"></i>@stageLabel</h5>
+                        <span class="badge @recBadge.Item1">@recBadge.Item2</span>
                     </div>
-                }
-            </div>
+                    <div class="card-body d-flex gap-2 flex-wrap align-items-center">
+                        @if (rec.Stage == RecommendationStage.Stage1)
+                        {
+                            <a asp-controller="Recommendation"
+                               asp-action="Stage1"
+                               asp-route-applicationId="@Model.Id"
+                               class="btn btn-primary btn-sm">
+                                <i class="fas fa-edit me-1"></i>Create / Edit Recommendation
+                            </a>
+                            @if (rec.Status == RecommendationStatus.Draft)
+                            {
+                                <form asp-controller="Recommendation" asp-action="SubmitStage1" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="applicationId" value="@Model.Id" />
+                                    <button type="submit" class="btn btn-success btn-sm">
+                                        <i class="fas fa-paper-plane me-1"></i>Submit for Approval
+                                    </button>
+                                </form>
+                            }
+                            @if (rec.Status == RecommendationStatus.Submitted)
+                            {
+                                <span class="text-muted small"><i class="fas fa-clock me-1"></i>Awaiting admin review</span>
+                            }
+                        }
+                        else
+                        {
+                            @if (rec.Status == RecommendationStatus.Submitted)
+                            {
+                                <span class="text-muted small"><i class="fas fa-clock me-1"></i>Awaiting manager review</span>
+                            }
+                            else if (rec.Status == RecommendationStatus.Draft)
+                            {
+                                <a asp-controller="Recommendation"
+                                   asp-action="Stage2"
+                                   asp-route-applicationId="@Model.Id"
+                                   class="btn btn-primary btn-sm">
+                                    <i class="fas fa-edit me-1"></i>Create / Edit Recommendation
+                                </a>
+                                <form asp-controller="Recommendation" asp-action="SubmitStage2" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="applicationId" value="@Model.Id" />
+                                    <button type="submit" class="btn btn-success btn-sm">
+                                        <i class="fas fa-paper-plane me-1"></i>Submit for Approval
+                                    </button>
+                                </form>
+                            }
+                            else if (rec.Status != RecommendationStatus.Approved)
+                            {
+                                <span class="text-muted small"><i class="fas fa-info-circle me-1"></i>No Stage 2 recommendation yet</span>
+                            }
+                        }
+                    </div>
+                    @if (rec.Status == RecommendationStatus.Approved && !string.IsNullOrWhiteSpace(rec.ApprovalFeedback))
+                    {
+                        <div class="card-footer bg-success bg-opacity-10 border-0">
+                            <p class="fw-semibold text-success small mb-1"><i class="fas fa-comment-alt me-1"></i>Manager Feedback</p>
+                            <p class="mb-0 small">@rec.ApprovalFeedback</p>
+                        </div>
+                    }
+                </div>
+            }
 
             <!-- Scheduled Interviews Section -->
             <div class="card shadow-sm border-0 mb-4">

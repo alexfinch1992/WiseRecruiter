@@ -19,18 +19,28 @@ public class RecommendationAdminController : Controller
     [HttpGet("Pending")]
     public async Task<IActionResult> Pending()
     {
-        var pending = await _recommendationService.GetPendingStage1RecommendationsAsync();
+        var pending = await _recommendationService.GetPendingRecommendationsAsync();
         return View(pending);
     }
 
     [HttpGet("Review/{applicationId}")]
-    public async Task<IActionResult> Review(int applicationId)
+    public async Task<IActionResult> Review(int applicationId, JobPortal.Models.RecommendationStage? stage)
     {
-        var review = await _recommendationService.GetStage1ReviewAsync(applicationId);
-        if (review == null)
-            return NotFound();
+        if (stage == null || !Enum.IsDefined(typeof(JobPortal.Models.RecommendationStage), stage))
+            return BadRequest("Valid stage is required");
 
-        return View(review);
+        if (stage == JobPortal.Models.RecommendationStage.Stage2)
+        {
+            var vm2 = await _recommendationService.GetStage2ReviewAsync(applicationId);
+            if (vm2 == null)
+                return NotFound();
+            return View("Stage2Review", vm2);
+        }
+
+        var vm = await _recommendationService.GetStage1ReviewAsync(applicationId);
+        if (vm == null)
+            return NotFound();
+        return View("Stage1Review", vm);
     }
 
     [HttpPost("Approve/{applicationId}")]
@@ -49,7 +59,27 @@ public class RecommendationAdminController : Controller
             ApprovalResult.AlreadyApproved => BadRequest(),
             ApprovalResult.InvalidState    => BadRequest(),
             ApprovalResult.Forbidden       => Forbid(),
-            _                              => RedirectToAction("Pending")
+            _                              => RedirectToAction("CandidateDetails", "Admin", new { id = applicationId })
+        };
+    }
+
+    [HttpPost("ApproveStage2/{applicationId}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ApproveStage2(int applicationId, string? approvalFeedback = null)
+    {
+        var userIdStr = User?.FindFirst("AdminId")?.Value;
+        if (!int.TryParse(userIdStr, out var userId))
+            return Forbid();
+
+        var result = await _recommendationService.ApproveStage2RecommendationAsync(applicationId, userId, approvalFeedback);
+
+        return result switch
+        {
+            ApprovalResult.NotFound        => NotFound(),
+            ApprovalResult.AlreadyApproved => BadRequest(),
+            ApprovalResult.InvalidState    => BadRequest(),
+            ApprovalResult.Forbidden       => Forbid(),
+            _                              => RedirectToAction("CandidateDetails", "Admin", new { id = applicationId })
         };
     }
 }

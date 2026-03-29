@@ -53,11 +53,11 @@ namespace WiseRecruiter.Tests.Unit.Services
             return application;
         }
 
-        // --- GetPendingStage1RecommendationsAsync ---
+        // --- GetPendingRecommendationsAsync ---
 
-        // 1. Pending list includes ONLY Submitted recommendations
+        // 1. Pending list includes ONLY Submitted recommendations (Stage 1)
         [Fact]
-        public async Task GetPendingStage1Recommendations_ReturnsSubmittedRecsOnly()
+        public async Task GetPendingRecommendations_ReturnsSubmittedRecsOnly()
         {
             using var context = CreateInMemoryContext();
             var app1 = await SeedApplicationAsync(context, "Alice");
@@ -81,8 +81,8 @@ namespace WiseRecruiter.Tests.Unit.Services
             });
             await context.SaveChangesAsync();
 
-            var service = new RecommendationService(context);
-            var pending = await service.GetPendingStage1RecommendationsAsync();
+            var service = new RecommendationService(context, new StageOrderService());
+            var pending = await service.GetPendingRecommendationsAsync();
 
             pending.Should().HaveCount(2);
             pending.Should().Contain(p => p.CandidateName == "Alice");
@@ -91,7 +91,7 @@ namespace WiseRecruiter.Tests.Unit.Services
 
         // 2. Approved and Draft recommendations do not appear in pending list
         [Fact]
-        public async Task GetPendingStage1Recommendations_ExcludesApprovedAndDraftRecs()
+        public async Task GetPendingRecommendations_ExcludesApprovedAndDraftRecs()
         {
             using var context = CreateInMemoryContext();
             var app1 = await SeedApplicationAsync(context, "Approved Candidate");
@@ -115,8 +115,8 @@ namespace WiseRecruiter.Tests.Unit.Services
             });
             await context.SaveChangesAsync();
 
-            var service = new RecommendationService(context);
-            var pending = await service.GetPendingStage1RecommendationsAsync();
+            var service = new RecommendationService(context, new StageOrderService());
+            var pending = await service.GetPendingRecommendationsAsync();
 
             pending.Should().BeEmpty();
         }
@@ -140,7 +140,7 @@ namespace WiseRecruiter.Tests.Unit.Services
             });
             await context.SaveChangesAsync();
 
-            var service = new RecommendationService(context);
+            var service = new RecommendationService(context, new StageOrderService());
             var result = await service.ApproveStage1RecommendationAsync(application.Id, userId: 99);
 
             result.Should().Be(ApprovalResult.Approved);
@@ -161,7 +161,7 @@ namespace WiseRecruiter.Tests.Unit.Services
             var application = await SeedApplicationAsync(context);
             // No recommendation seeded
 
-            var service = new RecommendationService(context);
+            var service = new RecommendationService(context, new StageOrderService());
             var result = await service.ApproveStage1RecommendationAsync(application.Id, userId: 1);
 
             result.Should().Be(ApprovalResult.NotFound);
@@ -188,7 +188,7 @@ namespace WiseRecruiter.Tests.Unit.Services
             });
             await context.SaveChangesAsync();
 
-            var service = new RecommendationService(context);
+            var service = new RecommendationService(context, new StageOrderService());
             var result = await service.ApproveStage1RecommendationAsync(application.Id, userId: 10);
 
             result.Should().Be(ApprovalResult.AlreadyApproved);
@@ -201,7 +201,7 @@ namespace WiseRecruiter.Tests.Unit.Services
         // ---- A: Only Submitted in pending (Draft and Approved both excluded) ----
 
         [Fact]
-        public async Task GetPendingStage1Recommendations_OnlyIncludesSubmitted_ExcludesDraftAndApproved()
+        public async Task GetPendingRecommendations_OnlyIncludesSubmitted_ExcludesDraftAndApproved()
         {
             using var context = CreateInMemoryContext();
             var appDraft    = await SeedApplicationAsync(context, "Draft Candidate");
@@ -231,13 +231,91 @@ namespace WiseRecruiter.Tests.Unit.Services
             });
             await context.SaveChangesAsync();
 
-            var service = new RecommendationService(context);
-            var pending = await service.GetPendingStage1RecommendationsAsync();
+            var service = new RecommendationService(context, new StageOrderService());
+            var pending = await service.GetPendingRecommendationsAsync();
 
             pending.Should().HaveCount(1);
             pending.Should().Contain(p => p.CandidateName == "Submitted Candidate");
             pending.Should().NotContain(p => p.CandidateName == "Draft Candidate");
             pending.Should().NotContain(p => p.CandidateName == "Approved Candidate");
+        }
+
+        // ---- Stage 2 in pending ----
+
+        [Fact]
+        public async Task GetPendingRecommendations_IncludesSubmittedStage2()
+        {
+            using var context = CreateInMemoryContext();
+            var app = await SeedApplicationAsync(context, "Stage2 Candidate");
+
+            context.CandidateRecommendations.Add(new CandidateRecommendation
+            {
+                ApplicationId = app.Id,
+                Stage = RecommendationStage.Stage2,
+                Status = RecommendationStatus.Submitted,
+                Summary = "S2 summary",
+                LastUpdatedUtc = DateTime.UtcNow
+            });
+            await context.SaveChangesAsync();
+
+            var service = new RecommendationService(context, new StageOrderService());
+            var pending = await service.GetPendingRecommendationsAsync();
+
+            pending.Should().HaveCount(1);
+            pending[0].CandidateName.Should().Be("Stage2 Candidate");
+            pending[0].Stage.Should().Be(RecommendationStage.Stage2);
+        }
+
+        [Fact]
+        public async Task GetPendingRecommendations_IncludesBothStage1AndStage2_WhenBothSubmitted()
+        {
+            using var context = CreateInMemoryContext();
+            var app1 = await SeedApplicationAsync(context, "S1 Candidate");
+            var app2 = await SeedApplicationAsync(context, "S2 Candidate");
+
+            context.CandidateRecommendations.Add(new CandidateRecommendation
+            {
+                ApplicationId = app1.Id,
+                Stage = RecommendationStage.Stage1,
+                Status = RecommendationStatus.Submitted,
+                LastUpdatedUtc = DateTime.UtcNow
+            });
+            context.CandidateRecommendations.Add(new CandidateRecommendation
+            {
+                ApplicationId = app2.Id,
+                Stage = RecommendationStage.Stage2,
+                Status = RecommendationStatus.Submitted,
+                LastUpdatedUtc = DateTime.UtcNow
+            });
+            await context.SaveChangesAsync();
+
+            var service = new RecommendationService(context, new StageOrderService());
+            var pending = await service.GetPendingRecommendationsAsync();
+
+            pending.Should().HaveCount(2);
+            pending.Should().Contain(p => p.Stage == RecommendationStage.Stage1 && p.CandidateName == "S1 Candidate");
+            pending.Should().Contain(p => p.Stage == RecommendationStage.Stage2 && p.CandidateName == "S2 Candidate");
+        }
+
+        [Fact]
+        public async Task GetPendingRecommendations_Stage2Draft_IsExcluded()
+        {
+            using var context = CreateInMemoryContext();
+            var app = await SeedApplicationAsync(context, "Draft S2 Candidate");
+
+            context.CandidateRecommendations.Add(new CandidateRecommendation
+            {
+                ApplicationId = app.Id,
+                Stage = RecommendationStage.Stage2,
+                Status = RecommendationStatus.Draft,
+                LastUpdatedUtc = DateTime.UtcNow
+            });
+            await context.SaveChangesAsync();
+
+            var service = new RecommendationService(context, new StageOrderService());
+            var pending = await service.GetPendingRecommendationsAsync();
+
+            pending.Should().BeEmpty();
         }
 
         // ---- C: ApprovalResult return type ----
@@ -257,7 +335,7 @@ namespace WiseRecruiter.Tests.Unit.Services
             });
             await context.SaveChangesAsync();
 
-            var service = new RecommendationService(context);
+            var service = new RecommendationService(context, new StageOrderService());
             var result = await service.ApproveStage1RecommendationAsync(application.Id, userId: 1);
 
             result.Should().Be(ApprovalResult.InvalidState);
@@ -278,7 +356,7 @@ namespace WiseRecruiter.Tests.Unit.Services
             });
             await context.SaveChangesAsync();
 
-            var service = new RecommendationService(context);
+            var service = new RecommendationService(context, new StageOrderService());
             var result = await service.ApproveStage1RecommendationAsync(application.Id, userId: 7);
 
             result.Should().Be(ApprovalResult.Approved);
@@ -307,7 +385,7 @@ namespace WiseRecruiter.Tests.Unit.Services
             });
             await context.SaveChangesAsync();
 
-            var service = new RecommendationService(context);
+            var service = new RecommendationService(context, new StageOrderService());
             var result = await service.SubmitStage1RecommendationAsync(application.Id, userId: 1);
 
             result.Should().Be(TransitionResult.Success);
@@ -336,7 +414,7 @@ namespace WiseRecruiter.Tests.Unit.Services
             });
             await context.SaveChangesAsync();
 
-            var service = new RecommendationService(context);
+            var service = new RecommendationService(context, new StageOrderService());
             var result = await service.SaveStage1DraftAsync(application.Id, "Updated summary", null, null, null);
 
             result.Should().Be(TransitionResult.Success);
@@ -365,7 +443,7 @@ namespace WiseRecruiter.Tests.Unit.Services
             });
             await context.SaveChangesAsync();
 
-            var service = new RecommendationService(context);
+            var service = new RecommendationService(context, new StageOrderService());
             var result = await service.SubmitStage1RecommendationAsync(application.Id, userId: 1);
 
             result.Should().Be(TransitionResult.InvalidState);
@@ -393,7 +471,7 @@ namespace WiseRecruiter.Tests.Unit.Services
             });
             await context.SaveChangesAsync();
 
-            var service = new RecommendationService(context);
+            var service = new RecommendationService(context, new StageOrderService());
             var result = await service.SaveStage1DraftAsync(application.Id, "Updated post-approval notes", "New strengths", null, true);
 
             result.Should().Be(TransitionResult.Success);
@@ -413,7 +491,7 @@ namespace WiseRecruiter.Tests.Unit.Services
             using var context = CreateInMemoryContext();
             var application = await SeedApplicationAsync(context);
 
-            var service = new RecommendationService(context);
+            var service = new RecommendationService(context, new StageOrderService());
             var result = await service.SubmitStage1RecommendationAsync(application.Id, userId: 1);
 
             result.Should().Be(TransitionResult.NotFound);
@@ -435,7 +513,7 @@ namespace WiseRecruiter.Tests.Unit.Services
             });
             await context.SaveChangesAsync();
 
-            var service = new RecommendationService(context, authService: new DenyAllAuthService());
+            var service = new RecommendationService(context, new StageOrderService(), authService: new DenyAllAuthService());
             var result = await service.ApproveStage1RecommendationAsync(application.Id, userId: 1);
 
             result.Should().Be(ApprovalResult.Forbidden);

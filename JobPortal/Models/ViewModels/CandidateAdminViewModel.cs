@@ -51,14 +51,17 @@ namespace JobPortal.Models.ViewModels
         public List<AdminUser> AdminUsers { get; set; } = new();
         public List<int> SelectedInterviewerIds { get; set; } = new();
 
-        // Stage 1 recommendation
-        public CandidateRecommendation? Stage1Recommendation { get; set; }
+        // Recommendations (Stage1 first, then Stage2)
+        public List<CandidateRecommendation> Recommendations { get; set; } = new();
         public bool RequiresStage1ApprovalWarning { get; set; }
 
         // Application pipeline stage
         public ApplicationStage ApplicationStage { get; set; }
         public bool RequiresStageApprovalWarning { get; set; }
         public ApplicationStage? PendingApplicationStage { get; set; }
+
+        // Unified hiring pipeline (system stages + dynamic job stages)
+        public List<PipelineStageViewModel> Pipeline { get; set; } = new();
     }
 
     public class InterviewSummaryDto

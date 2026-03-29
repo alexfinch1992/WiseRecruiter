@@ -144,9 +144,20 @@
                 </button>
             </div>
             <div class="card-body" style="display: none;" id="stagesFilledView">
+                @{
+                    var _lockedClass = "d-flex align-items-center px-3 py-2 rounded mb-2";
+                    var _lockedStyle = "border-left: 4px solid #adb5bd; background-color: #f8f9fa; opacity: 0.6;";
+                }
+                <!-- System stages: locked, non-editable -->
+                <div class="@_lockedClass" style="@_lockedStyle">
+                    <span class="flex-grow-1 fw-500 text-muted"><i class="fas fa-lock me-2" style="font-size:0.75rem;"></i>Applied</span>
+                </div>
+                <div class="@_lockedClass" style="@_lockedStyle">
+                    <span class="flex-grow-1 fw-500 text-muted"><i class="fas fa-lock me-2" style="font-size:0.75rem;"></i>Screen</span>
+                </div>
                 @if (stages.Any())
                 {
-                    <div class="mb-3" id="stagesContainer">
+                    <div class="mb-0" id="stagesContainer">
                         @for (int i = 0; i < stages.Count; i++)
                         {
                             var stage = stages[i];
@@ -175,14 +186,22 @@
                 }
                 else
                 {
-                    <p class="text-muted small mb-3"><i class="fas fa-info-circle me-1"></i>No stages configured</p>
+                    <div id="stagesContainer"></div>
                 }
+                <!-- System stages: locked, non-editable -->
+                <div class="@_lockedClass" style="@_lockedStyle">
+                    <span class="flex-grow-1 fw-500 text-muted"><i class="fas fa-lock me-2" style="font-size:0.75rem;"></i>Offer</span>
+                </div>
+                <div class="@_lockedClass mb-3" style="@_lockedStyle">
+                    <span class="flex-grow-1 fw-500 text-muted"><i class="fas fa-lock me-2" style="font-size:0.75rem;"></i>Hired</span>
+                </div>
 
                 <!-- Add New Stage Form -->
-                <form method="post" asp-action="AddStage" class="d-flex gap-2">
+                <form method="post" asp-action="AddStage" class="d-flex gap-2 align-items-center">
                     <input type="hidden" name="jobId" value="@Model.Id" />
                     <input type="text" name="stageName" class="form-control form-control-sm" placeholder="Enter stage name (e.g., HR Review, Coding Test)" required />
                     <button type="submit" class="btn btn-sm btn-outline-success"><i class="fas fa-plus me-1"></i>Add Stage</button>
+                    <span id="stageSaveStatus" style="display:none;" class="text-success small ms-1"><i class="fas fa-check me-1"></i>Saved</span>
                 </form>
             </div>
             <div class="card-body" id="stagesCollapsedView">
@@ -349,6 +368,13 @@
 </div>
 
 <script>
+function showSavedIndicator() {
+    const el = document.getElementById('stageSaveStatus');
+    if (!el) return;
+    el.style.display = 'inline';
+    setTimeout(() => el.style.display = 'none', 2000);
+}
+
 async function moveStage(stageId, jobId, direction, button) {
     const container = document.getElementById('stagesContainer');
     const currentItem = container.querySelector(`[data-stage-id="${stageId}"]`);
@@ -380,6 +406,7 @@ async function moveStage(stageId, jobId, direction, button) {
         });
 
         if (response.ok) {
+            showSavedIndicator();
             // Add animation classes
             currentItem.classList.add(`moving-${direction}`);
             nextItem.classList.add(`moving-${direction === 'up' ? 'down' : 'up'}`);
@@ -439,6 +466,7 @@ async function removeStage(stageId, jobId, button) {
         });
 
         if (response.ok) {
+            showSavedIndicator();
             // Fade out animation
             stageItem.style.opacity = '0';
             stageItem.style.transform = 'scale(0.95)';

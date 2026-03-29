@@ -4,6 +4,8 @@ using FluentAssertions;
 using JobPortal.Data;
 using JobPortal.Models;
 using JobPortal.Services.Implementations;
+using JobPortal.Services.Interfaces;
+using JobPortal.Services.Models;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
@@ -57,7 +59,7 @@ namespace WiseRecruiter.Tests.Unit.Services
         {
             using var context = CreateInMemoryContext();
             var application = await SeedApplicationAsync(context);
-            var service = new RecommendationService(context);
+            var service = new RecommendationService(context, new StageOrderService());
 
             var (rec, isApproved) = await service.GetOrPrepareStage1RecommendationAsync(
                 application.Id, proceedWithoutApproval: true, bypassReason: "Urgent hire", userId: "42");
@@ -91,7 +93,7 @@ namespace WiseRecruiter.Tests.Unit.Services
             });
             await context.SaveChangesAsync();
 
-            var service = new RecommendationService(context);
+            var service = new RecommendationService(context, new StageOrderService());
 
             await service.GetOrPrepareStage1RecommendationAsync(
                 application.Id, proceedWithoutApproval: true, bypassReason: null, userId: "");
@@ -121,7 +123,7 @@ namespace WiseRecruiter.Tests.Unit.Services
             });
             await context.SaveChangesAsync();
 
-            var service = new RecommendationService(context);
+            var service = new RecommendationService(context, new StageOrderService());
 
             await service.GetOrPrepareStage1RecommendationAsync(
                 application.Id, proceedWithoutApproval: true, bypassReason: "New reason", userId: "99");
@@ -150,7 +152,7 @@ namespace WiseRecruiter.Tests.Unit.Services
             });
             await context.SaveChangesAsync();
 
-            var service = new RecommendationService(context);
+            var service = new RecommendationService(context, new StageOrderService());
 
             var (rec, isApproved) = await service.GetOrPrepareStage1RecommendationAsync(
                 application.Id, proceedWithoutApproval: true, bypassReason: "Ignored", userId: "1");
@@ -166,7 +168,7 @@ namespace WiseRecruiter.Tests.Unit.Services
         {
             using var context = CreateInMemoryContext();
             var application = await SeedApplicationAsync(context);
-            var service = new RecommendationService(context);
+            var service = new RecommendationService(context, new StageOrderService());
 
             var (rec, isApproved) = await service.GetOrPrepareStage1RecommendationAsync(
                 application.Id, proceedWithoutApproval: false, bypassReason: null, userId: "");
@@ -200,7 +202,7 @@ namespace WiseRecruiter.Tests.Unit.Services
             });
             await context.SaveChangesAsync();
 
-            var service = new RecommendationService(context);
+            var service = new RecommendationService(context, new StageOrderService());
             var result = await service.SaveStage1DraftAsync(application.Id, "Updated notes", null, null, null);
 
             result.Should().Be(JobPortal.Services.Models.TransitionResult.Success);
@@ -233,7 +235,7 @@ namespace WiseRecruiter.Tests.Unit.Services
             });
             await context.SaveChangesAsync();
 
-            var service = new RecommendationService(context);
+            var service = new RecommendationService(context, new StageOrderService());
             await service.SaveStage1DraftAsync(application.Id, "Updated notes", null, null, null);
 
             var rec = await context.CandidateRecommendations
@@ -261,7 +263,7 @@ namespace WiseRecruiter.Tests.Unit.Services
             });
             await context.SaveChangesAsync();
 
-            var service = new RecommendationService(context);
+            var service = new RecommendationService(context, new StageOrderService());
             var result = await service.SaveStage1DraftAsync(application.Id, "Notes", "Strengths", null, true);
 
             result.Should().Be(JobPortal.Services.Models.TransitionResult.Success);
@@ -293,7 +295,7 @@ namespace WiseRecruiter.Tests.Unit.Services
             });
             await context.SaveChangesAsync();
 
-            var service = new RecommendationService(context);
+            var service = new RecommendationService(context, new StageOrderService());
             var r1 = await service.SaveStage1DraftAsync(application.Id, "First save", null, null, null);
             var r2 = await service.SaveStage1DraftAsync(application.Id, "Second save", null, null, null);
 
@@ -307,6 +309,383 @@ namespace WiseRecruiter.Tests.Unit.Services
             // Bypass metadata preserved
             rec.BypassedApproval.Should().BeTrue();
             rec.BypassReason.Should().Be("Original bypass");
+        }
+
+        // ---- Auto-advance on approval ----
+
+        // 1. Candidate at Screen → approval advances to Interview AND sets all metadata
+        [Fact]
+        public async Task Approve_WhenAtScreen_AdvancesToInterviewAndSetsMetadata()
+        {
+            using var context = CreateInMemoryContext();
+            var application = await SeedApplicationAsync(context);
+            application.Stage = ApplicationStage.Screen;
+            await context.SaveChangesAsync();
+
+            context.CandidateRecommendations.Add(new CandidateRecommendation
+            {
+                ApplicationId = application.Id,
+                Stage = RecommendationStage.Stage1,
+                Status = RecommendationStatus.Submitted,
+                SubmittedByUserId = 1,
+                SubmittedUtc = DateTime.UtcNow,
+                LastUpdatedUtc = DateTime.UtcNow
+            });
+            await context.SaveChangesAsync();
+
+            var service = new RecommendationService(context, new StageOrderService());
+            var result = await service.ApproveStage1RecommendationAsync(application.Id, userId: 99, approvalFeedback: "Great candidate");
+
+            result.Should().Be(ApprovalResult.Approved);
+
+            var updatedApp = await context.Applications.FindAsync(application.Id);
+            updatedApp!.Stage.Should().Be(ApplicationStage.Interview);
+
+            var rec = await context.CandidateRecommendations.FirstAsync(r => r.ApplicationId == application.Id);
+            rec.Status.Should().Be(RecommendationStatus.Approved);
+            rec.ApprovedByUserId.Should().Be(99);
+            rec.ApprovedUtc.Should().NotBeNull();
+            rec.ApprovalFeedback.Should().Be("Great candidate");
+        }
+
+        // 2. Candidate already past Screen (Interview) → approval succeeds but stage does not change
+        [Fact]
+        public async Task Approve_WhenPastScreen_DoesNotChangeStage()
+        {
+            using var context = CreateInMemoryContext();
+            var application = await SeedApplicationAsync(context);
+            application.Stage = ApplicationStage.Interview;
+            await context.SaveChangesAsync();
+
+            context.CandidateRecommendations.Add(new CandidateRecommendation
+            {
+                ApplicationId = application.Id,
+                Stage = RecommendationStage.Stage1,
+                Status = RecommendationStatus.Submitted,
+                SubmittedByUserId = 1,
+                SubmittedUtc = DateTime.UtcNow,
+                LastUpdatedUtc = DateTime.UtcNow
+            });
+            await context.SaveChangesAsync();
+
+            var service = new RecommendationService(context, new StageOrderService());
+            var result = await service.ApproveStage1RecommendationAsync(application.Id, userId: 99);
+
+            result.Should().Be(ApprovalResult.Approved);
+
+            var updatedApp = await context.Applications.FindAsync(application.Id);
+            updatedApp!.Stage.Should().Be(ApplicationStage.Interview); // unchanged
+        }
+
+        // 3. Candidate at Hired (no meaningful next stage) → approval succeeds, stage unchanged
+        [Fact]
+        public async Task Approve_WhenAtHired_DoesNotChangeStage()
+        {
+            using var context = CreateInMemoryContext();
+            var application = await SeedApplicationAsync(context);
+            application.Stage = ApplicationStage.Hired;
+            await context.SaveChangesAsync();
+
+            context.CandidateRecommendations.Add(new CandidateRecommendation
+            {
+                ApplicationId = application.Id,
+                Stage = RecommendationStage.Stage1,
+                Status = RecommendationStatus.Submitted,
+                SubmittedByUserId = 1,
+                SubmittedUtc = DateTime.UtcNow,
+                LastUpdatedUtc = DateTime.UtcNow
+            });
+            await context.SaveChangesAsync();
+
+            var service = new RecommendationService(context, new StageOrderService());
+            var result = await service.ApproveStage1RecommendationAsync(application.Id, userId: 99);
+
+            result.Should().Be(ApprovalResult.Approved);
+
+            var updatedApp = await context.Applications.FindAsync(application.Id);
+            updatedApp!.Stage.Should().Be(ApplicationStage.Hired); // unchanged
+        }
+
+        // 4. Approval called twice → second returns AlreadyApproved, no further stage change
+        [Fact]
+        public async Task Approve_CalledTwice_SecondCallReturnsAlreadyApproved_NoStageChange()
+        {
+            using var context = CreateInMemoryContext();
+            var application = await SeedApplicationAsync(context);
+            application.Stage = ApplicationStage.Screen;
+            await context.SaveChangesAsync();
+
+            context.CandidateRecommendations.Add(new CandidateRecommendation
+            {
+                ApplicationId = application.Id,
+                Stage = RecommendationStage.Stage1,
+                Status = RecommendationStatus.Submitted,
+                SubmittedByUserId = 1,
+                SubmittedUtc = DateTime.UtcNow,
+                LastUpdatedUtc = DateTime.UtcNow
+            });
+            await context.SaveChangesAsync();
+
+            var service = new RecommendationService(context, new StageOrderService());
+            var first  = await service.ApproveStage1RecommendationAsync(application.Id, userId: 99);
+            var second = await service.ApproveStage1RecommendationAsync(application.Id, userId: 99);
+
+            first.Should().Be(ApprovalResult.Approved);
+            second.Should().Be(ApprovalResult.AlreadyApproved);
+
+            // Stage advanced once on first call, not again on second
+            var updatedApp = await context.Applications.FindAsync(application.Id);
+            updatedApp!.Stage.Should().Be(ApplicationStage.Interview);
+        }
+
+        // ---- Stage 2 approval tests ----
+
+        [Fact]
+        public async Task ApproveStage2_WhenManager_Approves_Succeeds()
+        {
+            using var context = CreateInMemoryContext();
+            var application = await SeedApplicationAsync(context);
+
+            context.CandidateRecommendations.Add(new CandidateRecommendation
+            {
+                ApplicationId = application.Id,
+                Stage = RecommendationStage.Stage2,
+                Status = RecommendationStatus.Submitted,
+                SubmittedByUserId = 1,
+                SubmittedUtc = DateTime.UtcNow,
+                LastUpdatedUtc = DateTime.UtcNow
+            });
+            await context.SaveChangesAsync();
+
+            // CanApproveStage2 = true (default StageAuthorizationService)
+            var service = new RecommendationService(context, new StageOrderService());
+            var result = await service.ApproveStage2RecommendationAsync(application.Id, userId: 7, approvalFeedback: "Final approval");
+
+            result.Should().Be(ApprovalResult.Approved);
+
+            var rec = await context.CandidateRecommendations
+                .FirstAsync(r => r.ApplicationId == application.Id && r.Stage == RecommendationStage.Stage2);
+            rec.Status.Should().Be(RecommendationStatus.Approved);
+            rec.ApprovedByUserId.Should().Be(7);
+            rec.ApprovedUtc.Should().NotBeNull();
+            rec.ApprovalFeedback.Should().Be("Final approval");
+        }
+
+        [Fact]
+        public async Task ApproveStage2_WhenNotManager_ReturnsForbidden()
+        {
+            using var context = CreateInMemoryContext();
+            var application = await SeedApplicationAsync(context);
+
+            context.CandidateRecommendations.Add(new CandidateRecommendation
+            {
+                ApplicationId = application.Id,
+                Stage = RecommendationStage.Stage2,
+                Status = RecommendationStatus.Submitted,
+                SubmittedByUserId = 1,
+                SubmittedUtc = DateTime.UtcNow,
+                LastUpdatedUtc = DateTime.UtcNow
+            });
+            await context.SaveChangesAsync();
+
+            var denyAuth = new DenyStage2AuthService();
+            var service = new RecommendationService(context, new StageOrderService(), authService: denyAuth);
+            var result = await service.ApproveStage2RecommendationAsync(application.Id, userId: 1);
+
+            result.Should().Be(ApprovalResult.Forbidden);
+
+            var rec = await context.CandidateRecommendations
+                .FirstAsync(r => r.ApplicationId == application.Id && r.Stage == RecommendationStage.Stage2);
+            rec.Status.Should().Be(RecommendationStatus.Submitted); // unchanged
+        }
+
+        [Fact]
+        public async Task ApproveStage2_WhenDraft_ReturnsInvalidState()
+        {
+            using var context = CreateInMemoryContext();
+            var application = await SeedApplicationAsync(context);
+
+            context.CandidateRecommendations.Add(new CandidateRecommendation
+            {
+                ApplicationId = application.Id,
+                Stage = RecommendationStage.Stage2,
+                Status = RecommendationStatus.Draft,
+                LastUpdatedUtc = DateTime.UtcNow
+            });
+            await context.SaveChangesAsync();
+
+            var service = new RecommendationService(context, new StageOrderService());
+            var result = await service.ApproveStage2RecommendationAsync(application.Id, userId: 1);
+
+            result.Should().Be(ApprovalResult.InvalidState);
+
+            var rec = await context.CandidateRecommendations
+                .FirstAsync(r => r.ApplicationId == application.Id && r.Stage == RecommendationStage.Stage2);
+            rec.Status.Should().Be(RecommendationStatus.Draft); // unchanged
+        }
+
+        // ---- Stage 2 auto-creation on Stage 1 approval ----
+
+        [Fact]
+        public async Task ApproveStage1_CreatesStage2DraftRecommendation()
+        {
+            using var context = CreateInMemoryContext();
+            var application = await SeedApplicationAsync(context);
+            application.Stage = ApplicationStage.Screen;
+            await context.SaveChangesAsync();
+
+            context.CandidateRecommendations.Add(new CandidateRecommendation
+            {
+                ApplicationId = application.Id,
+                Stage = RecommendationStage.Stage1,
+                Status = RecommendationStatus.Submitted,
+                SubmittedByUserId = 1,
+                SubmittedUtc = DateTime.UtcNow,
+                LastUpdatedUtc = DateTime.UtcNow
+            });
+            await context.SaveChangesAsync();
+
+            var service = new RecommendationService(context, new StageOrderService());
+            var result = await service.ApproveStage1RecommendationAsync(application.Id, userId: 99);
+
+            result.Should().Be(ApprovalResult.Approved);
+
+            var stage2Rec = await context.CandidateRecommendations
+                .FirstOrDefaultAsync(r => r.ApplicationId == application.Id && r.Stage == RecommendationStage.Stage2);
+
+            stage2Rec.Should().NotBeNull("Stage 2 recommendation should be auto-created after Stage 1 approval");
+            stage2Rec!.Status.Should().Be(RecommendationStatus.Draft);
+        }
+
+        [Fact]
+        public async Task ApproveStage1_WhenStage2AlreadyExists_DoesNotDuplicate()
+        {
+            using var context = CreateInMemoryContext();
+            var application = await SeedApplicationAsync(context);
+            application.Stage = ApplicationStage.Screen;
+            await context.SaveChangesAsync();
+
+            context.CandidateRecommendations.Add(new CandidateRecommendation
+            {
+                ApplicationId = application.Id,
+                Stage = RecommendationStage.Stage1,
+                Status = RecommendationStatus.Submitted,
+                SubmittedByUserId = 1,
+                SubmittedUtc = DateTime.UtcNow,
+                LastUpdatedUtc = DateTime.UtcNow
+            });
+            context.CandidateRecommendations.Add(new CandidateRecommendation
+            {
+                ApplicationId = application.Id,
+                Stage = RecommendationStage.Stage2,
+                Status = RecommendationStatus.Draft,
+                LastUpdatedUtc = DateTime.UtcNow
+            });
+            await context.SaveChangesAsync();
+
+            var service = new RecommendationService(context, new StageOrderService());
+            await service.ApproveStage1RecommendationAsync(application.Id, userId: 99);
+
+            var stage2Count = await context.CandidateRecommendations
+                .CountAsync(r => r.ApplicationId == application.Id && r.Stage == RecommendationStage.Stage2);
+
+            stage2Count.Should().Be(1, "Stage 2 should not be duplicated if one already exists");
+        }
+
+        // ---- Stage 2 save/submit ----
+
+        [Fact]
+        public async Task SaveStage2Draft_WhenNoRecExists_CreatesNewDraft()
+        {
+            using var context = CreateInMemoryContext();
+            var application = await SeedApplicationAsync(context);
+            var service = new RecommendationService(context, new StageOrderService());
+
+            var result = await service.SaveStage2DraftAsync(application.Id, "S2 notes", "S2 strengths", "S2 concerns", true);
+
+            result.Should().Be(TransitionResult.Success);
+
+            var rec = await context.CandidateRecommendations
+                .FirstOrDefaultAsync(r => r.ApplicationId == application.Id && r.Stage == RecommendationStage.Stage2);
+
+            rec.Should().NotBeNull();
+            rec!.Status.Should().Be(RecommendationStatus.Draft);
+            rec.Summary.Should().Be("S2 notes");
+            rec.ExperienceFit.Should().Be("S2 strengths");
+        }
+
+        [Fact]
+        public async Task SaveStage2Draft_WhenDraftExists_UpdatesContent()
+        {
+            using var context = CreateInMemoryContext();
+            var application = await SeedApplicationAsync(context);
+
+            context.CandidateRecommendations.Add(new CandidateRecommendation
+            {
+                ApplicationId = application.Id,
+                Stage = RecommendationStage.Stage2,
+                Status = RecommendationStatus.Draft,
+                Summary = "Old notes",
+                LastUpdatedUtc = DateTime.UtcNow
+            });
+            await context.SaveChangesAsync();
+
+            var service = new RecommendationService(context, new StageOrderService());
+            var result = await service.SaveStage2DraftAsync(application.Id, "New notes", null, null, null);
+
+            result.Should().Be(TransitionResult.Success);
+
+            var count = await context.CandidateRecommendations
+                .CountAsync(r => r.ApplicationId == application.Id && r.Stage == RecommendationStage.Stage2);
+            count.Should().Be(1, "no duplicate should be created");
+
+            var rec = await context.CandidateRecommendations
+                .FirstAsync(r => r.ApplicationId == application.Id && r.Stage == RecommendationStage.Stage2);
+            rec.Summary.Should().Be("New notes");
+        }
+
+        [Fact]
+        public async Task SubmitStage2_WhenDraftExists_TransitionsToSubmitted()
+        {
+            using var context = CreateInMemoryContext();
+            var application = await SeedApplicationAsync(context);
+
+            context.CandidateRecommendations.Add(new CandidateRecommendation
+            {
+                ApplicationId = application.Id,
+                Stage = RecommendationStage.Stage2,
+                Status = RecommendationStatus.Draft,
+                LastUpdatedUtc = DateTime.UtcNow
+            });
+            await context.SaveChangesAsync();
+
+            var service = new RecommendationService(context, new StageOrderService());
+            var result = await service.SubmitStage2RecommendationAsync(application.Id, userId: 5);
+
+            result.Should().Be(TransitionResult.Success);
+
+            var rec = await context.CandidateRecommendations
+                .FirstAsync(r => r.ApplicationId == application.Id && r.Stage == RecommendationStage.Stage2);
+            rec.Status.Should().Be(RecommendationStatus.Submitted);
+            rec.SubmittedByUserId.Should().Be(5);
+        }
+
+        [Fact]
+        public async Task SubmitStage2_WhenNoRec_ReturnsNotFound()
+        {
+            using var context = CreateInMemoryContext();
+            var application = await SeedApplicationAsync(context);
+            var service = new RecommendationService(context, new StageOrderService());
+
+            var result = await service.SubmitStage2RecommendationAsync(application.Id, userId: 1);
+
+            result.Should().Be(TransitionResult.NotFound);
+        }
+
+        private sealed class DenyStage2AuthService : IStageAuthorizationService
+        {
+            public bool CanApproveStage1(int userId) => true;
+            public bool CanApproveStage2(int userId) => false;
         }
     }
 }

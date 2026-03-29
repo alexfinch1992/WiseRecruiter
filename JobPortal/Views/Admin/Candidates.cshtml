@@ -1,0 +1,92 @@
+@model List<JobPortal.Models.Application>
+@using JobPortal.Models
+
+@{
+    ViewData["Title"] = "All Candidates";
+    var search = ViewData["Search"] as string;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold mb-0"><i class="fas fa-users me-2" style="color:#7B3FF2;"></i>Candidates</h2>
+    <span class="text-muted small">@Model.Count result@(Model.Count != 1 ? "s" : "")</span>
+</div>
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body py-3">
+        <form method="get" asp-action="Candidates" class="d-flex gap-2">
+            <input type="text" name="search" value="@search" class="form-control form-control-sm"
+                   placeholder="Filter by candidate name..." autocomplete="off" />
+            <button type="submit" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-search me-1"></i>Search
+            </button>
+            @if (!string.IsNullOrWhiteSpace(search))
+            {
+                <a asp-action="Candidates" class="btn btn-sm btn-outline-secondary">Clear</a>
+            }
+        </form>
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="text-center text-muted py-5">
+        <i class="fas fa-user-slash fa-2x mb-3 d-block" style="color:#adb5bd;"></i>
+        <p>No candidates found@(string.IsNullOrWhiteSpace(search) ? "" : $" matching \"{search}\"").</p>
+    </div>
+}
+else
+{
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
+                    <tr>
+                        <th class="text-white fw-semibold py-3 ps-4">Candidate</th>
+                        <th class="text-white fw-semibold py-3">Job</th>
+                        <th class="text-white fw-semibold py-3">Stage</th>
+                        <th class="text-white fw-semibold py-3">Applied</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var application in Model)
+                    {
+                        <tr>
+                            <td class="ps-4 py-3">
+                                <a asp-controller="Admin" asp-action="CandidateDetails" asp-route-id="@application.Id"
+                                   class="text-decoration-none fw-semibold" style="color:#1E1765;">
+                                    @application.Name
+                                </a>
+                                @if (!string.IsNullOrWhiteSpace(application.Email))
+                                {
+                                    <div class="text-muted small">@application.Email</div>
+                                }
+                            </td>
+                            <td class="py-3">
+                                <a asp-controller="Admin" asp-action="JobDetail" asp-route-id="@application.JobId"
+                                   class="text-decoration-none text-muted">
+                                    @(application.Job?.Title ?? "—")
+                                </a>
+                            </td>
+                            <td class="py-3">
+                                @{
+                                    var badgeStyle = application.Stage switch
+                                    {
+                                        ApplicationStage.Hired    => "bg-success",
+                                        ApplicationStage.Rejected => "bg-danger",
+                                        ApplicationStage.Offer    => "bg-warning text-dark",
+                                        _                         => "text-white"
+                                    };
+                                    var inlineStyle = application.Stage is not (ApplicationStage.Hired or ApplicationStage.Rejected or ApplicationStage.Offer)
+                                        ? "background:#7B3FF2;"
+                                        : "";
+                                }
+                                <span class="badge @badgeStyle" style="@inlineStyle">@application.Stage</span>
+                            </td>
+                            <td class="py-3 text-muted small">@application.AppliedDate.ToString("dd MMM yyyy")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

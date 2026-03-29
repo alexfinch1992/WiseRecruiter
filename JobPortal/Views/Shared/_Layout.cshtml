@@ -23,13 +23,18 @@
                     <ul class="navbar-nav flex-grow-1">
                         @{
                             var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
-                            var isAdminNavigation = currentController == "Admin" || currentController == "AdminSettings";
+                            var isAdminNavigation = currentController == "Admin" || currentController == "AdminSettings" || currentController == "RecommendationAdmin";
                         }
                         @if (isAdminNavigation)
                         {
                             <li class="nav-item">
                                 <a class="nav-link" asp-area="" asp-controller="Admin" asp-action="Index">
-                                    <i class="fas fa-home me-1"></i>Manage Jobs
+                                    <i class="fas fa-briefcase me-1"></i>Jobs
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="" asp-controller="Admin" asp-action="Candidates">
+                                    <i class="fas fa-users me-1"></i>Candidates
                                 </a>
                             </li>
                             <li class="nav-item">
@@ -62,8 +67,8 @@
                             <div class="flex-grow-1 position-relative">
                                 <input type="text" name="searchQuery" class="form-control form-control-sm" 
                                        id="navSearchInput"
-                                       placeholder="Search candidates..." 
-                                       aria-label="Search candidates"
+                                       placeholder="Search candidates and jobs..." 
+                                       aria-label="Search candidates and jobs"
                                        autocomplete="off" />
                                 <div class="position-absolute w-100 bg-white border border-top-0 rounded-bottom shadow-sm" 
                                      id="navSearchResults" 
@@ -103,7 +108,7 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script>
-        // Live search autocomplete for navbar
+        // Live search autocomplete for navbar — searches candidates + jobs
         document.getElementById('navSearchInput')?.addEventListener('input', async function(e) {
             const searchQuery = e.target.value.trim();
             const resultsContainer = document.getElementById('navSearchResults');
@@ -114,26 +119,39 @@
             }
             
             try {
-                const response = await fetch(`@Url.Action("SearchCandidatesApi", "Admin")?searchQuery=${encodeURIComponent(searchQuery)}`);
+                const response = await fetch(`@Url.Action("Search", "Admin")?query=${encodeURIComponent(searchQuery)}`);
                 const results = await response.json();
                 
+                const candidates = results.filter(r => r.type === 'Candidate');
+                const jobs = results.filter(r => r.type === 'Job');
+                
                 if (results.length === 0) {
-                    resultsContainer.innerHTML = '<div class="p-3 text-muted text-center small">No candidates found</div>';
+                    resultsContainer.innerHTML = '<div class="p-3 text-muted text-center small">No results found</div>';
                 } else {
-                    resultsContainer.innerHTML = results.map(candidate => `
-                        <a href="@Url.Action("Details", "Applications")?id=` + candidate.id + `" 
-                           class="d-block p-2 text-decoration-none border-bottom hover-light-nav"
-                           style="transition: background-color 0.2s; font-size: 0.9rem;">
-                            <div class="d-flex justify-content-between align-items-start gap-2">
-                                <div class="flex-grow-1" style="min-width: 0;">
-                                    <div class="fw-500 text-truncate" style="color: #1E1765;">` + candidate.name + `</div>
-                                    <small class="text-muted text-truncate d-block">` + candidate.email + `</small>
-                                    <small class="text-muted">` + candidate.job + `</small>
-                                </div>
-                                <span class="badge" style="background: #7B3FF2; font-size: 0.7rem; white-space: nowrap;">` + candidate.stage + `</span>
-                            </div>
-                        </a>
-                    `).join('');
+                    let html = '';
+                    if (candidates.length) {
+                        html += '<div class="px-3 pt-2 pb-1 border-bottom"><small class="text-muted fw-bold" style="font-size:0.7rem;letter-spacing:0.05em;">CANDIDATES</small></div>';
+                        html += candidates.map(r =>
+                            `<a href="@Url.Action("CandidateDetails", "Admin")/${r.id}" 
+                               class="d-block px-3 py-2 text-decoration-none border-bottom hover-light-nav"
+                               style="font-size:0.9rem;">
+                                <i class="fas fa-user me-2" style="color:#7B3FF2;font-size:0.8rem;"></i>
+                                <span style="color:#1E1765;">${r.displayText}</span>
+                             </a>`
+                        ).join('');
+                    }
+                    if (jobs.length) {
+                        html += '<div class="px-3 pt-2 pb-1 border-bottom"><small class="text-muted fw-bold" style="font-size:0.7rem;letter-spacing:0.05em;">JOBS</small></div>';
+                        html += jobs.map(r =>
+                            `<a href="@Url.Action("JobDetail", "Admin")/${r.id}" 
+                               class="d-block px-3 py-2 text-decoration-none border-bottom hover-light-nav"
+                               style="font-size:0.9rem;">
+                                <i class="fas fa-briefcase me-2" style="color:#7B3FF2;font-size:0.8rem;"></i>
+                                <span style="color:#1E1765;">${r.displayText}</span>
+                             </a>`
+                        ).join('');
+                    }
+                    resultsContainer.innerHTML = html;
                 }
                 
                 resultsContainer.style.display = 'block';
