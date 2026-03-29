@@ -21,7 +21,8 @@ namespace JobPortal.Services.Implementations
             int applicationId,
             ApplicationStage newStage,
             bool proceedWithoutApproval,
-            string userId)
+            string userId,
+            int? jobStageId = null)
         {
             var application = await _context.Applications.FindAsync(applicationId);
             if (application == null)
@@ -44,6 +45,7 @@ namespace JobPortal.Services.Implementations
             }
 
             application.Stage = newStage;
+            application.CurrentJobStageId = jobStageId;
 
             // Caller (controller) is responsible for SaveChangesAsync
             return new StageUpdateResult();

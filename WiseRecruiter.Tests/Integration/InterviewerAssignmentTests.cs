@@ -100,7 +100,7 @@ namespace WiseRecruiter.Tests.Integration
             var interviewerIds = new List<int> { admin1.Id, admin2.Id };
 
             // Act
-            var result = await controller.CreateInterview(candidate.Id, application.Id, stage.Id, scheduledAt, interviewerIds);
+            var result = await controller.CreateInterview(candidate.Id, application.Id, $"stage:{stage.Id}", scheduledAt, interviewerIds);
 
             // Assert - redirects
             result.Should().BeOfType<RedirectToActionResult>();

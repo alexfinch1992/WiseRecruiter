@@ -67,47 +67,8 @@ namespace JobPortal.Helpers
                 context.SaveChanges();
             }
 
-            // Seed dummy candidates
-            if (!context.Applications.Any())
-            {
-                var jobs = context.Jobs.Include(j => j.Stages).ToList();
-                if (jobs.Any())
-                {
-                    var applications = GenerateDummyCandidates(jobs);
-
-                    // Create Candidates BEFORE Applications to satisfy the FK constraint
-                    // (Application.CandidateId is a required FK; inserting with CandidateId=0 fails with FK checks on)
-                    var candidatesByEmail = new Dictionary<string, Candidate>(StringComparer.OrdinalIgnoreCase);
-                    foreach (var app in applications)
-                    {
-                        var email = app.Email ?? string.Empty;
-                        if (candidatesByEmail.ContainsKey(email))
-                            continue;
-
-                        var (firstName, lastName) = SplitName(app.Name);
-                        var candidate = new Candidate
-                        {
-                            FirstName = firstName,
-                            LastName = lastName,
-                            Email = email,
-                            CreatedAt = DateTime.UtcNow
-                        };
-                        context.Candidates.Add(candidate);
-                        candidatesByEmail[email] = candidate;
-                    }
-                    context.SaveChanges(); // persist all candidates at once to get their Ids
-
-                    foreach (var app in applications)
-                    {
-                        var email = app.Email ?? string.Empty;
-                        if (candidatesByEmail.TryGetValue(email, out var candidate))
-                            app.CandidateId = candidate.Id;
-                    }
-
-                    context.Applications.AddRange(applications);
-                    context.SaveChanges();
-                }
-            }
+// Wipe and reseed candidate data (always runs to keep demo data consistent)
+        WipeAndReseedCandidates(context);
 
             BackfillCandidateRelationships(context);
         }
@@ -304,63 +265,142 @@ namespace JobPortal.Helpers
             return (parts[0], string.Join(' ', parts.Skip(1)));
         }
 
-        private static List<Application> GenerateDummyCandidates(List<Job> jobs)
+        private static void WipeAndReseedCandidates(AppDbContext context)
         {
-            var applications = new List<Application>();
-            var cities = new[] { "New York", "San Francisco", "Los Angeles", "Chicago", "Boston", "Seattle", "Austin", "Denver", "Portland", "Miami" };
+            // Wipe in FK-safe order
+            context.Interviews.RemoveRange(context.Interviews.ToList());
+            context.CandidateRecommendations.RemoveRange(context.CandidateRecommendations.ToList());
+            context.Applications.RemoveRange(context.Applications.ToList());
+            context.Candidates.RemoveRange(context.Candidates.ToList());
+            context.SaveChanges();
 
-            var candidateNames = new[]
+            var jobs = context.Jobs.Include(j => j.Stages).ToList();
+            if (!jobs.Any()) return;
+
+            var names = new (string First, string Last, string EmailPrefix)[]
             {
-                ("Alice Johnson", "alice.johnson@email.com"),
-                ("Bob Smith", "bob.smith@email.com"),
-                ("Carol Williams", "carol.williams@email.com"),
-                ("David Brown", "david.brown@email.com"),
-                ("Emma Davis", "emma.davis@email.com"),
-                ("Frank Wilson", "frank.wilson@email.com"),
-                ("Grace Lee", "grace.lee@email.com"),
-                ("Henry Martinez", "henry.martinez@email.com"),
-                ("Iris Chen", "iris.chen@email.com"),
-                ("Jack Anderson", "jack.anderson@email.com"),
-                ("Karen Taylor", "karen.taylor@email.com"),
-                ("Leo Thomas", "leo.thomas@email.com"),
-                ("Monica Garcia", "monica.garcia@email.com"),
-                ("Nathan Robinson", "nathan.robinson@email.com"),
-                ("Olivia Clark", "olivia.clark@email.com")
+                ("Alice",   "Johnson",  "alice.johnson"),
+                ("Bob",     "Smith",    "bob.smith"),
+                ("Carol",   "Williams", "carol.williams"),
+                ("David",   "Brown",    "david.brown"),
+                ("Emma",    "Davis",    "emma.davis"),
+                ("Frank",   "Wilson",   "frank.wilson"),
+                ("Grace",   "Lee",      "grace.lee"),
+                ("Henry",   "Martinez", "henry.martinez"),
+                ("Iris",    "Chen",     "iris.chen"),
+                ("Jack",    "Anderson", "jack.anderson"),
+                ("Karen",   "Taylor",   "karen.taylor"),
+                ("Leo",     "Thomas",   "leo.thomas"),
+                ("Monica",  "Garcia",   "monica.garcia"),
+                ("Nathan",  "Robinson", "nathan.robinson"),
+                ("Olivia",  "Clark",    "olivia.clark"),
+                ("Patrick", "Lewis",    "patrick.lewis"),
+                ("Quinn",   "Walker",   "quinn.walker"),
+                ("Rachel",  "Hall",     "rachel.hall"),
+                ("Sam",     "Allen",    "sam.allen"),
+                ("Tina",    "Young",    "tina.young"),
             };
 
-            var random = new Random(42); // Fixed seed for consistency
+            var cities = new[] { "New York", "San Francisco", "Los Angeles", "Chicago", "Boston",
+                                  "Seattle", "Austin", "Denver", "Portland", "Miami" };
+
+            // 10 candidates per job: 3 Applied, 2 Screen, 3 Interview, 1 Offer, 1 Rejected
+            var stageDistribution = new[]
+            {
+                (ApplicationStage.Applied,   3),
+                (ApplicationStage.Screen,    2),
+                (ApplicationStage.Interview, 3),
+                (ApplicationStage.Offer,     1),
+                (ApplicationStage.Rejected,  1),
+            };
+
+            int globalNameIndex = 0;
 
             foreach (var job in jobs)
             {
                 var jobStages = job.Stages?.OrderBy(s => s.Order).ToList() ?? new List<JobStage>();
-                
-                if (!jobStages.Any())
-                    continue; // Skip if no stages for this job
 
-                // Add 7-8 candidates per job
-                int candidatesPerJob = random.Next(7, 9);
-                
-                for (int i = 0; i < candidatesPerJob; i++)
+                // Prefer the stage named "Interview", otherwise fall back to the first stage
+                var interviewJobStage = jobStages.FirstOrDefault(s => s.Name == "Interview")
+                                     ?? jobStages.FirstOrDefault();
+
+                int candidateIndex = 0;
+
+                foreach (var (stage, count) in stageDistribution)
                 {
-                    var (name, email) = candidateNames[applications.Count % candidateNames.Length];
-                    var cityIndex = (applications.Count + i) % cities.Length;
-                    var stageIndex = (applications.Count + i) % jobStages.Count;
-                    var daysAgo = random.Next(1, 30);
-
-                    applications.Add(new Application
+                    for (int i = 0; i < count; i++)
                     {
-                        Name = name,
-                        Email = $"{name.ToLower().Replace(" ", ".")}.{applications.Count}@email.com",
-                        City = cities[cityIndex],
-                        JobId = job.Id,
-                        CurrentJobStageId = jobStages[stageIndex].Id,
-                        AppliedDate = DateTime.UtcNow.AddDays(-daysAgo),
-                        ResumePath = null // In real scenario, would be actual resume files
-                    });
+                        var n = names[globalNameIndex % names.Length];
+                        var jobSuffix = jobs.IndexOf(job) + 1;
+                        var email = $"{n.EmailPrefix}.job{jobSuffix}@example.com";
+                        var city = cities[candidateIndex % cities.Length];
+
+                        // --- Candidate ---
+                        var candidate = new Candidate
+                        {
+                            FirstName = n.First,
+                            LastName  = n.Last,
+                            Email     = email,
+                            CreatedAt = DateTime.UtcNow.AddDays(-(29 - candidateIndex)),
+                        };
+                        context.Candidates.Add(candidate);
+                        context.SaveChanges(); // need Id for Application FK
+
+                        // --- Application ---
+                        int? currentJobStageId = stage == ApplicationStage.Interview
+                            ? interviewJobStage?.Id
+                            : null;
+
+                        var application = new Application
+                        {
+                            Name             = $"{n.First} {n.Last}",
+                            Email            = email,
+                            City             = city,
+                            JobId            = job.Id,
+                            CandidateId      = candidate.Id,
+                            Stage            = stage,
+                            CurrentJobStageId = currentJobStageId,
+                            AppliedDate      = DateTime.UtcNow.AddDays(-(28 - candidateIndex)),
+                        };
+                        context.Applications.Add(application);
+                        context.SaveChanges(); // need Id for Recommendation + Interview FKs
+
+                        // --- Recommendation + Interview (Interview-stage candidates only) ---
+                        if (stage == ApplicationStage.Interview && interviewJobStage != null)
+                        {
+                            var recStatus = i switch
+                            {
+                                0 => RecommendationStatus.Approved,
+                                1 => RecommendationStatus.Submitted,
+                                _ => RecommendationStatus.Draft,
+                            };
+
+                            context.CandidateRecommendations.Add(new CandidateRecommendation
+                            {
+                                ApplicationId      = application.Id,
+                                Stage              = RecommendationStage.Stage1,
+                                Status             = recStatus,
+                                Summary            = i == 0 ? "Strong candidate with excellent technical skills and culture fit." : null,
+                                HireRecommendation = i == 0 ? true : null,
+                            });
+
+                            context.Interviews.Add(new Interview
+                            {
+                                CandidateId   = candidate.Id,
+                                ApplicationId = application.Id,
+                                JobStageId    = interviewJobStage.Id,
+                                ScheduledAt   = DateTime.UtcNow.AddDays(7 + candidateIndex),
+                                IsCancelled   = false,
+                            });
+
+                            context.SaveChanges();
+                        }
+
+                        candidateIndex++;
+                        globalNameIndex++;
+                    }
                 }
             }
-
-            return applications;
         }
 
         private static void NullifyOrphanedScorecardTemplateIds(AppDbContext context)

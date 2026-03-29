@@ -154,7 +154,7 @@ namespace WiseRecruiter.Tests.Integration
             var controller = CreateAdminController(context);
 
             var result = await controller.CreateInterview(
-                candidate.Id, application.Id, stage.Id,
+                candidate.Id, application.Id, $"stage:{stage.Id}",
                 DateTime.UtcNow.AddDays(3),
                 proceedWithoutApproval: true,
                 bypassReason: "Urgent hire");
@@ -172,7 +172,7 @@ namespace WiseRecruiter.Tests.Integration
             var controller = CreateAdminController(context);
 
             await controller.CreateInterview(
-                candidate.Id, application.Id, stage.Id,
+                candidate.Id, application.Id, $"stage:{stage.Id}",
                 DateTime.UtcNow.AddDays(3),
                 proceedWithoutApproval: true,
                 bypassReason: "Test bypass reason");
@@ -194,7 +194,7 @@ namespace WiseRecruiter.Tests.Integration
             var controller = CreateAdminController(context);
 
             await controller.CreateInterview(
-                candidate.Id, application.Id, stage.Id,
+                candidate.Id, application.Id, $"stage:{stage.Id}",
                 DateTime.UtcNow.AddDays(3));
 
             var rec = await context.CandidateRecommendations
@@ -222,7 +222,7 @@ namespace WiseRecruiter.Tests.Integration
             var controller = CreateAdminController(context);
 
             await controller.CreateInterview(
-                candidate.Id, application.Id, stage.Id,
+                candidate.Id, application.Id, $"stage:{stage.Id}",
                 DateTime.UtcNow.AddDays(3),
                 proceedWithoutApproval: true,  // set but should be ignored since already approved
                 bypassReason: "Should not be recorded");

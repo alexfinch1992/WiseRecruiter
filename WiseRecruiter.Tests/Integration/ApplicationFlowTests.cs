@@ -217,7 +217,7 @@ namespace WiseRecruiter.Tests.Integration
             initialAnalytics.TotalApplications.Should().Be(2);
             
             var finalCandidatesByStage = finalAnalytics.CandidatesByStage;
-            var appliedCount = finalCandidatesByStage.First(s => s.StageName == "Applied").Count;
+            var appliedCount = finalCandidatesByStage.FirstOrDefault(s => s.StageName == "Applied")?.Count ?? 0;
             var challengeCount = finalCandidatesByStage.First(s => s.StageName == "Design Challenge").Count;
             var interviewCount = finalCandidatesByStage.First(s => s.StageName == "Interview").Count;
 

@@ -87,7 +87,7 @@ namespace WiseRecruiter.Tests.Integration
             var application = await SeedApplicationAsync(context);
             var controller = CreateAdminController(context);
 
-            var result = await controller.UpdateApplicationStage(application.Id, ApplicationStage.Screen);
+            var result = await controller.UpdateApplicationStage(application.Id, "enum:Screen");
 
             result.Should().BeOfType<RedirectToActionResult>();
 
@@ -102,7 +102,7 @@ namespace WiseRecruiter.Tests.Integration
             var application = await SeedApplicationAsync(context);
             var controller = CreateAdminController(context);
 
-            var result = await controller.UpdateApplicationStage(application.Id, ApplicationStage.Offer);
+            var result = await controller.UpdateApplicationStage(application.Id, "enum:Offer");
 
             result.Should().BeOfType<RedirectToActionResult>();
 
@@ -120,7 +120,7 @@ namespace WiseRecruiter.Tests.Integration
             var controller = CreateAdminController(context);
 
             // No recommendation exists; proceedWithoutApproval = false (default)
-            var result = await controller.UpdateApplicationStage(application.Id, ApplicationStage.Interview, proceedWithoutApproval: false);
+            var result = await controller.UpdateApplicationStage(application.Id, "enum:Interview", proceedWithoutApproval: false);
 
             // Should redirect back to CandidateDetails (server-driven warning pattern)
             var redirect = result.Should().BeOfType<RedirectToActionResult>().Subject;
@@ -151,7 +151,7 @@ namespace WiseRecruiter.Tests.Integration
 
             var controller = CreateAdminController(context);
 
-            var result = await controller.UpdateApplicationStage(application.Id, ApplicationStage.Interview, proceedWithoutApproval: false);
+            var result = await controller.UpdateApplicationStage(application.Id, "enum:Interview", proceedWithoutApproval: false);
 
             result.Should().BeOfType<RedirectToActionResult>();
 
@@ -168,7 +168,7 @@ namespace WiseRecruiter.Tests.Integration
             var application = await SeedApplicationAsync(context);
             var controller = CreateAdminController(context);
 
-            var result = await controller.UpdateApplicationStage(application.Id, ApplicationStage.Interview, proceedWithoutApproval: true);
+            var result = await controller.UpdateApplicationStage(application.Id, "enum:Interview", proceedWithoutApproval: true);
 
             result.Should().BeOfType<RedirectToActionResult>();
 
@@ -185,7 +185,7 @@ namespace WiseRecruiter.Tests.Integration
             var application = await SeedApplicationAsync(context);
             var controller = CreateAdminController(context);
 
-            await controller.UpdateApplicationStage(application.Id, ApplicationStage.Interview, proceedWithoutApproval: true);
+            await controller.UpdateApplicationStage(application.Id, "enum:Interview", proceedWithoutApproval: true);
 
             var rec = await context.CandidateRecommendations
                 .FirstOrDefaultAsync(r => r.ApplicationId == application.Id && r.Stage == RecommendationStage.Stage1);
@@ -213,7 +213,7 @@ namespace WiseRecruiter.Tests.Integration
 
             var controller = CreateAdminController(context);
 
-            await controller.UpdateApplicationStage(application.Id, ApplicationStage.Interview, proceedWithoutApproval: true);
+            await controller.UpdateApplicationStage(application.Id, "enum:Interview", proceedWithoutApproval: true);
 
             var count = await context.CandidateRecommendations
                 .CountAsync(r => r.ApplicationId == application.Id && r.Stage == RecommendationStage.Stage1);
@@ -231,7 +231,7 @@ namespace WiseRecruiter.Tests.Integration
             var controller = CreateAdminController(context);
 
             // No recommendation, but moving to Rejected — should just update
-            var result = await controller.UpdateApplicationStage(application.Id, ApplicationStage.Rejected, proceedWithoutApproval: false);
+            var result = await controller.UpdateApplicationStage(application.Id, "enum:Rejected", proceedWithoutApproval: false);
 
             result.Should().BeOfType<RedirectToActionResult>();
 
@@ -338,7 +338,7 @@ namespace WiseRecruiter.Tests.Integration
             await recService.SaveStage1DraftAsync(application.Id, "Good candidate", "Strong skills", null, true);
 
             var controller = CreateAdminController(context);
-            var result = await controller.UpdateApplicationStage(application.Id, ApplicationStage.Interview, proceedWithoutApproval: false);
+            var result = await controller.UpdateApplicationStage(application.Id, "enum:Interview", proceedWithoutApproval: false);
 
             // Stage still blocked
             var redirect = result.Should().BeOfType<RedirectToActionResult>().Subject;
@@ -366,10 +366,107 @@ namespace WiseRecruiter.Tests.Integration
             await context.SaveChangesAsync();
 
             var controller = CreateAdminController(context);
-            await controller.UpdateApplicationStage(application.Id, ApplicationStage.Interview, proceedWithoutApproval: true);
+            await controller.UpdateApplicationStage(application.Id, "enum:Interview", proceedWithoutApproval: true);
 
             var updated = await context.Applications.FindAsync(application.Id);
             updated!.Stage.Should().Be(ApplicationStage.Interview);
+        }
+
+        // ── Custom job stage tests ─────────────────────────────────────────
+
+        [Fact]
+        public async Task UpdateApplicationStage_WithStagePrefix_SetsInterviewAndCurrentJobStageId()
+        {
+            using var context = CreateInMemoryContext();
+            var application = await SeedApplicationAsync(context);
+            var jobStage = new JobStage { Name = "HR Review", JobId = application.JobId, Order = 1 };
+            context.JobStages.Add(jobStage);
+            await context.SaveChangesAsync();
+
+            var controller = CreateAdminController(context);
+            var result = await controller.UpdateApplicationStage(application.Id, $"stage:{jobStage.Id}", proceedWithoutApproval: true);
+
+            result.Should().BeOfType<RedirectToActionResult>();
+            var updated = await context.Applications.FindAsync(application.Id);
+            updated!.Stage.Should().Be(ApplicationStage.Interview);
+            updated.CurrentJobStageId.Should().Be(jobStage.Id);
+        }
+
+        [Fact]
+        public async Task UpdateApplicationStage_WithStagePrefix_WithoutApproval_ShowsWarning()
+        {
+            using var context = CreateInMemoryContext();
+            var application = await SeedApplicationAsync(context);
+            var jobStage = new JobStage { Name = "HR Review", JobId = application.JobId, Order = 1 };
+            context.JobStages.Add(jobStage);
+            await context.SaveChangesAsync();
+
+            var controller = CreateAdminController(context);
+            var result = await controller.UpdateApplicationStage(application.Id, $"stage:{jobStage.Id}");
+
+            var redirect = result.Should().BeOfType<RedirectToActionResult>().Subject;
+            redirect.ActionName.Should().Be("CandidateDetails");
+            controller.TempData["StageApprovalWarning"].Should().Be(application.Id);
+
+            // Stage should NOT have changed
+            var unchanged = await context.Applications.FindAsync(application.Id);
+            unchanged!.Stage.Should().Be(ApplicationStage.Applied);
+            unchanged.CurrentJobStageId.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task UpdateApplicationStage_WithEnumPrefix_SetsStageAndClearsCurrentJobStageId()
+        {
+            using var context = CreateInMemoryContext();
+            var application = await SeedApplicationAsync(context);
+            var jobStage = new JobStage { Name = "Coding Test", JobId = application.JobId, Order = 1 };
+            context.JobStages.Add(jobStage);
+            await context.SaveChangesAsync();
+
+            // Pre-assign a custom stage
+            application.Stage = ApplicationStage.Interview;
+            application.CurrentJobStageId = jobStage.Id;
+            await context.SaveChangesAsync();
+
+            var controller = CreateAdminController(context);
+            var result = await controller.UpdateApplicationStage(application.Id, "enum:Applied");
+
+            result.Should().BeOfType<RedirectToActionResult>();
+            var updated = await context.Applications.FindAsync(application.Id);
+            updated!.Stage.Should().Be(ApplicationStage.Applied);
+            updated.CurrentJobStageId.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task UpdateApplicationStage_WithInvalidString_ReturnsBadRequest()
+        {
+            using var context = CreateInMemoryContext();
+            var application = await SeedApplicationAsync(context);
+
+            var controller = CreateAdminController(context);
+            var result = await controller.UpdateApplicationStage(application.Id, "invalid:value");
+
+            result.Should().BeOfType<BadRequestResult>();
+        }
+
+        [Fact]
+        public async Task UpdateApplicationStage_WithStageFromWrongJob_ReturnsBadRequest()
+        {
+            using var context = CreateInMemoryContext();
+            var application = await SeedApplicationAsync(context);
+
+            // Create a job stage that belongs to a different job
+            var otherJob = new Job { Title = "Other Job" };
+            context.Jobs.Add(otherJob);
+            await context.SaveChangesAsync();
+            var wrongJobStage = new JobStage { Name = "Wrong Stage", JobId = otherJob.Id, Order = 1 };
+            context.JobStages.Add(wrongJobStage);
+            await context.SaveChangesAsync();
+
+            var controller = CreateAdminController(context);
+            var result = await controller.UpdateApplicationStage(application.Id, $"stage:{wrongJobStage.Id}");
+
+            result.Should().BeOfType<BadRequestResult>();
         }
     }
 }

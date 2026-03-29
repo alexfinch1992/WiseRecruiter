@@ -91,7 +91,7 @@ namespace WiseRecruiter.Tests.Integration
             var scheduledAt = new DateTime(2026, 5, 1, 10, 0, 0, DateTimeKind.Utc);
 
             // Act
-            var result = await controller.CreateInterview(candidate.Id, application.Id, stage.Id, scheduledAt);
+            var result = await controller.CreateInterview(candidate.Id, application.Id, $"stage:{stage.Id}", scheduledAt);
 
             // Assert - redirects back to CandidateDetails
             var redirect = result.Should().BeOfType<RedirectToActionResult>().Subject;
@@ -128,7 +128,7 @@ namespace WiseRecruiter.Tests.Integration
             var controller = CreateAdminController(context);
 
             // Act: use otherCandidate.Id but application belongs to first candidate
-            var result = await controller.CreateInterview(otherCandidate.Id, application.Id, stage.Id, DateTime.UtcNow.AddDays(1));
+            var result = await controller.CreateInterview(otherCandidate.Id, application.Id, $"stage:{stage.Id}", DateTime.UtcNow.AddDays(1));
 
             // Assert
             result.Should().BeOfType<BadRequestObjectResult>();

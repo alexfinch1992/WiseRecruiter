@@ -9,6 +9,7 @@ namespace JobPortal.Services.Interfaces
             int applicationId,
             ApplicationStage newStage,
             bool proceedWithoutApproval,
-            string userId);
+            string userId,
+            int? jobStageId = null);
     }
 }
