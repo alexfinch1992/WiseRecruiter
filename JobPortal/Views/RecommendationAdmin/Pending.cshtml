@@ -22,6 +22,7 @@
                     <tr>
                         <th>Candidate</th>
                         <th>Email</th>
+                        <th>Stage</th>
                         <th>Summary</th>
                         <th>Status</th>
                         <th>Submitted By</th>
@@ -34,6 +35,11 @@
                         <tr>
                             <td class="fw-semibold">@item.CandidateName</td>
                             <td class="text-muted">@item.CandidateEmail</td>
+                            <td>
+                                <span class="badge @(item.Stage == RecommendationStage.Stage1 ? "bg-primary" : "bg-purple")" style="@(item.Stage == RecommendationStage.Stage2 ? "background:#7B3FF2" : "")">
+                                    @(item.Stage == RecommendationStage.Stage1 ? "Stage 1" : "Stage 2")
+                                </span>
+                            </td>
                             <td>@(item.Summary?.Length > 80 ? item.Summary[..80] + "…" : item.Summary)</td>
                             <td>
                                 <span class="badge @(item.Status == RecommendationStatus.Submitted ? "bg-warning text-dark" : "bg-secondary")">
@@ -44,6 +50,7 @@
                             <td>
                                 <a asp-controller="RecommendationAdmin" asp-action="Review"
                                    asp-route-applicationId="@item.ApplicationId"
+                                   asp-route-stage="@((int)item.Stage)"
                                    class="btn btn-sm btn-outline-primary">
                                     Review
                                 </a>

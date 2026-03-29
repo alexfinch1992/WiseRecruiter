@@ -39,8 +39,12 @@ builder.Services.AddScoped<IScorecardAnalyticsService, ScorecardAnalyticsService
 builder.Services.AddScoped<IInterviewService, InterviewService>();
 builder.Services.AddScoped<IStageAuthorizationService, StageAuthorizationService>();
 builder.Services.AddScoped<IStageStateMachine<Stage1TransitionContext>, Stage1StateMachine>();
+builder.Services.AddScoped<IStageStateMachine<Stage2TransitionContext>, Stage2StateMachine>();
 builder.Services.AddScoped<IRecommendationService, RecommendationService>();
+builder.Services.AddScoped<IStageOrderService, StageOrderService>();
 builder.Services.AddScoped<IApplicationStageService, ApplicationStageService>();
+builder.Services.AddScoped<IHiringPipelineService, HiringPipelineService>();
+builder.Services.AddScoped<IGlobalSearchService, GlobalSearchService>();
     
 var app = builder.Build();
 

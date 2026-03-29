@@ -62,7 +62,7 @@ namespace WiseRecruiter.Tests.Integration
         {
             using var context = CreateInMemoryContext();
             var (_, application, _) = await SeedAsync(context);
-            var controller = new RecommendationController(new RecommendationService(context));
+            var controller = new RecommendationController(new RecommendationService(context, new StageOrderService()));
 
             var result = await controller.Stage1(application.Id);
 
@@ -94,7 +94,7 @@ namespace WiseRecruiter.Tests.Integration
             });
             await context.SaveChangesAsync();
 
-            var controller = new RecommendationController(new RecommendationService(context));
+            var controller = new RecommendationController(new RecommendationService(context, new StageOrderService()));
 
             var result = await controller.Stage1(application.Id);
 
@@ -112,7 +112,7 @@ namespace WiseRecruiter.Tests.Integration
         {
             using var context = CreateInMemoryContext();
             var (_, application, _) = await SeedAsync(context);
-            var controller = new RecommendationController(new RecommendationService(context));
+            var controller = new RecommendationController(new RecommendationService(context, new StageOrderService()));
 
             var model = new Stage1RecommendationViewModel
             {
@@ -155,7 +155,7 @@ namespace WiseRecruiter.Tests.Integration
             });
             await context.SaveChangesAsync();
 
-            var controller = new RecommendationController(new RecommendationService(context));
+            var controller = new RecommendationController(new RecommendationService(context, new StageOrderService()));
 
             var model = new Stage1RecommendationViewModel
             {
@@ -185,7 +185,7 @@ namespace WiseRecruiter.Tests.Integration
         public async Task Stage1_Get_WithUnknownApplicationId_ReturnsNotFound()
         {
             using var context = CreateInMemoryContext();
-            var controller = new RecommendationController(new RecommendationService(context));
+            var controller = new RecommendationController(new RecommendationService(context, new StageOrderService()));
 
             var result = await controller.Stage1(applicationId: 9999);
 
@@ -198,7 +198,7 @@ namespace WiseRecruiter.Tests.Integration
         {
             using var context = CreateInMemoryContext();
             var (_, application, _) = await SeedAsync(context);
-            var controller = new RecommendationController(new RecommendationService(context));
+            var controller = new RecommendationController(new RecommendationService(context, new StageOrderService()));
 
             var model = new Stage1RecommendationViewModel
             {
@@ -220,7 +220,7 @@ namespace WiseRecruiter.Tests.Integration
         {
             using var context = CreateInMemoryContext();
             var (_, application, _) = await SeedAsync(context);
-            var controller = new RecommendationController(new RecommendationService(context));
+            var controller = new RecommendationController(new RecommendationService(context, new StageOrderService()));
 
             var model = new Stage1RecommendationViewModel { Notes = "Test" };
 
@@ -236,7 +236,7 @@ namespace WiseRecruiter.Tests.Integration
 
         private static RecommendationController CreateControllerWithUser(AppDbContext context, int adminId = 1)
         {
-            var controller = new RecommendationController(new RecommendationService(context));
+            var controller = new RecommendationController(new RecommendationService(context, new StageOrderService()));
             controller.ControllerContext = new ControllerContext
             {
                 HttpContext = new DefaultHttpContext
@@ -333,7 +333,7 @@ namespace WiseRecruiter.Tests.Integration
             });
             await context.SaveChangesAsync();
 
-            var controller = new RecommendationController(new RecommendationService(context));
+            var controller = new RecommendationController(new RecommendationService(context, new StageOrderService()));
             var model = new Stage1RecommendationViewModel
             {
                 Notes = "Post-approval update",

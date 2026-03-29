@@ -41,7 +41,7 @@ namespace WiseRecruiter.Tests.Integration
                 context,
                 new Mock<IWebHostEnvironment>().Object,
                 applicationService, analyticsService, scorecardService,
-                templateService, jobService, scorecardAnalyticsService, interviewService, new RecommendationService(context), new ApplicationStageService(context, new RecommendationService(context)))
+                templateService, jobService, scorecardAnalyticsService, interviewService, new RecommendationService(context, new StageOrderService()), new ApplicationStageService(context, new RecommendationService(context, new StageOrderService())), new HiringPipelineService(), new GlobalSearchService(context))
             {
                 TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>())
             };
@@ -95,7 +95,7 @@ namespace WiseRecruiter.Tests.Integration
             var viewResult = result.Should().BeOfType<ViewResult>().Subject;
             var model = viewResult.Model.Should().BeAssignableTo<CandidateAdminViewModel>().Subject;
             model.RequiresStage1ApprovalWarning.Should().BeTrue();
-            model.Stage1Recommendation.Should().BeNull();
+            model.Recommendations.Should().NotContain(r => r.Stage == RecommendationStage.Stage1);
         }
 
         [Fact]
@@ -119,7 +119,8 @@ namespace WiseRecruiter.Tests.Integration
             var viewResult = result.Should().BeOfType<ViewResult>().Subject;
             var model = viewResult.Model.Should().BeAssignableTo<CandidateAdminViewModel>().Subject;
             model.RequiresStage1ApprovalWarning.Should().BeFalse();
-            model.Stage1Recommendation!.Status.Should().Be(RecommendationStatus.Approved);
+            var stage1 = model.Recommendations.First(r => r.Stage == RecommendationStage.Stage1);
+            stage1.Status.Should().Be(RecommendationStatus.Approved);
         }
 
         [Fact]
@@ -238,7 +239,7 @@ namespace WiseRecruiter.Tests.Integration
         {
             using var context = CreateInMemoryContext();
             var (_, application, _) = await SeedAsync(context);
-            var controller = new RecommendationController(new RecommendationService(context));
+            var controller = new RecommendationController(new RecommendationService(context, new StageOrderService()));
 
             var model = new Stage1RecommendationViewModel
             {
@@ -280,7 +281,7 @@ namespace WiseRecruiter.Tests.Integration
             });
             await context.SaveChangesAsync();
 
-            var controller = new RecommendationController(new RecommendationService(context));
+            var controller = new RecommendationController(new RecommendationService(context, new StageOrderService()));
 
             var model = new Stage1RecommendationViewModel
             {
@@ -301,6 +302,103 @@ namespace WiseRecruiter.Tests.Integration
             recs[0].Summary.Should().Be("Updated summary");
             recs[0].ExperienceFit.Should().Be("New trajectory");
             recs[0].Status.Should().Be(RecommendationStatus.Draft); // status unchanged
+        }
+
+        [Fact]
+        public async Task CandidateDetails_WhenStage1Approved_ContainsStage2Recommendation()
+        {
+            using var context = CreateInMemoryContext();
+            var (_, application, _) = await SeedAsync(context);
+            application.Stage = ApplicationStage.Screen;
+            await context.SaveChangesAsync();
+
+            // Seed an approved Stage 1 rec AND a Stage 2 rec (auto-created by system)
+            context.CandidateRecommendations.Add(new CandidateRecommendation
+            {
+                ApplicationId = application.Id,
+                Stage = RecommendationStage.Stage1,
+                Status = RecommendationStatus.Approved,
+                LastUpdatedUtc = DateTime.UtcNow
+            });
+            context.CandidateRecommendations.Add(new CandidateRecommendation
+            {
+                ApplicationId = application.Id,
+                Stage = RecommendationStage.Stage2,
+                Status = RecommendationStatus.Draft,
+                LastUpdatedUtc = DateTime.UtcNow
+            });
+            await context.SaveChangesAsync();
+
+            var controller = CreateAdminController(context);
+            var result = await controller.CandidateDetails(application.Id);
+
+            var model = result.Should().BeOfType<ViewResult>().Subject
+                .Model.Should().BeAssignableTo<CandidateAdminViewModel>().Subject;
+
+            model.Recommendations.Should().Contain(r => r.Stage == RecommendationStage.Stage2,
+                "Stage 2 recommendation should appear in the ViewModel after Stage 1 is approved");
+            model.Recommendations.First(r => r.Stage == RecommendationStage.Stage2)
+                .Status.Should().Be(RecommendationStatus.Draft);
+        }
+
+        [Fact]
+        public async Task Stage2Recommendation_CreatesRecord_WhenNoneExists()
+        {
+            using var context = CreateInMemoryContext();
+            var (_, application, _) = await SeedAsync(context);
+            var controller = new RecommendationController(new RecommendationService(context, new StageOrderService()));
+
+            var model = new Stage2RecommendationViewModel
+            {
+                Notes = "Stage 2 notes",
+                Strengths = "Leadership",
+                Concerns = "Communication",
+                HireRecommendation = true
+            };
+
+            var result = await controller.Stage2(application.Id, model);
+
+            result.Should().BeOfType<RedirectToActionResult>();
+
+            var rec = await context.CandidateRecommendations
+                .FirstOrDefaultAsync(r => r.ApplicationId == application.Id && r.Stage == RecommendationStage.Stage2);
+
+            rec.Should().NotBeNull();
+            rec!.Status.Should().Be(RecommendationStatus.Draft);
+            rec.Summary.Should().Be("Stage 2 notes");
+            rec.ExperienceFit.Should().Be("Leadership");
+        }
+
+        [Fact]
+        public async Task ApproveStage1_ViaService_AutoCreatesStage2InCandidateDetails()
+        {
+            using var context = CreateInMemoryContext();
+            var (_, application, _) = await SeedAsync(context);
+            application.Stage = ApplicationStage.Screen;
+            await context.SaveChangesAsync();
+
+            context.CandidateRecommendations.Add(new CandidateRecommendation
+            {
+                ApplicationId = application.Id,
+                Stage = RecommendationStage.Stage1,
+                Status = RecommendationStatus.Submitted,
+                SubmittedByUserId = 1,
+                SubmittedUtc = DateTime.UtcNow,
+                LastUpdatedUtc = DateTime.UtcNow
+            });
+            await context.SaveChangesAsync();
+
+            var service = new RecommendationService(context, new StageOrderService());
+            await service.ApproveStage1RecommendationAsync(application.Id, userId: 99);
+
+            var controller = CreateAdminController(context);
+            var result = await controller.CandidateDetails(application.Id);
+
+            var model = result.Should().BeOfType<ViewResult>().Subject
+                .Model.Should().BeAssignableTo<CandidateAdminViewModel>().Subject;
+
+            model.Recommendations.Should().Contain(r => r.Stage == RecommendationStage.Stage2,
+                "CandidateDetails should show Stage 2 after it was auto-created by Stage 1 approval");
         }
     }
 }

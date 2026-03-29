@@ -70,4 +70,61 @@ public class RecommendationController : Controller
             _                             => RedirectToAction("CandidateDetails", "Admin", new { id = applicationId })
         };
     }
+
+    [HttpGet]
+    public async Task<IActionResult> Stage2(int applicationId)
+    {
+        var context = await _recommendationService.GetStage2ContextAsync(applicationId);
+        if (context == null)
+            return NotFound();
+
+        var (rec, candidateName, jobTitle) = context.Value;
+
+        var model = new Stage2RecommendationViewModel
+        {
+            Notes = rec?.Summary,
+            Strengths = rec?.ExperienceFit,
+            Concerns = rec?.Concerns,
+            HireRecommendation = rec?.HireRecommendation
+        };
+
+        ViewData["ApplicationId"] = applicationId;
+        ViewData["CandidateName"] = candidateName;
+        ViewData["JobTitle"] = jobTitle;
+
+        return View(model);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Stage2(int applicationId, Stage2RecommendationViewModel model)
+    {
+        var saved = await _recommendationService.SaveStage2DraftAsync(
+            applicationId, model.Notes, model.Strengths, model.Concerns, model.HireRecommendation);
+
+        return saved switch
+        {
+            TransitionResult.NotFound     => NotFound(),
+            TransitionResult.InvalidState => BadRequest(),
+            _                             => RedirectToAction("CandidateDetails", "Admin", new { id = applicationId })
+        };
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SubmitStage2(int applicationId)
+    {
+        var userIdStr = User?.FindFirst("AdminId")?.Value;
+        if (!int.TryParse(userIdStr, out var userId))
+            return Forbid();
+
+        var result = await _recommendationService.SubmitStage2RecommendationAsync(applicationId, userId);
+
+        return result switch
+        {
+            TransitionResult.NotFound     => NotFound(),
+            TransitionResult.InvalidState => BadRequest(),
+            _                             => RedirectToAction("CandidateDetails", "Admin", new { id = applicationId })
+        };
+    }
 }

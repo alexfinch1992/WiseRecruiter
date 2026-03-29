@@ -54,7 +54,7 @@ namespace WiseRecruiter.Tests.Unit.Services
         }
 
         private static ApplicationStageService CreateService(AppDbContext context) =>
-            new ApplicationStageService(context, new RecommendationService(context));
+            new ApplicationStageService(context, new RecommendationService(context, new StageOrderService()));
 
         // Case 1: Approved → stage updates, no warning
         [Fact]

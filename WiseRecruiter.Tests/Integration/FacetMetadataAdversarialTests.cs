@@ -44,7 +44,7 @@ namespace WiseRecruiter.Tests.Integration
             IScorecardService scorecardService = new ScorecardService(context, templateService);
             IJobService jobService = new JobService(context);
             return new AdminController(context, new Mock<IWebHostEnvironment>().Object,
-                applicationService, analyticsService, scorecardService, templateService, jobService, new ScorecardAnalyticsService(context), new InterviewService(context), new RecommendationService(context), new ApplicationStageService(context, new RecommendationService(context)));
+                applicationService, analyticsService, scorecardService, templateService, jobService, new ScorecardAnalyticsService(context), new InterviewService(context), new RecommendationService(context, new StageOrderService()), new ApplicationStageService(context, new RecommendationService(context, new StageOrderService())), new HiringPipelineService(), new GlobalSearchService(context));
         }
 
         /// Builds the minimum application + template + facet chain needed to call CreateScorecard.

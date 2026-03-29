@@ -34,14 +34,19 @@ namespace JobPortal.Services.Interfaces
         Task<TransitionResult> SubmitStage1RecommendationAsync(int applicationId, int userId);
 
         /// <summary>
-        /// Returns all Stage 1 recommendations that have not yet been approved.
+        /// Returns all recommendations (any stage) that are awaiting approval (Status == Submitted).
         /// </summary>
-        Task<List<PendingRecommendationDto>> GetPendingStage1RecommendationsAsync();
+        Task<List<PendingRecommendationDto>> GetPendingRecommendationsAsync();
 
         /// <summary>
         /// Returns the full review context for a Stage 1 recommendation, or null when the application does not exist.
         /// </summary>
         Task<Stage1ReviewViewModel?> GetStage1ReviewAsync(int applicationId);
+
+        /// <summary>
+        /// Returns the full review context for a Stage 2 recommendation, or null when the application does not exist.
+        /// </summary>
+        Task<Stage2ReviewViewModel?> GetStage2ReviewAsync(int applicationId);
 
         /// <summary>
         /// Marks the Stage 1 recommendation as Approved and records the approver.
@@ -50,5 +55,18 @@ namespace JobPortal.Services.Interfaces
         /// Returns Approved on success.
         /// </summary>
         Task<ApprovalResult> ApproveStage1RecommendationAsync(int applicationId, int userId, string? approvalFeedback = null);
+
+        /// <summary>
+        /// Marks the Stage 2 recommendation as Approved. Manager-only.
+        /// Returns Forbidden when the caller is not authorized.
+        /// Returns NotFound when no Stage 2 recommendation exists.
+        /// Returns AlreadyApproved when already approved.
+        /// Returns Approved on success.
+        /// </summary>
+        Task<ApprovalResult> ApproveStage2RecommendationAsync(int applicationId, int userId, string? approvalFeedback = null);
+
+        Task<(CandidateRecommendation? Rec, string? CandidateName, string? JobTitle)?> GetStage2ContextAsync(int applicationId);
+        Task<TransitionResult> SaveStage2DraftAsync(int applicationId, string? notes, string? strengths, string? concerns, bool? hireRecommendation);
+        Task<TransitionResult> SubmitStage2RecommendationAsync(int applicationId, int userId);
     }
 }

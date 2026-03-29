@@ -11,7 +11,8 @@ namespace JobPortal.Models
 
     public enum RecommendationStage
     {
-        Stage1
+        Stage1,
+        Stage2
     }
 
     public class CandidateRecommendation
