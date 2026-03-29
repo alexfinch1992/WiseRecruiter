@@ -1,0 +1,100 @@
+@model JobPortal.Models.ViewModels.ResumeReviewViewModel
+@{
+    ViewData["Title"] = "Review Applicants";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="fw-bold mb-0">
+            <i class="fas fa-users me-2"></i>Review Applicants
+        </h2>
+        <a asp-action="JobDetail" asp-route-id="@Model.JobId" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Back to @Model.JobTitle
+        </a>
+    </div>
+
+    @if (Model.IsQueueEmpty)
+    {
+        <div class="card shadow-sm">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                <h4 class="text-muted">All caught up!</h4>
+                <p class="text-muted">There are no applicants in the Applied stage to review.</p>
+                <a asp-action="JobDetail" asp-route-id="@Model.JobId" class="btn btn-primary mt-2">
+                    Back to Job
+                </a>
+            </div>
+        </div>
+    }
+    else if (Model.IsQueueComplete)
+    {
+        <div class="card shadow-sm">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-flag-checkered fa-3x text-primary mb-3"></i>
+                <h4>Queue Complete</h4>
+                <p class="text-muted">You've reviewed all @Model.TotalCount applicant(s) in this batch.</p>
+                <a asp-action="JobDetail" asp-route-id="@Model.JobId" class="btn btn-primary mt-2">
+                    Back to Job
+                </a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card shadow-sm mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="badge bg-secondary me-2">@(Model.CurrentIndex + 1) of @Model.TotalCount</span>
+                    <strong>@Model.CandidateName</strong>
+                    <span class="text-muted ms-2">@Model.Email</span>
+                </div>
+                <div class="d-flex gap-2">
+                    @if (Model.CurrentIndex > 0)
+                    {
+                        <a asp-action="ResumeReview"
+                           asp-route-jobId="@Model.JobId"
+                           asp-route-index="@(Model.CurrentIndex - 1)"
+                           class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-chevron-left me-1"></i>Previous
+                        </a>
+                    }
+                    <a asp-action="ResumeReview"
+                       asp-route-jobId="@Model.JobId"
+                       asp-route-index="@(Model.CurrentIndex + 1)"
+                       class="btn btn-sm btn-outline-secondary">
+                        Skip<i class="fas fa-chevron-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="card-body">
+                @if (Model.HasResume)
+                {
+                    <iframe src="@Model.ResumeUrl"
+                            class="w-100 border rounded"
+                            style="height: 75vh; min-height: 500px;"
+                            title="Resume of @Model.CandidateName">
+                    </iframe>
+                }
+                else
+                {
+                    <div class="alert alert-warning d-flex align-items-center" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        No resume uploaded by this applicant.
+                    </div>
+                }
+            </div>
+
+            <div class="card-footer d-flex justify-content-end">
+                <form asp-action="AdvanceToScreen" method="post">
+                    <input type="hidden" name="applicationId" value="@Model.ApplicationId" />
+                    <input type="hidden" name="jobId" value="@Model.JobId" />
+                    <input type="hidden" name="index" value="@Model.CurrentIndex" />
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-arrow-right me-1"></i>Move to Screen
+                    </button>
+                </form>
+            </div>
+        </div>
+    }
+</div>
