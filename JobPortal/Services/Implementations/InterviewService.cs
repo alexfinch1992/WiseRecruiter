@@ -24,8 +24,8 @@ namespace JobPortal.Services.Implementations
             if (!applicationExists)
                 throw new InvalidOperationException($"Application with Id {applicationId} not found.");
 
-            var jobStageExists = await _context.JobStages.AnyAsync(js => js.Id == jobStageId);
-            if (!jobStageExists)
+            var jobStageExists = jobStageId > 0 && await _context.JobStages.AnyAsync(js => js.Id == jobStageId);
+            if (jobStageId > 0 && !jobStageExists)
                 throw new InvalidOperationException($"JobStage with Id {jobStageId} not found.");
 
             var interview = new Interview

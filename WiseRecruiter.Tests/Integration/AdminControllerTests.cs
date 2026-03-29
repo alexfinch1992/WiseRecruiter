@@ -131,7 +131,7 @@ namespace WiseRecruiter.Tests.Integration
             var application      = await SeedApplicationAsync(context);
             var controller       = CreateAdminController(context);
 
-            var result = await controller.UpdateApplicationStage(application.Id, ApplicationStage.Screen);
+            var result = await controller.UpdateApplicationStage(application.Id, "enum:Screen");
 
             var redirect = result.Should().BeOfType<RedirectToActionResult>().Subject;
             redirect.ActionName.Should().Be("CandidateDetails");
@@ -150,7 +150,7 @@ namespace WiseRecruiter.Tests.Integration
             var controller       = CreateAdminController(context);
 
             var result = await controller.UpdateApplicationStage(
-                application.Id, ApplicationStage.Interview, proceedWithoutApproval: false);
+                application.Id, "enum:Interview", proceedWithoutApproval: false);
 
             var redirect = result.Should().BeOfType<RedirectToActionResult>().Subject;
             redirect.ActionName.Should().Be("CandidateDetails");
@@ -171,7 +171,7 @@ namespace WiseRecruiter.Tests.Integration
             var controller       = CreateAdminController(context);
 
             var result = await controller.UpdateApplicationStage(
-                application.Id, ApplicationStage.Interview, proceedWithoutApproval: true);
+                application.Id, "enum:Interview", proceedWithoutApproval: true);
 
             var redirect = result.Should().BeOfType<RedirectToActionResult>().Subject;
             redirect.ActionName.Should().Be("CandidateDetails");

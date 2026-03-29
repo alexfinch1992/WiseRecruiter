@@ -8,7 +8,7 @@
 <div class="container-fluid py-5">
     <div class="row mb-5">
         <div class="col-md-8">
-            <a href="javascript:history.back()" class="btn btn-outline-secondary mb-4">
+            <a asp-action="JobDetail" asp-controller="Admin" asp-route-id="@Model.JobId" class="btn btn-outline-secondary mb-4">
                 <i class="fas fa-arrow-left me-2"></i>Back
             </a>
             <h1 class="fw-bold mb-3" style="color: #1E1765;">
@@ -169,20 +169,24 @@
                         <div class="d-flex align-items-end gap-2">
                             <div>
                                 <label class="form-label fw-bold small text-muted">Move to Stage</label>
-                                <select name="newStage" id="newStageSelect" class="form-select form-select-sm">
-                                    @{
-                                        var effectiveStage = Model.PendingApplicationStage ?? Model.ApplicationStage;
-                                    }
-                                    @foreach (ApplicationStage s in Enum.GetValues(typeof(ApplicationStage)))
+                                @{
+                                    var effectiveStage = Model.PendingApplicationStage ?? Model.ApplicationStage;
+                                }
+                                <select name="selectedStage" id="selectedStageSelect" class="form-select form-select-sm mb-2">
+                                    <optgroup label="Organisation Stages">
+                                        @foreach (ApplicationStage s in Enum.GetValues(typeof(ApplicationStage)))
+                                        {
+                                            <option value="enum:@s" selected="@(Model.CurrentJobStageId == null && effectiveStage == s)">@s</option>
+                                        }
+                                    </optgroup>
+                                    @if (Model.JobStages.Any())
                                     {
-                                        if (s == effectiveStage)
-                                        {
-                                            <option value="@s" selected="selected">@s</option>
-                                        }
-                                        else
-                                        {
-                                            <option value="@s">@s</option>
-                                        }
+                                        <optgroup label="Role Stages">
+                                            @foreach (var js in Model.JobStages)
+                                            {
+                                                <option value="stage:@js.Id" selected="@(Model.CurrentJobStageId == js.Id)">@js.Name</option>
+                                            }
+                                        </optgroup>
                                     }
                                 </select>
                             </div>
@@ -354,10 +358,24 @@
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label fw-bold small text-muted">Stage</label>
-                                <select name="jobStageId" class="form-select form-select-sm" required>
-                                    @foreach (var stage in Model.JobStages)
+                                @{
+                                    var scheduleEffectiveStage = Model.PendingApplicationStage ?? Model.ApplicationStage;
+                                }
+                                <select name="selectedStage" class="form-select form-select-sm" required>
+                                    <optgroup label="Organisation Stages">
+                                        @foreach (ApplicationStage s in Enum.GetValues(typeof(ApplicationStage)))
+                                        {
+                                            <option value="enum:@s" selected="@(Model.CurrentJobStageId == null && scheduleEffectiveStage == s)">@s</option>
+                                        }
+                                    </optgroup>
+                                    @if (Model.JobStages.Any())
                                     {
-                                        <option value="@stage.Id">@stage.Name</option>
+                                        <optgroup label="Role Stages">
+                                            @foreach (var js in Model.JobStages)
+                                            {
+                                                <option value="stage:@js.Id" selected="@(Model.CurrentJobStageId == js.Id)">@js.Name</option>
+                                            }
+                                        </optgroup>
                                     }
                                 </select>
                             </div>
@@ -428,6 +446,11 @@
                                     </tr>
                                 </thead>
                                 <tbody>
+                                    @{
+                                        var stageName = Model.CurrentJobStageId != null
+                                            ? (Model.JobStages.FirstOrDefault(s => s.Id == Model.CurrentJobStageId)?.Name ?? Model.ApplicationStage.ToString())
+                                            : Model.ApplicationStage.ToString();
+                                    }
                                     @foreach (var interview in Model.Interviews)
                                     {
                                         string interviewStatus;
@@ -454,7 +477,7 @@
                                         }
                                         <tr>
                                             <td><span class="local-time" data-utc="@interview.ScheduledAt.ToString("o")"></span></td>
-                                            <td><span class="badge" style="background: #7B3FF2;">@interview.StageName</span></td>
+                                            <td><span class="badge" style="background: #7B3FF2;">@stageName</span></td>
                                             <td class="small">
                                                 @if (interview.InterviewerNames.Any())
                                                 {

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using JobPortal.Data;
+using JobPortal.Models;
 using JobPortal.Services.Interfaces;
 
 namespace JobPortal.Services.Implementations
@@ -32,7 +33,8 @@ namespace JobPortal.Services.Implementations
             var avgApps = totalJobs > 0 ? (double)totalApplications / totalJobs : 0;
 
             // Compute aggregations in service, not view
-            var candidatesByStage = stages
+            // Candidates in custom (per-job) stages
+            var customStageCandidates = stages
                 .Select(s => new CandidateByStageDto
                 {
                     StageName = s.Name,
@@ -40,7 +42,22 @@ namespace JobPortal.Services.Implementations
                     PercentageOfTotal = totalApplications > 0
                         ? Math.Round((double)applications.Count(a => a.CurrentJobStageId == s.Id) / totalApplications * 100, 1)
                         : 0
-                })
+                });
+
+            // Candidates in system (enum) stages — those with no custom stage assigned
+            var systemStageCandidates = Enum.GetValues<ApplicationStage>()
+                .Select(s => new CandidateByStageDto
+                {
+                    StageName = s.ToString(),
+                    Count = applications.Count(a => a.CurrentJobStageId == null && a.Stage == s),
+                    PercentageOfTotal = totalApplications > 0
+                        ? Math.Round((double)applications.Count(a => a.CurrentJobStageId == null && a.Stage == s) / totalApplications * 100, 1)
+                        : 0
+                });
+
+            var candidatesByStage = systemStageCandidates
+                .Concat(customStageCandidates)
+                .Where(s => s.Count > 0)
                 .ToList();
 
             var jobStats = jobs
@@ -53,6 +70,18 @@ namespace JobPortal.Services.Implementations
                 .OrderByDescending(x => x.TotalApplications)
                 .ToList();
 
+            // Per-job breakdown: system stages + custom stages
+            var systemStageStats = jobs
+                .SelectMany(j => Enum.GetValues<ApplicationStage>().Select(s => new StageStatDto
+                {
+                    JobId = j.Id,
+                    JobTitle = j.Title,
+                    StageId = 0,
+                    StageName = s.ToString(),
+                    CandidateCount = applications.Count(a => a.JobId == j.Id && a.CurrentJobStageId == null && a.Stage == s)
+                }))
+                .Where(x => x.CandidateCount > 0);
+
             var stageStats = stages
                 .GroupJoin(jobs, s => s.JobId, j => j.Id, (s, j) => new { Stage = s, Job = j.FirstOrDefault() })
                 .Select(x => new StageStatDto
@@ -63,6 +92,7 @@ namespace JobPortal.Services.Implementations
                     StageName = x.Stage.Name,
                     CandidateCount = applications.Count(a => a.CurrentJobStageId == x.Stage.Id)
                 })
+                .Concat(systemStageStats)
                 .OrderBy(x => x.JobTitle)
                 .ThenBy(x => x.StageName)
                 .ToList();

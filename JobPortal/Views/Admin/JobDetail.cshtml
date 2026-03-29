@@ -70,6 +70,19 @@
                     <div class="btn-group" role="group">
                         <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-sm btn-outline-warning"><i class="fas fa-edit me-1"></i>Edit</a>
                         <a asp-controller="Job" asp-action="Delete" asp-route-id="@Model.Id" asp-route-returnUrl="@Url.Action("Index", "Admin")" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash me-1"></i>Delete</a>
+                        @if (ViewBag.HasApplicantsToReview == true)
+                        {
+                            <a asp-action="ResumeReview" asp-route-jobId="@Model.Id" class="btn btn-outline-primary">
+                                Review Applicants
+                            </a>
+                        }
+                        @* TEMP: seed button — remove before production *@
+                        <form asp-action="SeedResumeReviewData" method="post" style="display:inline;">
+                            <input type="hidden" name="jobId" value="@Model.Id" />
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                Seed Test Applicants
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -205,19 +218,16 @@
                 </form>
             </div>
             <div class="card-body" id="stagesCollapsedView">
-                @if (stages.Any())
-                {
-                    <div class="d-flex flex-wrap gap-2">
-                        @foreach (var stage in stages)
-                        {
-                            <span class="badge" style="background-color: #7B3FF2; font-size: 0.85rem;">@stage.Name</span>
-                        }
-                    </div>
-                }
-                else
-                {
-                    <p class="text-muted small mb-0"><i class="fas fa-info-circle me-1"></i>No stages configured</p>
-                }
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                    <span class="badge" style="background-color: #7B3FF2; font-size: 0.85rem;"><i class="fas fa-lock me-1"></i>Applied</span>
+                    <span class="badge" style="background-color: #7B3FF2; font-size: 0.85rem;"><i class="fas fa-lock me-1"></i>Screen</span>
+                    @foreach (var stage in stages)
+                    {
+                        <span class="badge" style="background-color: #7B3FF2; font-size: 0.85rem;">@stage.Name</span>
+                    }
+                    <span class="badge" style="background-color: #7B3FF2; font-size: 0.85rem;"><i class="fas fa-lock me-1"></i>Offer</span>
+                    <span class="badge" style="background-color: #7B3FF2; font-size: 0.85rem;"><i class="fas fa-lock me-1"></i>Hired</span>
+                </div>
             </div>
         </div>
 
@@ -305,17 +315,19 @@
                                     <small class="text-muted">@app.AppliedDate.ToString("MMM dd, yyyy hh:mm tt")</small>
                                 </td>
                                 <td class="text-center">
-                                    <form asp-action="UpdateStage" method="post" class="d-inline">
-                                        <input type="hidden" name="applicationId" value="@app.Id" />
-                                        <input type="hidden" name="jobId" value="@Model.Id" />
-                                        <select name="stageId" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto; display: inline-block;">
-                                            <option value="" selected="@(app.CurrentJobStageId == null)">-- Unassigned --</option>
-                                            @foreach (var stage in (Model.Stages?.OrderBy(s => s.Order) ?? Enumerable.Empty<JobStage>()).ToList())
-                                            {
-                                                <option value="@stage.Id" selected="@(app.CurrentJobStageId == stage.Id)">@stage.Name</option>
-                                            }
-                                        </select>
-                                    </form>
+                                    @{
+                                        var _stageName = app.CurrentJobStageId != null
+                                            ? Model.Stages?.FirstOrDefault(s => s.Id == app.CurrentJobStageId)?.Name
+                                            : null;
+                                    }
+                                    @if (_stageName != null)
+                                    {
+                                        <span class="badge bg-primary">@_stageName</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge" style="background-color: #7B3FF2;">@app.Stage</span>
+                                    }
                                 </td>
                                 <td class="text-center">
                                     @{
