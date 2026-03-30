@@ -15,4 +15,15 @@
     </PackageReference>
   </ItemGroup>
 
+  <!--
+    Automatically keeps the JS bundle fresh during local Debug builds.
+    Release / CI should run `npm ci && npm run build` as an explicit pipeline step.
+  -->
+  <Target Name="BuildClientApp" BeforeTargets="Build" Condition="'$(Configuration)' == 'Debug'">
+    <Message Text="[ClientApp] npm install..." Importance="high" />
+    <Exec Command="npm install" WorkingDirectory="$(MSBuildProjectDirectory)\ClientApp" />
+    <Message Text="[ClientApp] npm run build..." Importance="high" />
+    <Exec Command="npm run build" WorkingDirectory="$(MSBuildProjectDirectory)\ClientApp" />
+  </Target>
+
 </Project>

@@ -6,14 +6,41 @@
 }
 
 <div class="container-fluid py-5">
-    <div class="row mb-5">
-        <div class="col-md-8">
-            <a asp-action="JobDetail" asp-controller="Admin" asp-route-id="@Model.JobId" class="btn btn-outline-secondary mb-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <a asp-action="JobDetail" asp-controller="Admin" asp-route-id="@Model.JobId" class="btn btn-outline-secondary mb-3">
                 <i class="fas fa-arrow-left me-2"></i>Back
             </a>
-            <h1 class="fw-bold mb-3" style="color: #1E1765;">
+            <h1 class="fw-bold mb-2" style="color: #1E1765;">
                 <i class="fas fa-user-circle me-3"></i>@Model.Name
             </h1>
+
+            @* ── Application Switcher: horizontal pill nav ── *@
+            @if (Model.RelatedApplications.Any())
+            {
+                <div class="d-flex align-items-center flex-wrap gap-2 mt-2 mb-1">
+                    <span class="text-muted small fw-semibold me-1">Other Roles:</span>
+
+                    @* current application — highlighted solid pill *@
+                    <span class="badge fw-semibold px-3 py-2"
+                          style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%); font-size: 0.8rem; border-radius: 50rem;">
+                        @Model.JobTitle
+                        <span class="opacity-75 ms-1" style="font-size: 0.7rem;">@Model.AppliedDate.ToString("MMM yy")</span>
+                    </span>
+
+                    @foreach (var other in Model.RelatedApplications)
+                    {
+                        <a asp-action="CandidateDetails" asp-route-id="@other.Id"
+                           class="text-decoration-none">
+                            <span class="badge fw-semibold px-3 py-2"
+                                  style="background: transparent; border: 2px solid #7B3FF2; color: #1E1765; font-size: 0.8rem; border-radius: 50rem; cursor: pointer;">
+                                @other.JobTitle
+                                <span class="text-muted ms-1" style="font-size: 0.7rem;">@other.AppliedDate.ToString("MMM yy")</span>
+                            </span>
+                        </a>
+                    }
+                </div>
+            }
         </div>
     </div>
 
@@ -100,6 +127,62 @@
                 </div>
             </div>
 
+            @* ── Candidate Dossier: recommendations from OTHER applications ── *@
+            @if (Model.CrossApplicationRecommendations.Any())
+            {
+                <div class="card shadow-sm border-0 mb-4" style="border-left: 4px solid #f59e0b !important;">
+                    <div class="card-header d-flex align-items-center gap-2" style="background: linear-gradient(135deg, #92400e 0%, #f59e0b 100%);">
+                        <i class="fas fa-scroll text-white"></i>
+                        <h5 class="fw-bold mb-0 text-white">Candidate Dossier</h5>
+                        <span class="badge bg-white text-dark ms-auto" style="font-size: 0.7rem;">Cross-Application History</span>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-3">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Recommendation history from <strong>other applications</strong> by this candidate.
+                        </p>
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Role</th>
+                                        <th>Stage</th>
+                                        <th>Status</th>
+                                        <th>Updated</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var rec in Model.CrossApplicationRecommendations)
+                                    {
+                                        var dossierBadge = rec.Status switch
+                                        {
+                                            RecommendationStatus.Approved  => ("bg-success",           "Approved"),
+                                            RecommendationStatus.Rejected  => ("bg-danger",            "Rejected"),
+                                            RecommendationStatus.Submitted => ("bg-warning text-dark", "Pending Review"),
+                                            _                              => ("bg-secondary",          rec.Status.ToString())
+                                        };
+                                        var recStageLabel = rec.Stage == RecommendationStage.Stage1 ? "S1" : "S2";
+                                        <tr class="@(rec.Status == RecommendationStatus.Rejected ? "table-danger" : "")">
+                                            <td class="small fw-semibold">@rec.JobTitle</td>
+                                            <td><span class="badge" style="background: #7B3FF2; font-size: 0.7rem;">@recStageLabel</span></td>
+                                            <td><span class="badge @dossierBadge.Item1" style="font-size: 0.7rem;">@dossierBadge.Item2</span></td>
+                                            <td class="text-muted" style="font-size: 0.75rem;">@rec.LastUpdatedUtc.ToString("MMM dd, yyyy")</td>
+                                            <td>
+                                                <a asp-action="CandidateDetails" asp-route-id="@rec.ApplicationId"
+                                                   class="btn btn-outline-secondary btn-sm py-0 px-2" style="font-size: 0.7rem;">
+                                                    View
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+
             <!-- Hiring Pipeline Card -->
             <div class="card shadow-sm border-0 mb-4" id="hiring-pipeline-card">
                 <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
@@ -143,59 +226,19 @@
                         }
                     </div>
 
-                    <!-- Move stage form -->
-                    <form id="update-stage-form" method="post" asp-controller="Admin" asp-action="UpdateApplicationStage">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="applicationId" value="@Model.Id" />
-                        <input type="hidden" name="proceedWithoutApproval" id="proceedWithoutApproval" value="false" />
-                        @if (Model.RequiresStageApprovalWarning)
-                        {
-                            <div class="alert alert-warning py-2 mt-2 mb-3">
-                                <div class="d-flex align-items-start gap-2">
-                                    <i class="fas fa-exclamation-triangle mt-1 flex-shrink-0"></i>
-                                    <div class="flex-grow-1">
-                                        <strong>Stage 1 recommendation has not been approved.</strong>
-                                        <div class="mt-2 form-check mb-0">
-                                            <input class="form-check-input" type="checkbox" id="stageBypassConfirm"
-                                                   onchange="document.getElementById('proceedWithoutApproval').value = this.checked ? 'true' : 'false'; document.getElementById('update-stage-btn').disabled = !this.checked;" />
-                                            <label class="form-check-label small fw-semibold" for="stageBypassConfirm">
-                                                Proceed without formal approval
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        }
-                        <div class="d-flex align-items-end gap-2">
-                            <div>
-                                <label class="form-label fw-bold small text-muted">Move to Stage</label>
-                                @{
-                                    var effectiveStage = Model.PendingApplicationStage ?? Model.ApplicationStage;
-                                }
-                                <select name="selectedStage" id="selectedStageSelect" class="form-select form-select-sm mb-2">
-                                    <optgroup label="Organisation Stages">
-                                        @foreach (ApplicationStage s in Enum.GetValues(typeof(ApplicationStage)))
-                                        {
-                                            <option value="enum:@s" selected="@(Model.CurrentJobStageId == null && effectiveStage == s)">@s</option>
-                                        }
-                                    </optgroup>
-                                    @if (Model.JobStages.Any())
-                                    {
-                                        <optgroup label="Role Stages">
-                                            @foreach (var js in Model.JobStages)
-                                            {
-                                                <option value="stage:@js.Id" selected="@(Model.CurrentJobStageId == js.Id)">@js.Name</option>
-                                            }
-                                        </optgroup>
-                                    }
-                                </select>
-                            </div>
-                            <button type="submit" id="update-stage-btn" class="btn btn-sm btn-primary"
-                                    disabled="@(Model.RequiresStageApprovalWarning ? "disabled" : null)">
-                                <i class="fas fa-save me-1"></i>Update Stage
-                            </button>
-                        </div>
-                    </form>
+                    <!-- Move stage — handled by CandidateActionPanel React component -->
+                    @{
+                        var currentStageEncoded = Model.CurrentJobStageId.HasValue
+                            ? $"stage:{Model.CurrentJobStageId}"
+                            : $"enum:{Model.ApplicationStage}";
+                        var stage1RecStatus = Model.Recommendations
+                            .FirstOrDefault(r => r.Stage == RecommendationStage.Stage1)?.Status.ToString() ?? "None";
+                    }
+                    <div id="stage-move-root"
+                         data-application-id="@Model.Id"
+                         data-job-id="@Model.JobId"
+                         data-current-stage="@currentStageEncoded"
+                         data-stage1-status="@stage1RecStatus"></div>
                 </div>
             </div>
 
@@ -358,24 +401,19 @@
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label fw-bold small text-muted">Stage</label>
-                                @{
-                                    var scheduleEffectiveStage = Model.PendingApplicationStage ?? Model.ApplicationStage;
-                                }
                                 <select name="selectedStage" class="form-select form-select-sm" required>
-                                    <optgroup label="Organisation Stages">
-                                        @foreach (ApplicationStage s in Enum.GetValues(typeof(ApplicationStage)))
-                                        {
-                                            <option value="enum:@s" selected="@(Model.CurrentJobStageId == null && scheduleEffectiveStage == s)">@s</option>
-                                        }
-                                    </optgroup>
-                                    @if (Model.JobStages.Any())
+                                    @{
+                                        var scheduleEffectiveStage = Model.PendingApplicationStage ?? Model.ApplicationStage;
+                                        var scheduleOptions = Model.JobStages.Any()
+                                            ? Model.JobStages.Select(js => new { Value = $"stage:{js.Id}", Label = js.Name, IsSelected = Model.CurrentJobStageId == js.Id })
+                                                .Cast<dynamic>().ToList()
+                                            : Enum.GetValues(typeof(ApplicationStage)).Cast<ApplicationStage>()
+                                                .Select(s => new { Value = $"enum:{s}", Label = s.ToString(), IsSelected = Model.CurrentJobStageId == null && scheduleEffectiveStage == s })
+                                                .Cast<dynamic>().ToList();
+                                    }
+                                    @foreach (var opt in scheduleOptions)
                                     {
-                                        <optgroup label="Role Stages">
-                                            @foreach (var js in Model.JobStages)
-                                            {
-                                                <option value="stage:@js.Id" selected="@(Model.CurrentJobStageId == js.Id)">@js.Name</option>
-                                            }
-                                        </optgroup>
+                                        <option value="@opt.Value" selected="@(opt.IsSelected ? "selected" : null)">@opt.Label</option>
                                     }
                                 </select>
                             </div>
@@ -758,3 +796,7 @@
     }
 
 </script>
+
+@section Scripts {
+    <script type="module" src="~/js/dist/candidate-detail.js" asp-append-version="true"></script>
+}

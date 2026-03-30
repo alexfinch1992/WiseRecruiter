@@ -5,3 +5,11 @@ obj/
 *.db-wal
 *.user
 .vs/
+node_modules/
+
+# Temp patch/probe scripts
+patch_controller*.ps1
+patch_controller*.txt
+patch_result.txt
+probe_controller.ps1
+probe_output.txt

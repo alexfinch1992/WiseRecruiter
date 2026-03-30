@@ -62,6 +62,12 @@ namespace JobPortal.Models.ViewModels
 
         // Unified hiring pipeline (system stages + dynamic job stages)
         public List<PipelineStageViewModel> Pipeline { get; set; } = new();
+
+        // Application Switcher: other applications from this candidate (matched by email)
+        public List<OtherApplicationDto> RelatedApplications { get; set; } = new();
+
+        // Candidate Dossier: recommendations across ALL related applications
+        public List<CrossAppRecommendationDto> CrossApplicationRecommendations { get; set; } = new();
     }
 
     public class InterviewSummaryDto
@@ -72,5 +78,24 @@ namespace JobPortal.Models.ViewModels
         public bool IsCancelled { get; set; }
         public DateTime? CompletedAt { get; set; }
         public List<string> InterviewerNames { get; set; } = new();
+    }
+
+    /// <summary>Slim DTO for a related application (same email, different job).</summary>
+    public class OtherApplicationDto
+    {
+        public int Id { get; set; }
+        public string JobTitle { get; set; } = string.Empty;
+        public string Stage { get; set; } = string.Empty;
+        public DateTime AppliedDate { get; set; }
+    }
+
+    /// <summary>Recommendation record from a related application — used in the Candidate Dossier.</summary>
+    public class CrossAppRecommendationDto
+    {
+        public int ApplicationId { get; set; }
+        public string JobTitle { get; set; } = string.Empty;
+        public RecommendationStage Stage { get; set; }
+        public RecommendationStatus Status { get; set; }
+        public DateTime LastUpdatedUtc { get; set; }
     }
 }
