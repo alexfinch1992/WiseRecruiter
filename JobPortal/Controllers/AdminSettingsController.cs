@@ -305,6 +305,76 @@ public class AdminSettingsController : Controller
         return Ok();
     }
 
+    [HttpPost]
+    [Authorize(Roles = "Admin")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateUser(string fullName, string email, string role)
+    {
+        var allowedRoles = new[] { "Admin", "Recruiter", "HiringManager" };
+
+        if (string.IsNullOrWhiteSpace(fullName) || string.IsNullOrWhiteSpace(email) || !allowedRoles.Contains(role))
+            return BadRequest(new { error = "Invalid input. Please supply a full name, a valid email, and a recognised role." });
+
+        var existing = await _userManager.FindByEmailAsync(email.Trim());
+        if (existing != null)
+            return Conflict(new { error = "A user with that email address already exists." });
+
+        var user = new ApplicationUser
+        {
+            UserName = email.Trim(),
+            Email = email.Trim(),
+            FullName = fullName.Trim(),
+            EmailConfirmed = true
+        };
+
+        var createResult = await _userManager.CreateAsync(user, "TempPass123!");
+        if (!createResult.Succeeded)
+        {
+            var errors = string.Join(" ", createResult.Errors.Select(e => e.Description));
+            return UnprocessableEntity(new { error = errors });
+        }
+
+        var roleResult = await _userManager.AddToRoleAsync(user, role);
+        if (!roleResult.Succeeded)
+        {
+            await _userManager.DeleteAsync(user);
+            return UnprocessableEntity(new { error = "User was created but role assignment failed. Please try again." });
+        }
+
+        return Ok(new { message = $"User '{fullName.Trim()}' created successfully with role '{role}'." });
+    }
+
+    /// <summary>
+    /// Replaces all job assignments for a given user in a single atomic operation.
+    /// The front-end sends the full desired set of jobIds; existing rows not in
+    /// that set are removed and new ones are added.
+    /// </summary>
+    [HttpPost]
+    [Authorize(Roles = "Admin")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateJobAccess(string userId, [FromForm] List<int> jobIds)
+    {
+        if (string.IsNullOrWhiteSpace(userId))
+            return BadRequest(new { error = "userId is required." });
+
+        jobIds ??= new List<int>();
+
+        var existing = await _context.JobAssignments
+            .Where(ja => ja.UserId == userId)
+            .ToListAsync();
+
+        var toRemove = existing.Where(e => !jobIds.Contains(e.JobId)).ToList();
+        var existingIds = existing.Select(e => e.JobId).ToHashSet();
+        var toAdd = jobIds.Where(id => !existingIds.Contains(id))
+                          .Select(id => new JobAssignment { UserId = userId, JobId = id });
+
+        _context.JobAssignments.RemoveRange(toRemove);
+        _context.JobAssignments.AddRange(toAdd);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { assigned = jobIds.Count });
+    }
+
     private async Task<EditTemplateFacetsViewModel?> BuildTemplateFacetEditorViewModel(int templateId, List<TemplateFacetInput>? postedFacets = null)
     {
         var template = await _templateService.GetTemplateById(templateId);

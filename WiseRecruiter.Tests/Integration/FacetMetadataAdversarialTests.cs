@@ -1,4 +1,4 @@
-ï»¿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -44,7 +44,7 @@ namespace WiseRecruiter.Tests.Integration
             IScorecardService scorecardService = new ScorecardService(context, templateService);
             IJobService jobService = new JobService(context);
             return new AdminController(context, new Mock<IWebHostEnvironment>().Object,
-                applicationService, analyticsService, scorecardService, templateService, jobService, new ScorecardAnalyticsService(context), new InterviewService(context), new RecommendationService(context, new StageOrderService()), new ApplicationStageService(context, new RecommendationService(context, new StageOrderService())), new HiringPipelineService(), new GlobalSearchService(context), new AuditService(context));
+                applicationService, analyticsService, scorecardService, templateService, jobService, new ScorecardAnalyticsService(context), new InterviewService(context), new RecommendationService(context, new StageOrderService()), new ApplicationStageService(context, new RecommendationService(context, new StageOrderService())), new HiringPipelineService(), new GlobalSearchService(context), new AuditService(context), new JobPortal.Services.Implementations.JobAccessService(context));
         }
 
         /// Builds the minimum application + template + facet chain needed to call CreateScorecard.
@@ -108,7 +108,7 @@ namespace WiseRecruiter.Tests.Integration
         }
 
         // -------------------------------------------------------
-        // Task 1 â€” Cross-Layer Integrity: ViewModel must mirror DB
+        // Task 1 — Cross-Layer Integrity: ViewModel must mirror DB
         // -------------------------------------------------------
 
         [Fact]
@@ -156,7 +156,7 @@ namespace WiseRecruiter.Tests.Integration
         }
 
         // -------------------------------------------------------
-        // Task 2 â€” Two Facets With Same Name, Both In Template
+        // Task 2 — Two Facets With Same Name, Both In Template
         //          Proves ID-based lookup, not name-based
         // -------------------------------------------------------
 
@@ -164,7 +164,7 @@ namespace WiseRecruiter.Tests.Integration
         public async Task Task2_TwoFacetsWithSameName_BothInTemplate_EachRetainsDistinctMetadata()
         {
             // Bypass service uniqueness check to simulate data that would expose a name-based
-            // lookup bug â€” or to guard against any future relaxation of uniqueness.
+            // lookup bug — or to guard against any future relaxation of uniqueness.
             using var context = CreateInMemoryContext();
             var template = new ScorecardTemplate { Name = "DuplicateNameTemplate" };
             context.ScorecardTemplates.Add(template);
@@ -199,7 +199,7 @@ namespace WiseRecruiter.Tests.Integration
         }
 
         // -------------------------------------------------------
-        // Task 3 â€” Multiple Sequential Updates: Last Write Wins
+        // Task 3 — Multiple Sequential Updates: Last Write Wins
         //          Guards against any template-level snapshot caching
         // -------------------------------------------------------
 
@@ -226,7 +226,7 @@ namespace WiseRecruiter.Tests.Integration
         }
 
         // -------------------------------------------------------
-        // Task 4 â€” Null and Partial Field Combinations
+        // Task 4 — Null and Partial Field Combinations
         //          All three cases in one scorecard
         // -------------------------------------------------------
 
@@ -281,7 +281,7 @@ namespace WiseRecruiter.Tests.Integration
         }
 
         // -------------------------------------------------------
-        // Task 5 â€” Long String Stress: No Truncation At Any Layer
+        // Task 5 — Long String Stress: No Truncation At Any Layer
         // -------------------------------------------------------
 
         [Fact]
@@ -310,13 +310,13 @@ namespace WiseRecruiter.Tests.Integration
         }
 
         // -------------------------------------------------------
-        // Task 6 â€” Invalid CategoryId: Documents Current Behavior
+        // Task 6 — Invalid CategoryId: Documents Current Behavior
         //
         // EF InMemory does NOT enforce FK constraints.
         // UpdateFacet does NOT validate categoryId existence.
         // Current behavior: silently persists the invalid FK value.
         //
-        // This test documents that behavior â€” if the service adds
+        // This test documents that behavior — if the service adds
         // validation in future, this test will need to be updated
         // and the behavior change will be explicit.
         // -------------------------------------------------------
@@ -330,7 +330,7 @@ namespace WiseRecruiter.Tests.Integration
             const int nonExistentCategoryId = 99999;
 
             // With InMemory DB: no FK enforcement, no service-level validation
-            // â†’ silently succeeds, CategoryId is set to the non-existent value
+            // ? silently succeeds, CategoryId is set to the non-existent value
             Func<Task> act = async () =>
                 await service.UpdateFacet(facet.Id, facet.Name, "d", "n", nonExistentCategoryId);
 
@@ -339,12 +339,12 @@ namespace WiseRecruiter.Tests.Integration
 
             var loaded = await context.Facets.FirstAsync(f => f.Id == facet.Id);
             loaded.CategoryId.Should().Be(nonExistentCategoryId,
-                "the value is accepted silently â€” Category navigation property will be null");
+                "the value is accepted silently — Category navigation property will be null");
             loaded.Category.Should().BeNull("EF cannot resolve a navigation property with a non-existent FK");
         }
 
         // -------------------------------------------------------
-        // Task 7 â€” All Four ViewModel Binding Fields Must Be Present
+        // Task 7 — All Four ViewModel Binding Fields Must Be Present
         //          Protects against anyone removing a property from
         //          ScorecardResponseInputViewModel or the controller mapping
         // -------------------------------------------------------
@@ -371,20 +371,20 @@ namespace WiseRecruiter.Tests.Integration
             model.Responses.Should().ContainSingle();
             var r = model.Responses[0];
 
-            // FacetId binding â€” ID-based lookup machinery
+            // FacetId binding — ID-based lookup machinery
             r.FacetId.Should().Be(facetId,
                 "FacetId must be bound so rendering and POST can identify which facet each row belongs to");
 
-            // FacetName binding â€” basic display
+            // FacetName binding — basic display
             r.FacetName.Should().Be("FullyPopulated");
 
-            // Description binding â€” sourced from Facet, not template
+            // Description binding — sourced from Facet, not template
             r.Description.Should().Be("Complete description");
 
-            // NotesPlaceholder binding â€” sourced from Facet, not template
+            // NotesPlaceholder binding — sourced from Facet, not template
             r.NotesPlaceholder.Should().Be("Complete placeholder");
 
-            // CategoryName binding â€” resolved from Facet.Category.Name, not stored directly
+            // CategoryName binding — resolved from Facet.Category.Name, not stored directly
             r.CategoryName.Should().Be("Soft Skills");
         }
 

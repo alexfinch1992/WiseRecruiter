@@ -41,7 +41,7 @@ namespace WiseRecruiter.Tests.Integration
                 new RecommendationService(context, new StageOrderService()),
                 new ApplicationStageService(context, new RecommendationService(context, new StageOrderService())),
                 new HiringPipelineService(),
-                new GlobalSearchService(context), new AuditService(context))
+                new GlobalSearchService(context), new AuditService(context), new JobPortal.Services.Implementations.JobAccessService(context))
             {
                 ControllerContext = new ControllerContext
                 {

@@ -42,6 +42,7 @@ namespace JobPortal.Data
         public DbSet<CandidateRecommendation> CandidateRecommendations { get; set; } = null!;
         public DbSet<AuditLog> AuditLogs { get; set; } = null!;
         public DbSet<JobAssignment> JobAssignments { get; set; } = null!;
+        public DbSet<EmailTemplate> EmailTemplates { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -105,6 +106,26 @@ namespace JobPortal.Data
             modelBuilder.Entity<Facet>()
                 .HasIndex(f => f.Name)
                 .IsUnique();
+
+            // Seed email templates
+            modelBuilder.Entity<EmailTemplate>().HasData(
+                new EmailTemplate
+                {
+                    Id = 1,
+                    Name = "Screening Invite",
+                    Subject = "You're Invited to a Screening Call — {{FirstName}}",
+                    BodyContent = "Hi {{FirstName}},\n\nThank you for applying. We'd like to invite you to a brief screening call to discuss your application.\n\nPlease reply with your availability and we'll get something booked in.\n\nBest regards,\nThe WiseTech Recruiting Team",
+                    LastModified = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new EmailTemplate
+                {
+                    Id = 2,
+                    Name = "Offer Letter",
+                    Subject = "Congratulations {{FirstName}} — Your Offer from WiseTech Global",
+                    BodyContent = "Dear {{FirstName}},\n\nWe are delighted to extend this formal offer of employment at WiseTech Global. Please review the attached details and feel free to reach out if you have any questions.\n\nWe look forward to welcoming you to the team!\n\nBest regards,\nThe WiseTech Recruiting Team",
+                    LastModified = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                }
+            );
 
             // Seed initial categories
             modelBuilder.Entity<Category>().HasData(

@@ -2,6 +2,13 @@ using System.ComponentModel.DataAnnotations;
 
 namespace JobPortal.Models
 {
+    public enum ApplicationStatus
+    {
+        Active,
+        Rejected,
+        Withdrawn
+    }
+
     public enum ApplicationStage
     {
         Applied,
@@ -51,5 +58,10 @@ namespace JobPortal.Models
         // Ownership / traceability fields (pre-multi-tenant)
         public string CreatedByUserId { get; set; } = "System_Seed";
         public string? AssignedToUserId { get; set; }
+
+        // Rejection tracking
+        public ApplicationStatus Status { get; set; } = ApplicationStatus.Active;
+        public string? RejectionReason { get; set; }
+        public string? RejectionNotes { get; set; }
     }
 }

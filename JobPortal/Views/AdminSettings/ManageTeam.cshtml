@@ -10,13 +10,55 @@
             Control which jobs each Hiring Manager can see. Changes are saved immediately.
         </p>
     </div>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
+        <i class="fas fa-user-plus me-1"></i>Create User
+    </button>
+</div>
+
+<!-- Create User Modal -->
+<div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby="createUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createUserModalLabel"><i class="fas fa-user-plus me-2"></i>Create New User</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="create-user-alert" class="alert d-none" role="alert"></div>
+                <div class="mb-3">
+                    <label for="cu-fullname" class="form-label">Full Name <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="cu-fullname" placeholder="e.g. Jane Smith" maxlength="100" />
+                </div>
+                <div class="mb-3">
+                    <label for="cu-email" class="form-label">Email Address <span class="text-danger">*</span></label>
+                    <input type="email" class="form-control" id="cu-email" placeholder="jane.smith@company.com" maxlength="200" />
+                </div>
+                <div class="mb-3">
+                    <label for="cu-role" class="form-label">Role <span class="text-danger">*</span></label>
+                    <select class="form-select" id="cu-role">
+                        <option value="">-- Select a role --</option>
+                        <option value="Admin">Admin</option>
+                        <option value="Recruiter">Recruiter</option>
+                        <option value="HiringManager">Hiring Manager</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="cu-submit-btn">
+                    <span id="cu-spinner" class="spinner-border spinner-border-sm me-1 d-none" role="status" aria-hidden="true"></span>
+                    Create User
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 @if (!Model.Users.Any())
 {
     <div class="alert alert-info">
         <i class="fas fa-info-circle me-2"></i>
-        No Hiring Managers found. Assign users to the <strong>HiringManager</strong> role first.
+        No Hiring Managers found. Use the <strong>Create User</strong> button above to add one and assign them a role.
     </div>
 }
 else if (!Model.AllJobs.Any())
@@ -28,41 +70,91 @@ else if (!Model.AllJobs.Any())
 }
 else
 {
+    <!-- Compact summary table: one row per user, no horizontal scroll -->
     <div class="table-responsive">
-        <table class="table table-bordered table-hover align-middle">
+        <table class="table table-hover align-middle">
             <thead class="table-dark">
                 <tr>
-                    <th style="min-width:160px">Name</th>
-                    <th style="min-width:100px">Role</th>
-                    @foreach (var job in Model.AllJobs)
-                    {
-                        <th class="text-center small" style="min-width:90px">@job.Title</th>
-                    }
+                    <th>Name</th>
+                    <th>Role</th>
+                    <th class="text-center">Jobs Assigned</th>
+                    <th class="text-center" style="width:140px">Access</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var user in Model.Users)
                 {
+                    var assignedTitles = Model.AllJobs
+                        .Where(j => user.AssignedJobIds.Contains(j.Id))
+                        .Select(j => j.Title);
                     <tr>
                         <td class="fw-medium">@user.FullName</td>
                         <td><span class="badge bg-primary">HiringManager</span></td>
-                        @foreach (var job in Model.AllJobs)
-                        {
-                            <td class="text-center">
-                                <input type="checkbox"
-                                       class="form-check-input assignment-checkbox"
-                                       data-user-id="@user.UserId"
-                                       data-job-id="@job.Id"
-                                       @(user.AssignedJobIds.Contains(job.Id) ? "checked" : "")
-                                       title="@user.FullName — @job.Title" />
-                            </td>
-                        }
+                        <td class="text-center">
+                            @if (user.AssignedJobIds.Any())
+                            {
+                                <span class="badge bg-success rounded-pill"
+                                      title="@string.Join(", ", assignedTitles)">
+                                    @user.AssignedJobIds.Count
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary rounded-pill">0</span>
+                            }
+                        </td>
+                        <td class="text-center">
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-primary manage-access-btn"
+                                    data-user-id="@user.UserId"
+                                    data-user-name="@user.FullName"
+                                    data-assigned-ids="@System.Text.Json.JsonSerializer.Serialize(user.AssignedJobIds)"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#manageAccessModal">
+                                <i class="fas fa-key me-1"></i>Manage Access
+                            </button>
+                        </td>
                     </tr>
                 }
             </tbody>
         </table>
     </div>
 }
+
+<!-- Manage Access Modal (shared, populated by JS) -->
+<div class="modal fade" id="manageAccessModal" tabindex="-1" aria-labelledby="manageAccessLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="manageAccessLabel">
+                    <i class="fas fa-key me-2"></i>Manage Job Access — <span id="ma-username"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="ma-alert" class="alert d-none" role="alert"></div>
+                <div class="mb-3">
+                    <input type="text" id="ma-search" class="form-control"
+                           placeholder="Search jobs…" autocomplete="off" />
+                </div>
+                <div id="ma-job-list" class="overflow-auto" style="max-height:420px;">
+                    <!-- Populated by JS -->
+                </div>
+                <p id="ma-no-results" class="text-center text-muted small mt-2 d-none">No jobs match your search.</p>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <small class="text-muted" id="ma-count-label"></small>
+                <div>
+                    <button type="button" class="btn btn-secondary me-1" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="ma-save-btn">
+                        <span id="ma-spinner" class="spinner-border spinner-border-sm me-1 d-none" role="status" aria-hidden="true"></span>
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 {{!-- Hidden form just to expose the CSRF token to vanilla JS --}}
 <form id="csrf-form" style="display:none">@Html.AntiForgeryToken()</form>
@@ -77,32 +169,169 @@ else
 <script>
     const csrfToken = document.querySelector('#csrf-form input[name="__RequestVerificationToken"]').value;
 
-    document.querySelectorAll('.assignment-checkbox').forEach(function (cb) {
-        cb.addEventListener('change', async function () {
-            const userId = this.dataset.userId;
-            const jobId  = this.dataset.jobId;
-            const isAssigned = this.checked;
-            this.disabled = true;
+    // ── All jobs from server ───────────────────────────────────────
+    const allJobs = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+        Model.AllJobs.Select(j => new { id = j.Id, title = j.Title })
+    ));
 
-            try {
-                const res = await fetch('@Url.Action("UpdateAssignment", "AdminSettings")', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'RequestVerificationToken': csrfToken
-                    },
-                    body: new URLSearchParams({ userId, jobId, isAssigned })
-                });
+    // ── Create User Modal ──────────────────────────────────────────
+    document.getElementById('cu-submit-btn').addEventListener('click', async function () {
+        const fullName = document.getElementById('cu-fullname').value.trim();
+        const email    = document.getElementById('cu-email').value.trim();
+        const role     = document.getElementById('cu-role').value;
+        const alertEl  = document.getElementById('create-user-alert');
 
-                showToast(res.ok ? '✓ Saved' : '✗ Error saving', res.ok ? 'bg-success' : 'bg-danger');
-                if (!res.ok) this.checked = !isAssigned; // revert on failure
-            } catch (err) {
-                showToast('✗ Network error', 'bg-danger');
-                this.checked = !isAssigned;
-            } finally {
-                this.disabled = false;
+        alertEl.className = 'alert d-none';
+        alertEl.textContent = '';
+
+        if (!fullName || !email || !role) {
+            alertEl.className = 'alert alert-warning';
+            alertEl.textContent = 'Please fill in all fields.';
+            return;
+        }
+
+        const btn = this;
+        const spinner = document.getElementById('cu-spinner');
+        btn.disabled = true;
+        spinner.classList.remove('d-none');
+
+        try {
+            const res = await fetch('@Url.Action("CreateUser", "AdminSettings")', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': csrfToken },
+                body: new URLSearchParams({ fullName, email, role })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                window.location.reload();
+            } else {
+                alertEl.className = 'alert alert-danger';
+                alertEl.textContent = data.error || 'An error occurred.';
             }
+        } catch {
+            alertEl.className = 'alert alert-danger';
+            alertEl.textContent = 'Network error — please try again.';
+        } finally {
+            btn.disabled = false;
+            spinner.classList.add('d-none');
+        }
+    });
+
+    document.getElementById('createUserModal').addEventListener('hidden.bs.modal', function () {
+        document.getElementById('cu-fullname').value = '';
+        document.getElementById('cu-email').value    = '';
+        document.getElementById('cu-role').value     = '';
+        const alertEl = document.getElementById('create-user-alert');
+        alertEl.className   = 'alert d-none';
+        alertEl.textContent = '';
+    });
+
+    // ── Manage Access Modal ────────────────────────────────────────
+    let activeUserId = null;
+
+    document.querySelectorAll('.manage-access-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            activeUserId = this.dataset.userId;
+            const assignedIds = JSON.parse(this.dataset.assignedIds || '[]');
+
+            document.getElementById('ma-username').textContent = this.dataset.userName;
+            document.getElementById('ma-search').value = '';
+            document.getElementById('ma-alert').className = 'alert d-none';
+
+            renderJobList(allJobs, assignedIds);
         });
+    });
+
+    function renderJobList(jobs, assignedIds) {
+        const list = document.getElementById('ma-job-list');
+        list.innerHTML = jobs.map(j => `
+            <div class="form-check border-bottom py-2 px-3 job-item">
+                <input class="form-check-input" type="checkbox" value="${j.id}"
+                       id="job-cb-${j.id}" ${assignedIds.includes(j.id) ? 'checked' : ''}>
+                <label class="form-check-label w-100" for="job-cb-${j.id}">${j.title}</label>
+            </div>`
+        ).join('');
+        updateCount();
+    }
+
+    function getCheckedJobIds() {
+        return Array.from(document.querySelectorAll('#ma-job-list input[type=checkbox]:checked'))
+                    .map(cb => parseInt(cb.value, 10));
+    }
+
+    function updateCount() {
+        const n = getCheckedJobIds().length;
+        document.getElementById('ma-count-label').textContent =
+            n === 0 ? 'No jobs assigned' : `${n} job${n === 1 ? '' : 's'} assigned`;
+    }
+
+    document.getElementById('ma-job-list').addEventListener('change', updateCount);
+
+    // Search / filter
+    document.getElementById('ma-search').addEventListener('input', function () {
+        const q = this.value.toLowerCase();
+        const items = document.querySelectorAll('#ma-job-list .job-item');
+        let visible = 0;
+        items.forEach(function (item) {
+            const label = item.querySelector('label').textContent.toLowerCase();
+            const match = !q || label.includes(q);
+            item.style.display = match ? '' : 'none';
+            if (match) visible++;
+        });
+        document.getElementById('ma-no-results').classList.toggle('d-none', visible > 0);
+    });
+
+    // Save
+    document.getElementById('ma-save-btn').addEventListener('click', async function () {
+        if (!activeUserId) return;
+
+        const alertEl = document.getElementById('ma-alert');
+        alertEl.className = 'alert d-none';
+
+        const saveBtn = this;
+        const spinner = document.getElementById('ma-spinner');
+        saveBtn.disabled = true;
+        spinner.classList.remove('d-none');
+
+        const jobIds = getCheckedJobIds();
+        const body = new URLSearchParams({ userId: activeUserId });
+        jobIds.forEach(id => body.append('jobIds', id));
+
+        try {
+            const res = await fetch('@Url.Action("UpdateJobAccess", "AdminSettings")', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': csrfToken },
+                body: body.toString()
+            });
+
+            if (res.ok) {
+                showToast('✓ Access updated', 'bg-success');
+                // Update the badge in the table row
+                const rowBtn  = document.querySelector(`.manage-access-btn[data-user-id="${activeUserId}"]`);
+                if (rowBtn) {
+                    rowBtn.dataset.assignedIds = JSON.stringify(jobIds);
+                    const badge = rowBtn.closest('tr').querySelector('.badge');
+                    if (badge) {
+                        badge.textContent = jobIds.length;
+                        badge.className = 'badge rounded-pill ' + (jobIds.length ? 'bg-success' : 'bg-secondary');
+                    }
+                }
+                bootstrap.Modal.getInstance(document.getElementById('manageAccessModal')).hide();
+            } else {
+                alertEl.className = 'alert alert-danger';
+                alertEl.textContent = 'Failed to save — please try again.';
+            }
+        } catch {
+            alertEl.className = 'alert alert-danger';
+            alertEl.textContent = 'Network error — please try again.';
+        } finally {
+            saveBtn.disabled = false;
+            spinner.classList.add('d-none');
+        }
+    });
+
+    document.getElementById('manageAccessModal').addEventListener('hidden.bs.modal', function () {
+        activeUserId = null;
     });
 
     function showToast(msg, cls) {
@@ -111,7 +340,7 @@ else
         toast.className = 'toast text-white border-0 show ' + cls;
         document.getElementById('save-toast-msg').textContent = msg;
         wrap.style.display = 'block';
-        setTimeout(function () { wrap.style.display = 'none'; }, 2000);
+        setTimeout(function () { wrap.style.display = 'none'; }, 2500);
     }
 </script>
 }

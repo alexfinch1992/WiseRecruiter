@@ -343,6 +343,7 @@ namespace JobPortal.Helpers
                             LastName  = n.Last,
                             Email     = email,
                             CreatedAt = DateTime.UtcNow.AddDays(-(29 - candidateIndex)),
+                            Source    = globalNameIndex == 0 ? CandidateSource.LinkedIn : CandidateSource.Applicant,
                         };
                         context.Candidates.Add(candidate);
                         context.SaveChanges(); // need Id for Application FK
@@ -362,6 +363,7 @@ namespace JobPortal.Helpers
                             Stage            = stage,
                             CurrentJobStageId = currentJobStageId,
                             AppliedDate      = DateTime.UtcNow.AddDays(-(28 - candidateIndex)),
+                            ResumePath       = globalNameIndex == 0 ? "/uploads/resumes/alice-johnson-cv.pdf" : null,
                         };
                         context.Applications.Add(application);
                         context.SaveChanges(); // need Id for Recommendation + Interview FKs

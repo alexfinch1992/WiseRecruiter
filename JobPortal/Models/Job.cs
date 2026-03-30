@@ -7,8 +7,10 @@ namespace JobPortal.Models
         public int Id { get; set; }
 
         [Required]
+        [StringLength(200)]
         public string? Title { get; set; }
 
+        [StringLength(10000)]
         public string? Description { get; set; }
 
         public int? ScorecardTemplateId { get; set; }

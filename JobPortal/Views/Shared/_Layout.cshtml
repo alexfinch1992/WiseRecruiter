@@ -1,4 +1,11 @@
 ﻿<!DOCTYPE html>
+@{
+    var _fullName = User.Identity?.Name ?? "";
+    var _nameParts = _fullName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+    var _initials = _nameParts.Length >= 2
+        ? $"{_nameParts[0][0]}{_nameParts[^1][0]}".ToUpper()
+        : (_nameParts.Length == 1 ? _nameParts[0][0].ToString().ToUpper() : "U");
+}
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -8,13 +15,18 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/branding.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/JobPortal.styles.css" asp-append-version="true" />
 </head>
 <body>
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark wr-navbar border-bottom box-shadow mb-3">
             <div class="container-fluid">
-                <a class="navbar-brand fw-bold" asp-area="" asp-controller="Home" asp-action="Index"><i class="fas fa-briefcase me-2"></i>WiseRecruiter</a>
+                <a class="navbar-brand fw-bold" asp-area="" asp-controller="Home" asp-action="Index">
+                    <img src="~/images/image_a576bc.png" alt="WiseTech Global" height="30"
+                         onerror="this.style.display='none';this.nextElementSibling.style.display='inline'" />
+                    <span style="display:none"><i class="fas fa-briefcase me-2"></i>WiseTech Global</span>
+                </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -42,19 +54,20 @@
                                     <i class="fas fa-chart-bar me-1"></i>Analytics
                                 </a>
                             </li>
-                            <li class="nav-item">
-                                <a class="nav-link" asp-area="" asp-controller="Admin" asp-action="Settings">
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="settingsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     <i class="fas fa-sliders-h me-1"></i>Settings
                                 </a>
+                                <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="settingsDropdown">
+                                    <li><a class="dropdown-item" asp-area="" asp-controller="Admin" asp-action="Settings"><i class="fas fa-cog me-2"></i>Configuration</a></li>
+                                    <li><a class="dropdown-item" asp-area="" asp-controller="Admin" asp-action="EmailTemplates"><i class="fas fa-envelope me-2"></i>Email Library</a></li>
+                                    @if (User.IsInRole("Admin"))
+                                    {
+                                        <li><hr class="dropdown-divider" /></li>
+                                        <li><a class="dropdown-item" asp-area="" asp-controller="AdminSettings" asp-action="ManageTeam"><i class="fas fa-users-cog me-2"></i>Manage Team</a></li>
+                                    }
+                                </ul>
                             </li>
-                            @if (User.IsInRole("Admin"))
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-area="" asp-controller="AdminSettings" asp-action="ManageTeam">
-                                        <i class="fas fa-users-cog me-1"></i>Team
-                                    </a>
-                                </li>
-                            }
                         }
                         else
                         {
@@ -95,11 +108,31 @@
                                 <i class="fas fa-search"></i>
                             </button>
                         </form>
-                        <form asp-action="Logout" asp-controller="Admin" method="post" class="ms-2 d-flex align-items-center">
-                            <button type="submit" class="btn btn-outline-danger btn-sm">
-                                <i class="fas fa-sign-out-alt me-1"></i>Logout
+                        <div class="dropdown ms-3 d-flex align-items-center">
+                            <button class="user-avatar dropdown-toggle" type="button" id="userMenuToggle"
+                                    data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                                @_initials
                             </button>
-                        </form>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuToggle">
+                                <li><h6 class="dropdown-header text-truncate" style="max-width:220px;">
+                                    <i class="fas fa-user me-1"></i>@(User.Identity?.Name ?? "User")
+                                </h6></li>
+                                <li><hr class="dropdown-divider" /></li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Admin" asp-action="Profile">
+                                        <i class="fas fa-id-card me-2"></i>My Profile
+                                    </a>
+                                </li>
+                                <li>
+                                    <form asp-action="Logout" asp-controller="Account" method="post" class="m-0">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="dropdown-item text-danger">
+                                            <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
                     }
                 </div>
             </div>

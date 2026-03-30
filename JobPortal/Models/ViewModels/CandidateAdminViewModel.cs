@@ -12,6 +12,7 @@ namespace JobPortal.Models.ViewModels
     {
         public int Id { get; set; }
         public int CandidateId { get; set; }
+        public CandidateSource Source { get; set; } = CandidateSource.Applicant;
         public string? Name { get; set; }
         public string? Email { get; set; }
         public string? City { get; set; }

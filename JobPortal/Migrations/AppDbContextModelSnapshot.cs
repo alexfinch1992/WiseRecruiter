@@ -81,10 +81,19 @@ namespace JobPortal.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("RejectionNotes")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("ResumePath")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Stage")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Status")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
@@ -210,15 +219,24 @@ namespace JobPortal.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
+                        .HasMaxLength(254)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("LastName")
                         .IsRequired()
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("Source")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
@@ -272,6 +290,9 @@ namespace JobPortal.Migrations
 
                     b.Property<DateTime>("LastUpdatedUtc")
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("Outcome")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("PersonalityNotes")
                         .HasColumnType("TEXT");
@@ -373,6 +394,53 @@ namespace JobPortal.Migrations
                     b.HasIndex("ApplicationId");
 
                     b.ToTable("Documents");
+                });
+
+            modelBuilder.Entity("JobPortal.Models.EmailTemplate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("BodyContent")
+                        .IsRequired()
+                        .HasMaxLength(10000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("LastModified")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("EmailTemplates");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            BodyContent = "Hi {{FirstName}},\n\nThank you for applying. We'd like to invite you to a brief screening call to discuss your application.\n\nPlease reply with your availability and we'll get something booked in.\n\nBest regards,\nThe WiseTech Recruiting Team",
+                            LastModified = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Screening Invite",
+                            Subject = "You're Invited to a Screening Call — {{FirstName}}"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            BodyContent = "Dear {{FirstName}},\n\nWe are delighted to extend this formal offer of employment at WiseTech Global. Please review the attached details and feel free to reach out if you have any questions.\n\nWe look forward to welcoming you to the team!\n\nBest regards,\nThe WiseTech Recruiting Team",
+                            LastModified = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Offer Letter",
+                            Subject = "Congratulations {{FirstName}} — Your Offer from WiseTech Global"
+                        });
                 });
 
             modelBuilder.Entity("JobPortal.Models.Facet", b =>
@@ -483,6 +551,7 @@ namespace JobPortal.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Description")
+                        .HasMaxLength(10000)
                         .HasColumnType("TEXT");
 
                     b.Property<int?>("ScorecardTemplateId")
@@ -490,6 +559,7 @@ namespace JobPortal.Migrations
 
                     b.Property<string>("Title")
                         .IsRequired()
+                        .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");

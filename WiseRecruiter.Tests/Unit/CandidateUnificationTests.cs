@@ -53,7 +53,7 @@ namespace WiseRecruiter.Tests.Unit
                 new ApplicationStageService(context, recService),
                 new HiringPipelineService(),
                 new GlobalSearchService(context),
-                new AuditService(context))
+                new AuditService(context), new JobPortal.Services.Implementations.JobAccessService(context))
             {
                 ControllerContext = new ControllerContext
                 {

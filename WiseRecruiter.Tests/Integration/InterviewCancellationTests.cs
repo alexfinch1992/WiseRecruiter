@@ -40,7 +40,7 @@ namespace WiseRecruiter.Tests.Integration
                 context,
                 new Mock<IWebHostEnvironment>().Object,
                 applicationService, analyticsService, scorecardService,
-                templateService, jobService, scorecardAnalyticsService, interviewService, new RecommendationService(context, new StageOrderService()), new ApplicationStageService(context, new RecommendationService(context, new StageOrderService())), new HiringPipelineService(), new GlobalSearchService(context), new AuditService(context))
+                templateService, jobService, scorecardAnalyticsService, interviewService, new RecommendationService(context, new StageOrderService()), new ApplicationStageService(context, new RecommendationService(context, new StageOrderService())), new HiringPipelineService(), new GlobalSearchService(context), new AuditService(context), new JobPortal.Services.Implementations.JobAccessService(context))
             {
                 ControllerContext = new ControllerContext
                 {

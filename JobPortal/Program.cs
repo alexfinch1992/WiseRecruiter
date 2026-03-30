@@ -57,6 +57,7 @@ builder.Services.AddScoped<IApplicationStageService, ApplicationStageService>();
 builder.Services.AddScoped<IHiringPipelineService, HiringPipelineService>();
 builder.Services.AddScoped<IGlobalSearchService, GlobalSearchService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
+builder.Services.AddScoped<IJobAccessService, JobAccessService>();
     
 var app = builder.Build();
 
@@ -85,11 +86,21 @@ using (var scope = app.Services.CreateScope())
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+    // HSTS: 30 days for production; extend to 1 year (31536000s) once stable.
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
+
+// Security headers — applied before routing so every response carries them.
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["X-Frame-Options"]        = "DENY";
+    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    context.Response.Headers["Referrer-Policy"]        = "strict-origin-when-cross-origin";
+    await next();
+});
+
 app.UseRouting();
 
 app.UseSession();
