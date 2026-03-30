@@ -5,7 +5,7 @@ using JobPortal.Services.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-[Authorize(AuthenticationSchemes = "AdminAuth")]
+[Authorize]
 [Route("Admin/Recommendations")]
 public class RecommendationAdminController : Controller
 {

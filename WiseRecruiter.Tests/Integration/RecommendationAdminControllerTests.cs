@@ -33,7 +33,7 @@ namespace WiseRecruiter.Tests.Integration
                 {
                     User = new ClaimsPrincipal(new ClaimsIdentity(
                         new[] { new Claim("AdminId", adminId.ToString()) },
-                        "AdminAuth"))
+                        "Identity.Application"))
                 }
             };
             return controller;
@@ -410,7 +410,7 @@ namespace WiseRecruiter.Tests.Integration
                 HttpContext = new DefaultHttpContext
                 {
                     User = new ClaimsPrincipal(new ClaimsIdentity(
-                        new[] { new Claim("AdminId", "1") }, "AdminAuth"))
+                        new[] { new Claim("AdminId", "1") }, "Identity.Application"))
                 }
             };
 
@@ -633,7 +633,7 @@ namespace WiseRecruiter.Tests.Integration
                 HttpContext = new DefaultHttpContext
                 {
                     User = new ClaimsPrincipal(new ClaimsIdentity(
-                        new[] { new Claim("AdminId", "1") }, "AdminAuth"))
+                        new[] { new Claim("AdminId", "1") }, "Identity.Application"))
                 }
             };
 

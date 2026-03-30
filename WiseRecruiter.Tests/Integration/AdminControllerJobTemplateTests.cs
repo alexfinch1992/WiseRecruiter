@@ -1,4 +1,4 @@
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using FluentAssertions;
 using JobPortal.Data;
 using JobPortal.Models;
@@ -33,7 +33,7 @@ namespace WiseRecruiter.Tests.Integration
             IAnalyticsService analyticsService = new AnalyticsService(context);
             IScorecardService scorecardService = new ScorecardService(context, templateService);
             IJobService jobService = new JobService(context);
-            return new AdminController(context, webHostEnvironment, applicationService, analyticsService, scorecardService, templateService, jobService, new ScorecardAnalyticsService(context), new InterviewService(context), new RecommendationService(context, new StageOrderService()), new ApplicationStageService(context, new RecommendationService(context, new StageOrderService())), new HiringPipelineService(), new GlobalSearchService(context));
+            return new AdminController(context, webHostEnvironment, applicationService, analyticsService, scorecardService, templateService, jobService, new ScorecardAnalyticsService(context), new InterviewService(context), new RecommendationService(context, new StageOrderService()), new ApplicationStageService(context, new RecommendationService(context, new StageOrderService())), new HiringPipelineService(), new GlobalSearchService(context), new AuditService(context));
         }
 
         [Fact]

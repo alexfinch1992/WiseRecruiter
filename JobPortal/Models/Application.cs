@@ -47,5 +47,9 @@ namespace JobPortal.Models
 
         // Navigation property for documents
         public ICollection<Document> Documents { get; set; } = new List<Document>();
+
+        // Ownership / traceability fields (pre-multi-tenant)
+        public string CreatedByUserId { get; set; } = "System_Seed";
+        public string? AssignedToUserId { get; set; }
     }
 }

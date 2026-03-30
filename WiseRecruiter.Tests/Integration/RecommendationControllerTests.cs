@@ -242,7 +242,7 @@ namespace WiseRecruiter.Tests.Integration
                 HttpContext = new DefaultHttpContext
                 {
                     User = new ClaimsPrincipal(new ClaimsIdentity(
-                        new[] { new Claim("AdminId", adminId.ToString()) }, "AdminAuth"))
+                        new[] { new Claim("AdminId", adminId.ToString()) }, "Identity.Application"))
                 }
             };
             return controller;

@@ -1,11 +1,13 @@
 using JobPortal.Data;
+using JobPortal.Models;
+using JobPortal.Models.ViewModels;
 using JobPortal.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using JobPortal.Models.ViewModels;
 
-[Authorize(AuthenticationSchemes = "AdminAuth")]
+[Authorize]
 public class AdminSettingsController : Controller
 {
     private const string AtLeastOneFacetMessage = "A scorecard template must have at least one facet.";
@@ -13,12 +15,14 @@ public class AdminSettingsController : Controller
     private readonly AppDbContext _context;
     private readonly IFacetService _facetService;
     private readonly IScorecardTemplateService _templateService;
+    private readonly UserManager<ApplicationUser> _userManager;
 
-    public AdminSettingsController(AppDbContext context, IFacetService facetService, IScorecardTemplateService templateService)
+    public AdminSettingsController(AppDbContext context, IFacetService facetService, IScorecardTemplateService templateService, UserManager<ApplicationUser> userManager)
     {
         _context = context;
         _facetService = facetService;
         _templateService = templateService;
+        _userManager = userManager;
     }
 
     [HttpGet]
@@ -263,6 +267,42 @@ public class AdminSettingsController : Controller
             return NotFound();
 
         return View(viewModel);
+    }
+
+    [HttpGet]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> ManageTeam()
+    {
+        var hiringManagers = await _userManager.GetUsersInRoleAsync("HiringManager");
+        var allJobs = await _context.Jobs.OrderBy(j => j.Title).ToListAsync();
+        var allAssignments = await _context.JobAssignments.ToListAsync();
+
+        var rows = hiringManagers.Select(u => new UserAssignmentRow
+        {
+            UserId = u.Id,
+            UserName = u.UserName ?? u.Email ?? u.Id,
+            FullName = string.IsNullOrWhiteSpace(u.FullName) ? (u.UserName ?? u.Email ?? u.Id) : u.FullName,
+            AssignedJobIds = allAssignments.Where(a => a.UserId == u.Id).Select(a => a.JobId).ToList()
+        }).ToList();
+
+        return View(new ManageTeamViewModel { Users = rows, AllJobs = allJobs });
+    }
+
+    [HttpPost]
+    [Authorize(Roles = "Admin")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateAssignment(string userId, int jobId, bool isAssigned)
+    {
+        var existing = await _context.JobAssignments
+            .FirstOrDefaultAsync(ja => ja.UserId == userId && ja.JobId == jobId);
+
+        if (isAssigned && existing == null)
+            _context.JobAssignments.Add(new JobAssignment { UserId = userId, JobId = jobId });
+        else if (!isAssigned && existing != null)
+            _context.JobAssignments.Remove(existing);
+
+        await _context.SaveChangesAsync();
+        return Ok();
     }
 
     private async Task<EditTemplateFacetsViewModel?> BuildTemplateFacetEditorViewModel(int templateId, List<TemplateFacetInput>? postedFacets = null)

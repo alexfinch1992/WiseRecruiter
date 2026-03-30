@@ -1,0 +1,117 @@
+@model JobPortal.Models.ViewModels.ManageTeamViewModel
+@{
+    ViewData["Title"] = "Manage Team";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-0"><i class="fas fa-users-cog me-2"></i>Manage Team</h2>
+        <p class="text-muted small mt-1 mb-0">
+            Control which jobs each Hiring Manager can see. Changes are saved immediately.
+        </p>
+    </div>
+</div>
+
+@if (!Model.Users.Any())
+{
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
+        No Hiring Managers found. Assign users to the <strong>HiringManager</strong> role first.
+    </div>
+}
+else if (!Model.AllJobs.Any())
+{
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        No jobs exist yet.
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th style="min-width:160px">Name</th>
+                    <th style="min-width:100px">Role</th>
+                    @foreach (var job in Model.AllJobs)
+                    {
+                        <th class="text-center small" style="min-width:90px">@job.Title</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Model.Users)
+                {
+                    <tr>
+                        <td class="fw-medium">@user.FullName</td>
+                        <td><span class="badge bg-primary">HiringManager</span></td>
+                        @foreach (var job in Model.AllJobs)
+                        {
+                            <td class="text-center">
+                                <input type="checkbox"
+                                       class="form-check-input assignment-checkbox"
+                                       data-user-id="@user.UserId"
+                                       data-job-id="@job.Id"
+                                       @(user.AssignedJobIds.Contains(job.Id) ? "checked" : "")
+                                       title="@user.FullName — @job.Title" />
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+{{!-- Hidden form just to expose the CSRF token to vanilla JS --}}
+<form id="csrf-form" style="display:none">@Html.AntiForgeryToken()</form>
+
+<div id="save-status" class="position-fixed bottom-0 end-0 p-3" style="z-index:1080;display:none">
+    <div id="save-toast" class="toast text-white border-0 show" role="status">
+        <div class="toast-body" id="save-toast-msg">Saved</div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const csrfToken = document.querySelector('#csrf-form input[name="__RequestVerificationToken"]').value;
+
+    document.querySelectorAll('.assignment-checkbox').forEach(function (cb) {
+        cb.addEventListener('change', async function () {
+            const userId = this.dataset.userId;
+            const jobId  = this.dataset.jobId;
+            const isAssigned = this.checked;
+            this.disabled = true;
+
+            try {
+                const res = await fetch('@Url.Action("UpdateAssignment", "AdminSettings")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'RequestVerificationToken': csrfToken
+                    },
+                    body: new URLSearchParams({ userId, jobId, isAssigned })
+                });
+
+                showToast(res.ok ? '✓ Saved' : '✗ Error saving', res.ok ? 'bg-success' : 'bg-danger');
+                if (!res.ok) this.checked = !isAssigned; // revert on failure
+            } catch (err) {
+                showToast('✗ Network error', 'bg-danger');
+                this.checked = !isAssigned;
+            } finally {
+                this.disabled = false;
+            }
+        });
+    });
+
+    function showToast(msg, cls) {
+        const wrap  = document.getElementById('save-status');
+        const toast = document.getElementById('save-toast');
+        toast.className = 'toast text-white border-0 show ' + cls;
+        document.getElementById('save-toast-msg').textContent = msg;
+        wrap.style.display = 'block';
+        setTimeout(function () { wrap.style.display = 'none'; }, 2000);
+    }
+</script>
+}

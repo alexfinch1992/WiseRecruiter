@@ -1,7 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 using JobPortal.Data;
 using JobPortal.Domain.Recommendations;
 using JobPortal.Helpers;
+using JobPortal.Models;
 using JobPortal.Services.Interfaces;
 using JobPortal.Services.Implementations;
 
@@ -19,13 +21,22 @@ builder.Services.AddSession(options =>
     options.IdleTimeout = TimeSpan.FromMinutes(30);
 });
 
-builder.Services.AddAuthentication("AdminAuth")
-    .AddCookie("AdminAuth", options =>
-    {
-        options.LoginPath = "/Account/Login";
-        options.LogoutPath = "/Account/Logout";
-        options.AccessDeniedPath = "/";
-    });
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+{
+    options.Password.RequireDigit = true;
+    options.Password.RequiredLength = 8;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireUppercase = false;
+})
+.AddEntityFrameworkStores<AppDbContext>()
+.AddDefaultTokenProviders();
+
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.LoginPath = "/Account/Login";
+    options.LogoutPath = "/Account/Logout";
+    options.AccessDeniedPath = "/";
+});
 
 // Register simplified business logic services (CRUD handled directly by controllers with DbContext)
 builder.Services.AddScoped<IApplicationService, ApplicationService>();
@@ -45,6 +56,7 @@ builder.Services.AddScoped<IStageOrderService, StageOrderService>();
 builder.Services.AddScoped<IApplicationStageService, ApplicationStageService>();
 builder.Services.AddScoped<IHiringPipelineService, HiringPipelineService>();
 builder.Services.AddScoped<IGlobalSearchService, GlobalSearchService>();
+builder.Services.AddScoped<IAuditService, AuditService>();
     
 var app = builder.Build();
 
@@ -54,6 +66,19 @@ using (var scope = app.Services.CreateScope())
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     context.Database.Migrate();
     DbInitializer.Initialize(context);
+
+    // Seed Identity roles
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    string[] roles = { "Admin", "Recruiter", "HiringManager" };
+    foreach (var role in roles)
+    {
+        if (!await roleManager.RoleExistsAsync(role))
+            await roleManager.CreateAsync(new IdentityRole(role));
+    }
+
+    // Seed the master Admin user
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+    await DbInitializer.SeedAdminUserAsync(userManager);
 }
 
 // Configure the HTTP request pipeline.

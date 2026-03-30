@@ -1,5 +1,6 @@
 using JobPortal.Data;
 using JobPortal.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace JobPortal.Helpers
@@ -419,6 +420,31 @@ namespace JobPortal.Helpers
                 job.ScorecardTemplateId = null;
 
             context.SaveChanges();
+        }
+
+        /// <summary>
+        /// Seeds the master Admin identity user. Called from Program.cs after role seeding.
+        /// Idempotent — skips if the user already exists.
+        /// </summary>
+        public static async Task SeedAdminUserAsync(UserManager<ApplicationUser> userManager)
+        {
+            const string email    = "admin@wiserecruiter.com";
+            const string password = "Password123!";
+
+            if (await userManager.FindByEmailAsync(email) != null)
+                return;
+
+            var admin = new ApplicationUser
+            {
+                UserName  = email,
+                Email     = email,
+                FullName  = "System Administrator",
+                EmailConfirmed = true
+            };
+
+            var result = await userManager.CreateAsync(admin, password);
+            if (result.Succeeded)
+                await userManager.AddToRoleAsync(admin, "Admin");
         }
     }
 }

@@ -24,17 +24,9 @@ namespace WiseRecruiter.Tests.Integration
         [Fact]
         public void AdminController_HasAuthorizeAttribute()
         {
-            // Arrange
             var adminControllerType = typeof(AdminController);
-
-            // Act
             var attributes = adminControllerType.GetCustomAttributes(typeof(AuthorizeAttribute), true);
-
-            // Assert
             attributes.Should().NotBeEmpty();
-            var authorizeAttribute = attributes.First() as AuthorizeAttribute;
-            authorizeAttribute.Should().NotBeNull();
-            authorizeAttribute!.AuthenticationSchemes.Should().Contain("AdminAuth");
         }
 
         [Fact]
@@ -62,17 +54,16 @@ namespace WiseRecruiter.Tests.Integration
         }
 
         [Fact]
-        public void AdminController_AuthorizeAttribute_UsesCorrectAuthenticationScheme()
+        public void AdminController_AuthorizeAttribute_UsesIdentity()
         {
-            // Arrange
             var adminControllerType = typeof(AdminController);
             var authorizeAttribute = adminControllerType
                 .GetCustomAttributes(typeof(AuthorizeAttribute), true)
                 .FirstOrDefault() as AuthorizeAttribute;
 
-            // Act & Assert
             authorizeAttribute.Should().NotBeNull();
-            authorizeAttribute!.AuthenticationSchemes.Should().Be("AdminAuth");
+            // With Identity, AuthenticationSchemes is null (uses default Identity scheme)
+            authorizeAttribute!.AuthenticationSchemes.Should().BeNull();
         }
 
         [Fact]
@@ -105,22 +96,15 @@ namespace WiseRecruiter.Tests.Integration
         }
 
         [Fact]
-        public void AuthenticationScheme_CustomAdminAuth_IndicatesCustomImplementation()
+        public void AuthenticationScheme_UsesIdentity()
         {
-            // Arrange
             var adminControllerType = typeof(AdminController);
             var authorizeAttribute = adminControllerType
                 .GetCustomAttributes(typeof(AuthorizeAttribute), true)
                 .FirstOrDefault() as AuthorizeAttribute;
 
-            // Act
-            var scheme = authorizeAttribute?.AuthenticationSchemes;
-
-            // Assert
-            scheme.Should().NotBeNullOrEmpty();
-            // Custom scheme "AdminAuth" indicates a custom authentication handler is implemented
-            scheme.Should().Be("AdminAuth", 
-                "using custom 'AdminAuth' scheme means the application has a custom authentication handler");
+            authorizeAttribute.Should().NotBeNull();
+            // Identity uses default cookie scheme — no explicit scheme needed
         }
 
         [Fact]
@@ -141,21 +125,13 @@ namespace WiseRecruiter.Tests.Integration
         }
 
         [Fact]
-        public void AdminControllerAnalytics_Method_RequiresAdminAuth()
+        public void AdminControllerAnalytics_Method_RequiresAuth()
         {
-            // Arrange
             var adminControllerType = typeof(AdminController);
-            var analyticsMethod = adminControllerType.GetMethod("Analytics");
-
-            // Act
             var classAttributes = adminControllerType
-                .GetCustomAttributes(typeof(AuthorizeAttribute), true)
-                .FirstOrDefault() as AuthorizeAttribute;
+                .GetCustomAttributes(typeof(AuthorizeAttribute), true);
 
-            // Assert
-            classAttributes.Should().NotBeNull();
-            classAttributes!.AuthenticationSchemes.Should().Be("AdminAuth");
-            // Analytics should inherit this protection
+            classAttributes.Should().NotBeEmpty();
         }
 
         [Fact]

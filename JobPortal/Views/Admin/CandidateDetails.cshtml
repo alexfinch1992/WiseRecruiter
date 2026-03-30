@@ -127,8 +127,8 @@
                 </div>
             </div>
 
-            @* ── Candidate Dossier: recommendations from OTHER applications ── *@
-            @if (Model.CrossApplicationRecommendations.Any())
+            @* ── Candidate Dossier: recommendations from OTHER applications (Admin only) ── *@
+            @if (User.IsInRole("Admin") && Model.CrossApplicationRecommendations.Any())
             {
                 <div class="card shadow-sm border-0 mb-4" style="border-left: 4px solid #f59e0b !important;">
                     <div class="card-header d-flex align-items-center gap-2" style="background: linear-gradient(135deg, #92400e 0%, #f59e0b 100%);">

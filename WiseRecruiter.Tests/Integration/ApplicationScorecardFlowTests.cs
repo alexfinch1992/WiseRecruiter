@@ -40,6 +40,17 @@ namespace WiseRecruiter.Tests.Integration
 
             var controller = new ApplicationsController(context, environment.Object, applicationService, scorecardService)
             {
+                ControllerContext = new ControllerContext
+                {
+                    HttpContext = new DefaultHttpContext
+                    {
+                        User = new System.Security.Claims.ClaimsPrincipal(
+                            new System.Security.Claims.ClaimsIdentity(
+                                new[] { new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, "admin"),
+                                        new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, "Admin") },
+                                "Identity.Application"))
+                    }
+                },
                 TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>())
             };
 

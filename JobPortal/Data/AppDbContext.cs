@@ -1,10 +1,11 @@
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using JobPortal.Models;
 
 namespace JobPortal.Data
 {
-    public class AppDbContext : DbContext
+    public class AppDbContext : IdentityDbContext<ApplicationUser>
     {
         public AppDbContext(DbContextOptions<AppDbContext> options)
             : base(options)
@@ -39,6 +40,8 @@ namespace JobPortal.Data
 
         public DbSet<InterviewInterviewer> InterviewInterviewers { get; set; } = null!;
         public DbSet<CandidateRecommendation> CandidateRecommendations { get; set; } = null!;
+        public DbSet<AuditLog> AuditLogs { get; set; } = null!;
+        public DbSet<JobAssignment> JobAssignments { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
