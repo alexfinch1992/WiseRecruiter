@@ -31,3 +31,16 @@ appsettings.Development.json
 # Environment
 .env
 .env.local
+
+# Frontend dependencies
+ClientApp/node_modules/
+
+# Uploaded user files
+wwwroot/documents/
+wwwroot/resumes/
+
+# Temp patch scripts
+patch_controller*.ps1
+patch_result.txt
+probe_controller.ps1
+probe_output.txt

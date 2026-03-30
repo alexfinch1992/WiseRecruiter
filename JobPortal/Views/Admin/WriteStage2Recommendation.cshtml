@@ -1,0 +1,49 @@
+@model JobPortal.Models.ViewModels.WriteRecommendationViewModel
+
+@{
+    ViewData["Title"] = $"Stage 2 Recommendation — {Model.Name}";
+}
+
+<div class="container-fluid py-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <a asp-action="CandidateDetails" asp-controller="Admin" asp-route-id="@Model.Id"
+               class="btn btn-outline-secondary mb-4">
+                <i class="fas fa-arrow-left me-2"></i>Back to Candidate Profile
+            </a>
+            <h1 class="fw-bold mb-1" style="color: #1E1765;">
+                <i class="fas fa-edit me-3"></i>Stage 2 Technical Evaluation
+            </h1>
+            <p class="text-muted lead mb-0">@Model.Name &mdash; <em>@Model.JobTitle</em></p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
+                    <h5 class="fw-bold mb-0 text-white">
+                        <i class="fas fa-star me-2"></i>Technical &amp; Offer Evaluation
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="recommendation-editor-root"
+                         data-application-id="@Model.Id"
+                         data-job-id="@Model.JobId"
+                         data-stage="2"
+                         data-rec-status="@Model.RecStatus">
+                        <div class="text-center py-5">
+                            <div class="spinner-border" style="color: #7B3FF2;" role="status">
+                                <span class="visually-hidden">Loading&hellip;</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script type="module" src="~/js/dist/recommendation-editor.js" asp-append-version="true"></script>
+}

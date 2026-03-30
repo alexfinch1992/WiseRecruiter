@@ -100,6 +100,17 @@ namespace WiseRecruiter.Tests.Integration
         {
             using var context = CreateInMemoryContext();
             var application = await SeedApplicationAsync(context);
+
+            // Offer is past Screen — Stage 1 rec must be approved (or bypassed)
+            context.CandidateRecommendations.Add(new CandidateRecommendation
+            {
+                ApplicationId = application.Id,
+                Stage = RecommendationStage.Stage1,
+                Status = RecommendationStatus.Approved,
+                LastUpdatedUtc = DateTime.UtcNow
+            });
+            await context.SaveChangesAsync();
+
             var controller = CreateAdminController(context);
 
             var result = await controller.UpdateApplicationStage(application.Id, "enum:Offer");
@@ -108,6 +119,23 @@ namespace WiseRecruiter.Tests.Integration
 
             var updated = await context.Applications.FindAsync(application.Id);
             updated!.Stage.Should().Be(ApplicationStage.Offer);
+        }
+
+        [Fact]
+        public async Task UpdateApplicationStage_ToOffer_WithoutApproval_TriggersWarning()
+        {
+            using var context = CreateInMemoryContext();
+            var application = await SeedApplicationAsync(context);
+            var controller = CreateAdminController(context);
+
+            var result = await controller.UpdateApplicationStage(application.Id, "enum:Offer", proceedWithoutApproval: false);
+
+            var redirect = result.Should().BeOfType<RedirectToActionResult>().Subject;
+            redirect.ActionName.Should().Be("CandidateDetails");
+            controller.TempData["StageApprovalWarning"].Should().Be(application.Id);
+
+            var unchanged = await context.Applications.FindAsync(application.Id);
+            unchanged!.Stage.Should().Be(ApplicationStage.Applied);
         }
 
         // --- 2. Moving to Interview without approval triggers warning ---
