@@ -59,15 +59,15 @@ public class RecommendationController : Controller
     {
         var userIdStr = User?.FindFirst("AdminId")?.Value;
         if (!int.TryParse(userIdStr, out var userId))
-            return Forbid();
+            return StatusCode(403, new { success = false, error = "Forbidden" });
 
         var result = await _recommendationService.SubmitStage1RecommendationAsync(applicationId, userId);
 
         return result switch
         {
-            TransitionResult.NotFound     => NotFound(),
-            TransitionResult.InvalidState => BadRequest(),
-            _                             => RedirectToAction("CandidateDetails", "Admin", new { id = applicationId })
+            TransitionResult.NotFound     => NotFound(new { success = false, error = "Not found" }),
+            TransitionResult.InvalidState => BadRequest(new { success = false, error = "Invalid state" }),
+            _                             => Json(new { success = true })
         };
     }
 

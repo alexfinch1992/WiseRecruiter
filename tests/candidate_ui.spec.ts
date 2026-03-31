@@ -73,5 +73,68 @@ test.describe('Candidate Summary & Stage Logic', () => {
     await expect(page.locator('#documentType')).toBeVisible();
   });
 
+  test('stage 1 submit uses correct endpoint and succeeds', async ({ page }) => {
+    // Navigate to Alice's candidate page to discover her application ID
+    await page.goto('/Admin/SearchCandidates?searchQuery=alice');
+    await page.waitForLoadState('networkidle');
+
+    const viewLink = page.locator('a[href*="CandidateDetails"]').first();
+    await expect(viewLink).toBeVisible({ timeout: 15_000 });
+    const href = await viewLink.getAttribute('href');
+    if (!href) throw new Error('No CandidateDetails href found');
+    const appId = href.match(/\d+$/)?.[0];
+    if (!appId) throw new Error('Could not parse application ID from href');
+
+    // Track any stray calls to the old wrong endpoint
+    const wrongEndpointCalls: string[] = [];
+    page.on('request', (req) => {
+      if (req.method() === 'POST' && req.url().includes('/Admin/SubmitRecJson')) {
+        wrongEndpointCalls.push(req.url());
+      }
+    });
+
+    // Mock GetStage1RecJson to return Draft status so the Submit button is visible
+    await page.route('**/Admin/GetStage1RecJson**', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          status: 'Draft',
+          notes: 'Automated test note',
+          strengths: 'Testing',
+          concerns: '',
+          hireRecommendation: true,
+        }),
+      }),
+    );
+
+    // Capture the submission request and mock a successful redirect response
+    let submitPostData = '';
+    await page.route('**/Recommendation/SubmitStage1', async (route) => {
+      submitPostData = route.request().postData() ?? '';
+      await route.fulfill({ status: 200, body: 'OK', contentType: 'text/html' });
+    });
+
+    await page.goto(`/Admin/WriteRecommendation?applicationId=${appId}`);
+    await page.waitForLoadState('networkidle');
+
+    // Wait for the React component to render the Submit button (only shows when status=Draft)
+    const submitBtn = page.locator('button:has-text("Submit for Approval")');
+    await expect(submitBtn).toBeVisible({ timeout: 10_000 });
+
+    await submitBtn.click();
+
+    // Assert correct endpoint was called
+    await expect(async () => {
+      expect(submitPostData).toContain(`applicationId=${appId}`);
+    }).toPass({ timeout: 5_000 });
+
+    // Assert antiforgery token was included in the request body
+    expect(submitPostData).toContain('__RequestVerificationToken');
+
+    // Assert the old wrong endpoint was never called
+    expect(wrongEndpointCalls).toHaveLength(0);
+  });
+
 });
 

@@ -31,6 +31,9 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddEntityFrameworkStores<AppDbContext>()
 .AddDefaultTokenProviders();
 
+// Inject the "AdminId" claim from the legacy AdminUsers table at sign-in
+builder.Services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, JobPortal.Services.Auth.AdminClaimsPrincipalFactory>();
+
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/Account/Login";
