@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using WiseRecruiter.Tests.Helpers;
 using Xunit;
 
 namespace WiseRecruiter.Tests.Unit
@@ -34,43 +35,7 @@ namespace WiseRecruiter.Tests.Unit
                     .Options);
 
         private static AdminController CreateController(AppDbContext context)
-        {
-            var templateService   = new ScorecardTemplateService(context);
-            var recService        = new RecommendationService(context, new StageOrderService());
-            var stageOrderService = new StageOrderService();
-
-            return new AdminController(
-                context,
-                new Mock<IWebHostEnvironment>().Object,
-                new ApplicationService(context),
-                new AnalyticsService(context),
-                new ScorecardService(context, templateService),
-                templateService,
-                new JobService(context),
-                new ScorecardAnalyticsService(context),
-                new InterviewService(context),
-                recService,
-                new ApplicationStageService(context, recService),
-                new HiringPipelineService(),
-                new GlobalSearchService(context),
-                new AuditService(context), new JobPortal.Services.Implementations.JobAccessService(context))
-            {
-                ControllerContext = new ControllerContext
-                {
-                    HttpContext = new DefaultHttpContext
-                    {
-                        User = new System.Security.Claims.ClaimsPrincipal(
-                            new System.Security.Claims.ClaimsIdentity(
-                                new[] { new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, "admin"),
-                                        new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, "Admin") },
-                                "Identity.Application"))
-                    }
-                },
-                TempData = new TempDataDictionary(
-                    new DefaultHttpContext(),
-                    Mock.Of<ITempDataProvider>())
-            };
-        }
+            => AdminControllerFactory.Create(context);
 
         /// <summary>
         /// Seeds a minimal Job + Candidate + Application triple for a given email.

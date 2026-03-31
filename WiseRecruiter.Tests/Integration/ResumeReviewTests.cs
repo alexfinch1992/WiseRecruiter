@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using WiseRecruiter.Tests.Helpers;
 using Xunit;
 
 namespace WiseRecruiter.Tests.Integration
@@ -23,42 +24,8 @@ namespace WiseRecruiter.Tests.Integration
                 .UseInMemoryDatabase("resume_review_" + Guid.NewGuid())
                 .Options);
 
-        private AdminController CreateController(AppDbContext context)
-        {
-            IScorecardTemplateService templateService = new ScorecardTemplateService(context);
-            IApplicationService applicationService = new ApplicationService(context);
-            IAnalyticsService analyticsService = new AnalyticsService(context);
-            IScorecardService scorecardService = new ScorecardService(context, templateService);
-            IJobService jobService = new JobService(context);
-            IScorecardAnalyticsService scorecardAnalyticsService = new ScorecardAnalyticsService(context);
-            IInterviewService interviewService = new InterviewService(context);
-
-            var controller = new AdminController(
-                context,
-                new Mock<IWebHostEnvironment>().Object,
-                applicationService, analyticsService, scorecardService,
-                templateService, jobService, scorecardAnalyticsService, interviewService,
-                new RecommendationService(context, new StageOrderService()),
-                new ApplicationStageService(context, new RecommendationService(context, new StageOrderService())),
-                new HiringPipelineService(),
-                new GlobalSearchService(context), new AuditService(context), new JobPortal.Services.Implementations.JobAccessService(context))
-            {
-                ControllerContext = new ControllerContext
-                {
-                    HttpContext = new DefaultHttpContext
-                    {
-                        User = new System.Security.Claims.ClaimsPrincipal(
-                            new System.Security.Claims.ClaimsIdentity(
-                                new[] { new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, "admin"),
-                                        new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, "Admin") },
-                                "Identity.Application"))
-                    }
-                },
-                TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>())
-            };
-
-            return controller;
-        }
+        private static AdminController CreateController(AppDbContext context)
+            => AdminControllerFactory.Create(context);
 
         private async Task<(Job job, Application application)> SeedApplicationAsync(
             AppDbContext ctx,

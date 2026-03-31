@@ -31,6 +31,9 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddEntityFrameworkStores<AppDbContext>()
 .AddDefaultTokenProviders();
 
+// Inject the "AdminId" claim from the legacy AdminUsers table at sign-in
+builder.Services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, JobPortal.Services.Auth.AdminClaimsPrincipalFactory>();
+
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/Account/Login";
@@ -58,6 +61,18 @@ builder.Services.AddScoped<IHiringPipelineService, HiringPipelineService>();
 builder.Services.AddScoped<IGlobalSearchService, GlobalSearchService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IJobAccessService, JobAccessService>();
+builder.Services.AddScoped<ICandidateCoreService, CandidateCoreService>();
+builder.Services.AddScoped<IScorecardSummaryService, ScorecardSummaryService>();
+builder.Services.AddScoped<IRelatedApplicationsService, RelatedApplicationsService>();
+builder.Services.AddScoped<IRecommendationSummaryService, RecommendationSummaryService>();
+builder.Services.AddScoped<IWriteRecommendationService, WriteRecommendationService>();
+builder.Services.AddScoped<IMoveApplicationStageService, MoveApplicationStageService>();
+builder.Services.AddScoped<IInterviewCommandService, InterviewCommandService>();
+builder.Services.AddScoped<IJobStageCommandService, JobStageCommandService>();
+builder.Services.AddScoped<RecommendationCommandService>();
+builder.Services.AddScoped<IRecommendationActionService>(sp => sp.GetRequiredService<RecommendationCommandService>());
+builder.Services.AddScoped<IRecommendationDraftService>(sp => sp.GetRequiredService<RecommendationCommandService>());
+builder.Services.AddScoped<ICandidateDetailsService, CandidateDetailsService>();
     
 var app = builder.Build();
 

@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using WiseRecruiter.Tests.Helpers;
 using Xunit;
 
 namespace WiseRecruiter.Tests.Integration
@@ -27,38 +28,14 @@ namespace WiseRecruiter.Tests.Integration
             return new AppDbContext(options);
         }
 
-        private AdminController CreateAdminController(AppDbContext context)
-        {
-            IScorecardTemplateService templateService = new ScorecardTemplateService(context);
-            IApplicationService applicationService = new ApplicationService(context);
-            IAnalyticsService analyticsService = new AnalyticsService(context);
-            IScorecardService scorecardService = new ScorecardService(context, templateService);
-            IJobService jobService = new JobService(context);
-            IScorecardAnalyticsService scorecardAnalyticsService = new ScorecardAnalyticsService(context);
-            IInterviewService interviewService = new InterviewService(context);
+        private static AdminController CreateAdminController(AppDbContext context)
+            => AdminControllerFactory.Create(context);
 
-            var controller = new AdminController(
+        private static InterviewCommandService CreateInterviewCommandService(AppDbContext context) =>
+            new InterviewCommandService(
                 context,
-                new Mock<IWebHostEnvironment>().Object,
-                applicationService, analyticsService, scorecardService,
-                templateService, jobService, scorecardAnalyticsService, interviewService, new RecommendationService(context, new StageOrderService()), new ApplicationStageService(context, new RecommendationService(context, new StageOrderService())), new HiringPipelineService(), new GlobalSearchService(context), new AuditService(context), new JobPortal.Services.Implementations.JobAccessService(context))
-            {
-                ControllerContext = new ControllerContext
-                {
-                    HttpContext = new DefaultHttpContext
-                    {
-                        User = new System.Security.Claims.ClaimsPrincipal(
-                            new System.Security.Claims.ClaimsIdentity(
-                                new[] { new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, "admin"),
-                                        new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, "Admin") },
-                                "Identity.Application"))
-                    }
-                },
-                TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>())
-            };
-
-            return controller;
-        }
+                new InterviewService(context),
+                new RecommendationService(context, new StageOrderService()));
 
         private static async Task<(Candidate candidate, Application application, JobStage stage)> SeedAsync(AppDbContext context)
         {
@@ -162,15 +139,17 @@ namespace WiseRecruiter.Tests.Integration
         {
             using var context = CreateInMemoryContext();
             var (candidate, application, stage) = await SeedAsync(context);
-            var controller = CreateAdminController(context);
+            var svc = CreateInterviewCommandService(context);
 
-            var result = await controller.CreateInterview(
+            var result = await svc.CreateAsync(
                 candidate.Id, application.Id, $"stage:{stage.Id}",
                 DateTime.UtcNow.AddDays(3),
+                selectedInterviewerIds: null,
                 proceedWithoutApproval: true,
-                bypassReason: "Urgent hire");
+                bypassReason: "Urgent hire",
+                userId: "");
 
-            result.Should().BeOfType<RedirectToActionResult>();
+            result.Success.Should().BeTrue();
             var interviews = await context.Interviews.ToListAsync();
             interviews.Should().HaveCount(1);
         }
@@ -180,13 +159,15 @@ namespace WiseRecruiter.Tests.Integration
         {
             using var context = CreateInMemoryContext();
             var (candidate, application, stage) = await SeedAsync(context);
-            var controller = CreateAdminController(context);
+            var svc = CreateInterviewCommandService(context);
 
-            await controller.CreateInterview(
+            await svc.CreateAsync(
                 candidate.Id, application.Id, $"stage:{stage.Id}",
                 DateTime.UtcNow.AddDays(3),
+                selectedInterviewerIds: null,
                 proceedWithoutApproval: true,
-                bypassReason: "Test bypass reason");
+                bypassReason: "Test bypass reason",
+                userId: "");
 
             var rec = await context.CandidateRecommendations
                 .FirstOrDefaultAsync(r => r.ApplicationId == application.Id);
@@ -202,11 +183,15 @@ namespace WiseRecruiter.Tests.Integration
         {
             using var context = CreateInMemoryContext();
             var (candidate, application, stage) = await SeedAsync(context);
-            var controller = CreateAdminController(context);
+            var svc = CreateInterviewCommandService(context);
 
-            await controller.CreateInterview(
+            await svc.CreateAsync(
                 candidate.Id, application.Id, $"stage:{stage.Id}",
-                DateTime.UtcNow.AddDays(3));
+                DateTime.UtcNow.AddDays(3),
+                selectedInterviewerIds: null,
+                proceedWithoutApproval: false,
+                bypassReason: null,
+                userId: "");
 
             var rec = await context.CandidateRecommendations
                 .FirstOrDefaultAsync(r => r.ApplicationId == application.Id);
@@ -230,13 +215,15 @@ namespace WiseRecruiter.Tests.Integration
             });
             await context.SaveChangesAsync();
 
-            var controller = CreateAdminController(context);
+            var svc = CreateInterviewCommandService(context);
 
-            await controller.CreateInterview(
+            await svc.CreateAsync(
                 candidate.Id, application.Id, $"stage:{stage.Id}",
                 DateTime.UtcNow.AddDays(3),
+                selectedInterviewerIds: null,
                 proceedWithoutApproval: true,  // set but should be ignored since already approved
-                bypassReason: "Should not be recorded");
+                bypassReason: "Should not be recorded",
+                userId: "");
 
             var rec = await context.CandidateRecommendations
                 .FirstAsync(r => r.ApplicationId == application.Id);

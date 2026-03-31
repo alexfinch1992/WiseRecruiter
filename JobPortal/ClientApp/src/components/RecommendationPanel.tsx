@@ -95,6 +95,7 @@ function RecForm({ label, data, saving, error, onFieldChange, onSaveDraft, onSub
 
           <div className="d-flex gap-1 flex-wrap">
             <button
+              type="button"
               className="btn btn-sm btn-outline-secondary"
               onClick={onSaveDraft}
               disabled={saving}
@@ -104,6 +105,7 @@ function RecForm({ label, data, saving, error, onFieldChange, onSaveDraft, onSub
             </button>
             {data.status === 'Draft' && (
               <button
+                type="button"
                 className="btn btn-sm btn-outline-primary"
                 onClick={onSubmit}
                 disabled={saving}
@@ -200,21 +202,23 @@ export function RecommendationPanel({
   }
 
   async function submitS1() {
+    console.log('submitS1 fired');
     setS1Saving(true);
     setS1Error(null);
     try {
-      const resp = await fetch('/Admin/SubmitRecJson', {
+      const token =
+        document.querySelector<HTMLInputElement>('[name="__RequestVerificationToken"]')?.value ?? '';
+      const resp = await fetch('/Recommendation/SubmitStage1', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ applicationId: String(applicationId) }),
+        body: new URLSearchParams({ applicationId: String(applicationId), __RequestVerificationToken: token }),
       });
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      const result = (await resp.json()) as { success: boolean; status: string };
-      setS1((prev) => (prev ? { ...prev, status: result.status } : prev));
-      onStage1StatusChanged(result.status);
-      // Return to the candidate profile so the recruiter can immediately move the stage
-      if (result.status === 'Submitted' || result.status === 'Approved') {
+      const data = await resp.json() as { success: boolean; error?: string };
+      console.log('SubmitStage1:', resp.status, data);
+      if (resp.ok && data.success) {
         window.location.href = `/Admin/CandidateDetails/${applicationId}`;
+      } else {
+        setS1Error(data.error ?? 'Submit failed. Please try again.');
       }
     } catch {
       setS1Error('Submit failed. Please try again.');

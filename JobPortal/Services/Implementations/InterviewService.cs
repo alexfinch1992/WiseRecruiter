@@ -1,5 +1,6 @@
 using JobPortal.Data;
 using JobPortal.Models;
+using JobPortal.Models.ViewModels;
 using JobPortal.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -41,6 +42,46 @@ namespace JobPortal.Services.Implementations
             await _context.SaveChangesAsync();
 
             return interview;
+        }
+
+        public async Task<List<InterviewSummaryDto>> GetInterviewSummariesAsync(int candidateId, string fallbackStageName)
+        {
+            var now = DateTime.UtcNow;
+            var interviews = await _context.Interviews
+                .Include(i => i.JobStage)
+                .Include(i => i.InterviewInterviewers)
+                    .ThenInclude(ii => ii.AdminUser)
+                .Where(i => i.CandidateId == candidateId)
+                .ToListAsync();
+
+            return interviews
+                .Select(i => new InterviewSummaryDto
+                {
+                    Id = i.Id,
+                    ScheduledAt = i.ScheduledAt,
+                    StageName = i.JobStage?.Name ?? fallbackStageName,
+                    IsCancelled = i.IsCancelled,
+                    CompletedAt = i.CompletedAt,
+                    InterviewerNames = i.InterviewInterviewers
+                        .Where(ii => ii.AdminUser != null)
+                        .Select(ii => ii.AdminUser!.Username ?? string.Empty)
+                        .ToList()
+                })
+                .OrderBy(i => i.IsCancelled ? 3 : (i.CompletedAt != null ? 2 : (i.ScheduledAt < now ? 1 : 0)))
+                .ThenBy(i => i.ScheduledAt)
+                .ToList();
+        }
+
+        public async Task<InterviewSchedulingData> GetInterviewSchedulingDataAsync(int candidateId)
+        {
+            var candidateApplications = await _context.Applications
+                .Where(a => a.CandidateId == candidateId)
+                .Include(a => a.Job)
+                .ToListAsync();
+
+            var adminUsers = await _context.AdminUsers.OrderBy(a => a.Username).ToListAsync();
+
+            return new InterviewSchedulingData(candidateApplications, adminUsers);
         }
     }
 }

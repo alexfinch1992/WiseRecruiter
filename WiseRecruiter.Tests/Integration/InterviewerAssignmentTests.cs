@@ -6,13 +6,7 @@ using FluentAssertions;
 using JobPortal.Data;
 using JobPortal.Models;
 using JobPortal.Services.Implementations;
-using JobPortal.Services.Interfaces;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.EntityFrameworkCore;
-using Moq;
 using Xunit;
 
 namespace WiseRecruiter.Tests.Integration
@@ -27,38 +21,11 @@ namespace WiseRecruiter.Tests.Integration
             return new AppDbContext(options);
         }
 
-        private AdminController CreateAdminController(AppDbContext context)
-        {
-            IScorecardTemplateService templateService = new ScorecardTemplateService(context);
-            IApplicationService applicationService = new ApplicationService(context);
-            IAnalyticsService analyticsService = new AnalyticsService(context);
-            IScorecardService scorecardService = new ScorecardService(context, templateService);
-            IJobService jobService = new JobService(context);
-            IScorecardAnalyticsService scorecardAnalyticsService = new ScorecardAnalyticsService(context);
-            IInterviewService interviewService = new InterviewService(context);
-
-            var controller = new AdminController(
+        private static InterviewCommandService CreateService(AppDbContext context) =>
+            new InterviewCommandService(
                 context,
-                new Mock<IWebHostEnvironment>().Object,
-                applicationService, analyticsService, scorecardService,
-                templateService, jobService, scorecardAnalyticsService, interviewService, new RecommendationService(context, new StageOrderService()), new ApplicationStageService(context, new RecommendationService(context, new StageOrderService())), new HiringPipelineService(), new GlobalSearchService(context), new AuditService(context), new JobPortal.Services.Implementations.JobAccessService(context))
-            {
-                ControllerContext = new ControllerContext
-                {
-                    HttpContext = new DefaultHttpContext
-                    {
-                        User = new System.Security.Claims.ClaimsPrincipal(
-                            new System.Security.Claims.ClaimsIdentity(
-                                new[] { new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, "admin"),
-                                        new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, "Admin") },
-                                "Identity.Application"))
-                    }
-                },
-                TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>())
-            };
-
-            return controller;
-        }
+                new InterviewService(context),
+                new RecommendationService(context, new StageOrderService()));
 
         private static async Task<(Candidate candidate, Application application, JobStage stage)> SeedAsync(AppDbContext context)
         {
@@ -106,15 +73,17 @@ namespace WiseRecruiter.Tests.Integration
             context.AdminUsers.AddRange(admin1, admin2);
             await context.SaveChangesAsync();
 
-            var controller = CreateAdminController(context);
+            var svc = CreateService(context);
             var scheduledAt = new DateTime(2026, 6, 1, 9, 0, 0, DateTimeKind.Utc);
             var interviewerIds = new List<int> { admin1.Id, admin2.Id };
 
             // Act
-            var result = await controller.CreateInterview(candidate.Id, application.Id, $"stage:{stage.Id}", scheduledAt, interviewerIds);
+            var result = await svc.CreateAsync(
+                candidate.Id, application.Id, $"stage:{stage.Id}", scheduledAt,
+                interviewerIds, proceedWithoutApproval: false, bypassReason: null, userId: "");
 
-            // Assert - redirects
-            result.Should().BeOfType<RedirectToActionResult>();
+            // Assert - succeeded
+            result.Success.Should().BeTrue();
 
             // Assert - exactly 2 InterviewInterviewer rows
             var links = await context.InterviewInterviewers.ToListAsync();

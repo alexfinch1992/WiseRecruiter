@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using WiseRecruiter.Tests.Helpers;
 using Xunit;
 
 namespace WiseRecruiter.Tests.Integration
@@ -26,15 +27,8 @@ namespace WiseRecruiter.Tests.Integration
             return new AppDbContext(options);
         }
 
-        private AdminController CreateAdminController(AppDbContext context, IScorecardTemplateService templateService)
-        {
-            var webHostEnvironment = new Mock<IWebHostEnvironment>().Object;
-            IApplicationService applicationService = new ApplicationService(context);
-            IAnalyticsService analyticsService = new AnalyticsService(context);
-            IScorecardService scorecardService = new ScorecardService(context, templateService);
-            IJobService jobService = new JobService(context);
-            return new AdminController(context, webHostEnvironment, applicationService, analyticsService, scorecardService, templateService, jobService, new ScorecardAnalyticsService(context), new InterviewService(context), new RecommendationService(context, new StageOrderService()), new ApplicationStageService(context, new RecommendationService(context, new StageOrderService())), new HiringPipelineService(), new GlobalSearchService(context), new AuditService(context), new JobPortal.Services.Implementations.JobAccessService(context));
-        }
+        private static AdminController CreateAdminController(AppDbContext context, IScorecardTemplateService templateService)
+            => AdminControllerFactory.Create(context, templateService: templateService);
 
         [Fact]
         public async Task CreateJob_Post_WithNonExistentScorecardTemplateId_AddsModelStateErrorAndReturnsView()

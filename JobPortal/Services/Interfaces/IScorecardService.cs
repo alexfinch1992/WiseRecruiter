@@ -24,6 +24,13 @@ namespace JobPortal.Services.Interfaces
 
         Task<List<Scorecard>> GetScorecardsByCandidateAsync(int candidateId);
 
+        /// <summary>
+        /// Returns all non-archived scorecards for the candidate, with Responses eagerly loaded.
+        /// Use this in preference to <see cref="GetScorecardsByCandidateAsync"/> when per-scorecard
+        /// averages are needed, to avoid an N+1 query per scorecard.
+        /// </summary>
+        Task<List<Scorecard>> GetScorecardsByCandidateWithResponsesAsync(int candidateId);
+
         Task<decimal> CalculateAverageScoreAsync(int scorecardId);
     }
 

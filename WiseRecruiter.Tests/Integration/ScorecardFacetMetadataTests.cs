@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using WiseRecruiter.Tests.Helpers;
 using Xunit;
 
 namespace WiseRecruiter.Tests.Integration
@@ -31,16 +32,8 @@ namespace WiseRecruiter.Tests.Integration
                 .UseInMemoryDatabase("scorecard_facet_metadata_" + Guid.NewGuid())
                 .Options);
 
-        private AdminController CreateAdminController(AppDbContext context)
-        {
-            IScorecardTemplateService templateService = new ScorecardTemplateService(context);
-            IApplicationService applicationService = new ApplicationService(context);
-            IAnalyticsService analyticsService = new AnalyticsService(context);
-            IScorecardService scorecardService = new ScorecardService(context, templateService);
-            IJobService jobService = new JobService(context);
-            var env = new Mock<IWebHostEnvironment>().Object;
-            return new AdminController(context, env, applicationService, analyticsService, scorecardService, templateService, jobService, new ScorecardAnalyticsService(context), new InterviewService(context), new RecommendationService(context, new StageOrderService()), new ApplicationStageService(context, new RecommendationService(context, new StageOrderService())), new HiringPipelineService(), new GlobalSearchService(context), new AuditService(context), new JobPortal.Services.Implementations.JobAccessService(context));
-        }
+        private static AdminController CreateAdminController(AppDbContext context)
+            => AdminControllerFactory.Create(context);
 
         private async Task<(int applicationId, int facetId)> SeedApplicationWithFacetAsync(
             AppDbContext context,
@@ -103,7 +96,7 @@ namespace WiseRecruiter.Tests.Integration
         }
 
         // -------------------------------------------------------
-        // Suite 3 — Scorecard Creation Uses Facet Metadata
+        // Suite 3 � Scorecard Creation Uses Facet Metadata
         // -------------------------------------------------------
 
         [Fact]
@@ -150,7 +143,7 @@ namespace WiseRecruiter.Tests.Integration
         public async Task CreateScorecard_Reflects_Updated_Facet_Metadata()
         {
             // Create facet with initial metadata, then update it AFTER template creation.
-            // Scorecard should use the updated values — proving it reads from Facet, not a stale copy.
+            // Scorecard should use the updated values � proving it reads from Facet, not a stale copy.
             using var context = CreateInMemoryContext();
             var (applicationId, facetId) = await SeedApplicationWithFacetAsync(context,
                 "Original description", "Original placeholder");
@@ -174,7 +167,7 @@ namespace WiseRecruiter.Tests.Integration
         }
 
         // -------------------------------------------------------
-        // Suite 4 — Adversarial / Regression Guards
+        // Suite 4 � Adversarial / Regression Guards
         // -------------------------------------------------------
 
         [Fact]
@@ -289,7 +282,7 @@ namespace WiseRecruiter.Tests.Integration
         }
 
         // -------------------------------------------------------
-        // Suite 5 — Minimal Controller Coverage
+        // Suite 5 � Minimal Controller Coverage
         // -------------------------------------------------------
 
         [Fact]
@@ -349,7 +342,7 @@ namespace WiseRecruiter.Tests.Integration
         }
 
         // -------------------------------------------------------
-        // Suite 6 — Overall Recommendation
+        // Suite 6 � Overall Recommendation
         // -------------------------------------------------------
 
         [Fact]
@@ -365,7 +358,7 @@ namespace WiseRecruiter.Tests.Integration
             {
                 ApplicationId = applicationId,
                 CandidateId = 0, // will be overridden by controller from DB
-                OverallRecommendation = "Strong hire — excellent problem-solving skills.",
+                OverallRecommendation = "Strong hire � excellent problem-solving skills.",
                 Responses = new System.Collections.Generic.List<ScorecardResponseInputViewModel>
                 {
                     new ScorecardResponseInputViewModel
@@ -383,7 +376,7 @@ namespace WiseRecruiter.Tests.Integration
 
             var saved = await context.Scorecards.FirstOrDefaultAsync();
             saved.Should().NotBeNull();
-            saved!.OverallRecommendation.Should().Be("Strong hire — excellent problem-solving skills.");
+            saved!.OverallRecommendation.Should().Be("Strong hire � excellent problem-solving skills.");
         }
     }
 }
