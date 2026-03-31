@@ -273,18 +273,39 @@ public class AdminSettingsController : Controller
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> ManageTeam()
     {
+        var admins         = await _userManager.GetUsersInRoleAsync("Admin");
+        var recruiters     = await _userManager.GetUsersInRoleAsync("Recruiter");
         var hiringManagers = await _userManager.GetUsersInRoleAsync("HiringManager");
-        var allJobs = await _context.Jobs.OrderBy(j => j.Title).ToListAsync();
+
+        var allJobs        = await _context.Jobs.OrderBy(j => j.Title).ToListAsync();
         var allAssignments = await _context.JobAssignments.ToListAsync();
 
-        var rows = hiringManagers.Select(u => new UserAssignmentRow
-        {
-            UserId = u.Id,
-            UserName = u.UserName ?? u.Email ?? u.Id,
-            FullName = string.IsNullOrWhiteSpace(u.FullName) ? (u.UserName ?? u.Email ?? u.Id) : u.FullName,
-            AssignedJobIds = allAssignments.Where(a => a.UserId == u.Id).Select(a => a.JobId).ToList()
-        }).ToList();
+        // Aggregate users across all three roles; priority Admin > Recruiter > HiringManager
+        var seenIds = new HashSet<string>();
+        var rows    = new List<UserAssignmentRow>();
 
+        foreach (var (users, roleName) in new (IList<ApplicationUser>, string)[]
+        {
+            (admins,         "Admin"),
+            (recruiters,     "Recruiter"),
+            (hiringManagers, "HiringManager"),
+        })
+        {
+            foreach (var u in users)
+            {
+                if (!seenIds.Add(u.Id)) continue;
+                rows.Add(new UserAssignmentRow
+                {
+                    UserId         = u.Id,
+                    UserName       = u.UserName ?? u.Email ?? u.Id,
+                    FullName       = string.IsNullOrWhiteSpace(u.FullName) ? (u.UserName ?? u.Email ?? u.Id) : u.FullName,
+                    Role           = roleName,
+                    AssignedJobIds = allAssignments.Where(a => a.UserId == u.Id).Select(a => a.JobId).ToList()
+                });
+            }
+        }
+
+        rows = rows.OrderBy(r => r.FullName).ToList();
         return View(new ManageTeamViewModel { Users = rows, AllJobs = allJobs });
     }
 
@@ -342,6 +363,38 @@ public class AdminSettingsController : Controller
         }
 
         return Ok(new { message = $"User '{fullName.Trim()}' created successfully with role '{role}'." });
+    }
+
+    [HttpPost]
+    [Authorize(Roles = "Admin")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteUser(string userId)
+    {
+        if (string.IsNullOrWhiteSpace(userId))
+            return BadRequest(new { error = "userId is required." });
+
+        var currentUserId = _userManager.GetUserId(User);
+        if (currentUserId == userId)
+            return BadRequest(new { error = "You cannot delete your own account." });
+
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null)
+            return NotFound(new { error = "User not found." });
+
+        var assignments = await _context.JobAssignments
+            .Where(ja => ja.UserId == userId)
+            .ToListAsync();
+        _context.JobAssignments.RemoveRange(assignments);
+        await _context.SaveChangesAsync();
+
+        var result = await _userManager.DeleteAsync(user);
+        if (!result.Succeeded)
+        {
+            var errors = string.Join(" ", result.Errors.Select(e => e.Description));
+            return UnprocessableEntity(new { error = errors });
+        }
+
+        return Ok(new { message = $"User '{user.FullName ?? user.Email}' deleted successfully." });
     }
 
     /// <summary>

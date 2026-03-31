@@ -3,6 +3,7 @@
     ViewData["Title"] = "Manage Team";
 }
 
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h2 class="mb-0"><i class="fas fa-users-cog me-2"></i>Manage Team</h2>
@@ -58,7 +59,7 @@
 {
     <div class="alert alert-info">
         <i class="fas fa-info-circle me-2"></i>
-        No Hiring Managers found. Use the <strong>Create User</strong> button above to add one and assign them a role.
+        No team members found. Use the <strong>Create User</strong> button above to add one.
     </div>
 }
 else if (!Model.AllJobs.Any())
@@ -89,18 +90,18 @@ else
                         .Select(j => j.Title);
                     <tr>
                         <td class="fw-medium">@user.FullName</td>
-                        <td><span class="badge bg-primary">HiringManager</span></td>
+                        <td><span class="badge role-badge @(user.Role == "Admin" ? "bg-danger" : user.Role == "Recruiter" ? "bg-success" : "bg-primary")">@user.Role</span></td>
                         <td class="text-center">
                             @if (user.AssignedJobIds.Any())
                             {
-                                <span class="badge bg-success rounded-pill"
+                                <span class="badge bg-success rounded-pill job-count-badge"
                                       title="@string.Join(", ", assignedTitles)">
                                     @user.AssignedJobIds.Count
                                 </span>
                             }
                             else
                             {
-                                <span class="badge bg-secondary rounded-pill">0</span>
+                                <span class="badge bg-secondary rounded-pill job-count-badge">0</span>
                             }
                         </td>
                         <td class="text-center">
@@ -112,6 +113,12 @@ else
                                     data-bs-toggle="modal"
                                     data-bs-target="#manageAccessModal">
                                 <i class="fas fa-key me-1"></i>Manage Access
+                            </button>
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-danger delete-user-btn ms-1"
+                                    data-user-id="@user.UserId"
+                                    data-user-name="@user.FullName">
+                                <i class="fas fa-trash me-1"></i>Delete
                             </button>
                         </td>
                     </tr>
@@ -226,6 +233,31 @@ else
         alertEl.textContent = '';
     });
 
+    // ── Delete User ────────────────────────────────────────────────
+    document.querySelectorAll('.delete-user-btn').forEach(function (btn) {
+        btn.addEventListener('click', async function () {
+            const userId   = this.dataset.userId;
+            const userName = this.dataset.userName;
+            if (!confirm(`Delete "${userName}"? This action cannot be undone.`)) return;
+
+            try {
+                const res = await fetch('@Url.Action("DeleteUser", "AdminSettings")', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': csrfToken },
+                    body: new URLSearchParams({ userId })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    window.location.reload();
+                } else {
+                    alert(data.error || 'Delete failed — please try again.');
+                }
+            } catch {
+                alert('Network error — please try again.');
+            }
+        });
+    });
+
     // ── Manage Access Modal ────────────────────────────────────────
     let activeUserId = null;
 
@@ -310,7 +342,7 @@ else
                 const rowBtn  = document.querySelector(`.manage-access-btn[data-user-id="${activeUserId}"]`);
                 if (rowBtn) {
                     rowBtn.dataset.assignedIds = JSON.stringify(jobIds);
-                    const badge = rowBtn.closest('tr').querySelector('.badge');
+                    const badge = rowBtn.closest('tr').querySelector('.job-count-badge');
                     if (badge) {
                         badge.textContent = jobIds.length;
                         badge.className = 'badge rounded-pill ' + (jobIds.length ? 'bg-success' : 'bg-secondary');

@@ -191,6 +191,7 @@
                                style="font-size:0.9rem;">
                                 <i class="fas fa-user me-2" style="color:#7B3FF2;font-size:0.8rem;"></i>
                                 <span style="color:#1E1765;">${r.displayText}</span>
+                                ${r.subText ? `<small class="d-block text-muted ms-4 search-result-job" style="font-size:0.75rem;">${r.subText}</small>` : ''}
                              </a>`
                         ).join('');
                     }

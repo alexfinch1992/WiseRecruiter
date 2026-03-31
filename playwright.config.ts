@@ -37,7 +37,7 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         storageState: authFile,
       },
-      testMatch: /email_functionality\.spec\.ts|candidate_ui\.spec\.ts/,
+      testMatch: /email_functionality\.spec\.ts|candidate_ui\.spec\.ts|team_visibility\.spec\.ts|search_dropdown\.spec\.ts|manage_team_bugs\.spec\.ts/,
       dependencies: ['setup'],
     },
   ],
