@@ -93,10 +93,10 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 // Security headers — applied before routing so every response carries them.
-// /documents/ is excluded so PDF assets can be embedded inline on same-origin pages.
+// ViewResumeInline is excluded so controller-served PDFs can be embedded inline.
 app.Use(async (context, next) =>
 {
-    if (!context.Request.Path.StartsWithSegments("/documents"))
+    if (!context.Request.Path.StartsWithSegments("/Admin/ViewResumeInline"))
     {
         context.Response.Headers["X-Frame-Options"]        = "DENY";
         context.Response.Headers["X-Content-Type-Options"] = "nosniff";
