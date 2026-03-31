@@ -29,6 +29,16 @@ namespace JobPortal.Services.Implementations
                 .Include(s => s.Responses)
                 .ToListAsync();
 
+            return await ComputeAnalyticsAsync(scorecards);
+        }
+
+        public async Task<CandidateAnalyticsDto> GetCandidateAnalyticsFromScorecardsAsync(List<Scorecard> scorecards)
+        {
+            return await ComputeAnalyticsAsync(scorecards);
+        }
+
+        private async Task<CandidateAnalyticsDto> ComputeAnalyticsAsync(List<Scorecard> scorecards)
+        {
             if (scorecards.Count < 2)
                 return new CandidateAnalyticsDto { ScorecardCount = scorecards.Count };
 

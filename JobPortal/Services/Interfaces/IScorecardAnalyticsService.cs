@@ -1,3 +1,5 @@
+using JobPortal.Models;
+
 namespace JobPortal.Services.Interfaces
 {
     public interface IScorecardAnalyticsService
@@ -7,6 +9,13 @@ namespace JobPortal.Services.Interfaces
         /// Returns ScorecardCount only when fewer than two scorecards exist.
         /// </summary>
         Task<CandidateAnalyticsDto> GetCandidateAnalyticsAsync(int applicationId);
+
+        /// <summary>
+        /// Computes scorecard analytics from an already-loaded list of scorecards (with Responses
+        /// eagerly loaded). Avoids the candidateId lookup and the second scorecards DB fetch that
+        /// <see cref="GetCandidateAnalyticsAsync"/> performs internally.
+        /// </summary>
+        Task<CandidateAnalyticsDto> GetCandidateAnalyticsFromScorecardsAsync(List<Scorecard> scorecards);
     }
 
     public class CandidateAnalyticsDto

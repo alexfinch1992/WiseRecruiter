@@ -243,6 +243,15 @@ namespace JobPortal.Services.Implementations
                 .ToListAsync();
         }
 
+        public async Task<List<Scorecard>> GetScorecardsByCandidateWithResponsesAsync(int candidateId)
+        {
+            return await _context.Scorecards
+                .Include(s => s.Responses)
+                .Where(s => s.CandidateId == candidateId && !s.IsArchived)
+                .OrderByDescending(s => s.SubmittedAt)
+                .ToListAsync();
+        }
+
         public async Task<decimal> CalculateAverageScoreAsync(int scorecardId)
         {
             var scorecardExists = await _context.Scorecards.AnyAsync(s => s.Id == scorecardId);
