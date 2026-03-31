@@ -1,5 +1,6 @@
 using JobPortal.Data;
 using JobPortal.Models;
+using JobPortal.Models.ViewModels;
 using JobPortal.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -44,6 +45,51 @@ namespace JobPortal.Services.Implementations
 
             _context.JobStages.AddRange(defaultStages);
             await _context.SaveChangesAsync();
+        }
+
+        /// <inheritdoc />
+        public IReadOnlyList<CandidateStageSummaryItem> GetStageSummary(Job job)
+        {
+            if (job.Applications == null || !job.Applications.Any())
+                return Array.Empty<CandidateStageSummaryItem>();
+
+            var customStages = job.Stages ?? Enumerable.Empty<JobStage>();
+
+            return job.Applications
+                .GroupBy(a => GetEffectiveStageLabel(a, customStages))
+                .OrderBy(g => GetEffectiveSortOrder(g.First(), customStages))
+                .Select(g => new CandidateStageSummaryItem(g.Key, g.Count()))
+                .ToList();
+        }
+
+        /// <summary>
+        /// Returns the display label for an application's current stage.
+        /// If a custom JobStage is assigned, use its name.
+        /// Otherwise fall back to the ApplicationStage enum (e.g. "Applied", "Screen").
+        /// </summary>
+        private static string GetEffectiveStageLabel(Application app, IEnumerable<JobStage> customStages)
+        {
+            if (app.CurrentJobStageId != null)
+            {
+                var customStage = customStages.FirstOrDefault(s => s.Id == app.CurrentJobStageId);
+                return customStage?.Name ?? "Unknown stage";
+            }
+            return app.Stage.ToString();
+        }
+
+        /// <summary>
+        /// Sort order: system stages use their enum ordinal (×10) so custom stages
+        /// (which sit inside the "Interview" system stage) can be interleaved naturally.
+        /// </summary>
+        private static int GetEffectiveSortOrder(Application app, IEnumerable<JobStage> customStages)
+        {
+            if (app.CurrentJobStageId != null)
+            {
+                var customStage = customStages.FirstOrDefault(s => s.Id == app.CurrentJobStageId);
+                // Custom stages sit between Interview (20) and Offer (30) in the enum ordering
+                return (int)ApplicationStage.Interview * 10 + (customStage?.Order ?? 999);
+            }
+            return (int)app.Stage * 10;
         }
     }
 }
