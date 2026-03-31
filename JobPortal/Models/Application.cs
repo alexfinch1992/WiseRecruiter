@@ -63,5 +63,8 @@ namespace JobPortal.Models
         public ApplicationStatus Status { get; set; } = ApplicationStatus.Active;
         public string? RejectionReason { get; set; }
         public string? RejectionNotes { get; set; }
+
+        // Stage transition audit: set when candidate is moved past Screen without a Stage 1 approval
+        public bool MovedWithoutStage1Approval { get; set; }
     }
 }

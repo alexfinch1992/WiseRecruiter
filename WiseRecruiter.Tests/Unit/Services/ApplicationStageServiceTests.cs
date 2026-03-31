@@ -84,9 +84,9 @@ namespace WiseRecruiter.Tests.Unit.Services
             updated!.Stage.Should().Be(ApplicationStage.Interview);
         }
 
-        // Case 2: Not approved + no bypass → returns warning, stage NOT updated
+        // Case 2: Not approved + no bypass → stage IS updated (non-blocking), no warning
         [Fact]
-        public async Task UpdateStageAsync_ToInterview_WhenNotApprovedAndNoBypass_ReturnsWarningAndDoesNotUpdateStage()
+        public async Task UpdateStageAsync_ToInterview_WhenNotApprovedAndNoBypass_UpdatesStageWithoutWarning()
         {
             using var context = CreateInMemoryContext();
             var application = await SeedApplicationAsync(context);
@@ -98,11 +98,48 @@ namespace WiseRecruiter.Tests.Unit.Services
                 application.Id, ApplicationStage.Interview,
                 proceedWithoutApproval: false, userId: "");
 
-            result.RequiresApprovalWarning.Should().BeTrue();
-            result.PendingStage.Should().Be(ApplicationStage.Interview);
+            result.RequiresApprovalWarning.Should().BeFalse();
 
-            var unchanged = await context.Applications.FindAsync(application.Id);
-            unchanged!.Stage.Should().Be(ApplicationStage.Applied); // not mutated
+            var updated = await context.Applications.FindAsync(application.Id);
+            updated!.Stage.Should().Be(ApplicationStage.Interview); // stage moves regardless
+        }
+
+        // New: movement succeeds without Stage 1 approval
+        [Fact]
+        public async Task UpdateStageAsync_MoveSucceeds_WhenStage1ApprovalMissing()
+        {
+            using var context = CreateInMemoryContext();
+            var application = await SeedApplicationAsync(context);
+            // No recommendation — Stage 1 approval is absent
+
+            var service = CreateService(context);
+
+            var result = await service.UpdateStageAsync(
+                application.Id, ApplicationStage.Interview,
+                proceedWithoutApproval: false, userId: "user1");
+
+            // Stage must be updated — no hard gate
+            var updated = await context.Applications.FindAsync(application.Id);
+            updated!.Stage.Should().Be(ApplicationStage.Interview);
+            result.RequiresApprovalWarning.Should().BeFalse();
+        }
+
+        // New: flag is set when approval missing and moving past Screen
+        [Fact]
+        public async Task UpdateStageAsync_SetsMovedWithoutStage1ApprovalFlag_WhenApprovalMissing()
+        {
+            using var context = CreateInMemoryContext();
+            var application = await SeedApplicationAsync(context);
+            // No Stage 1 recommendation
+
+            var service = CreateService(context);
+
+            await service.UpdateStageAsync(
+                application.Id, ApplicationStage.Interview,
+                proceedWithoutApproval: false, userId: "user1");
+
+            var updated = await context.Applications.FindAsync(application.Id);
+            updated!.MovedWithoutStage1Approval.Should().BeTrue();
         }
 
         // Case 3: Not approved + proceedWithoutApproval → stage updates

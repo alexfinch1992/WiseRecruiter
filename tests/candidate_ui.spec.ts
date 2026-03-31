@@ -56,5 +56,22 @@ test.describe('Candidate Summary & Stage Logic', () => {
     expect(stageText).toMatch(/Applied|Technical Interview|Offer|Rejected/);
   });
 
+  test('no duplicate resume upload card – resume accessible only via summary link', async ({ page }) => {
+    await goToAlicePage(page);
+
+    // The summary sidebar must contain exactly one "View Resume" link
+    const summaryCard = page.locator('.candidate-summary-card');
+    await expect(summaryCard.locator('a:has-text("View Resume")')).toHaveCount(1);
+
+    // There must be NO standalone resume card outside the summary sidebar
+    // (identified by the card header text "Resume" with a file-alt icon)
+    const resumeCardHeaders = page.locator('.card-header h5:has-text("Resume")');
+    await expect(resumeCardHeaders).toHaveCount(0);
+
+    // The general document upload box must still be present
+    await expect(page.locator('#documentFile')).toBeVisible();
+    await expect(page.locator('#documentType')).toBeVisible();
+  });
+
 });
 

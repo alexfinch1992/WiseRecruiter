@@ -133,7 +133,7 @@ namespace WiseRecruiter.Tests.Integration
         }
 
         [Fact]
-        public async Task UpdateApplicationStage_ToOffer_WithoutApproval_TriggersWarning()
+        public async Task UpdateApplicationStage_ToOffer_WithoutApproval_MovesStageAndSetsFlag()
         {
             using var context = CreateInMemoryContext();
             var application = await SeedApplicationAsync(context);
@@ -143,16 +143,17 @@ namespace WiseRecruiter.Tests.Integration
 
             var redirect = result.Should().BeOfType<RedirectToActionResult>().Subject;
             redirect.ActionName.Should().Be("CandidateDetails");
-            controller.TempData["StageApprovalWarning"].Should().Be(application.Id);
+            controller.TempData.ContainsKey("StageApprovalWarning").Should().BeFalse();
 
-            var unchanged = await context.Applications.FindAsync(application.Id);
-            unchanged!.Stage.Should().Be(ApplicationStage.Applied);
+            var updated = await context.Applications.FindAsync(application.Id);
+            updated!.Stage.Should().Be(ApplicationStage.Offer);
+            updated.MovedWithoutStage1Approval.Should().BeTrue();
         }
 
         // --- 2. Moving to Interview without approval triggers warning ---
 
         [Fact]
-        public async Task UpdateApplicationStage_ToInterview_WithoutApproval_RedirectsWithWarningFlag()
+        public async Task UpdateApplicationStage_ToInterview_WithoutApproval_MovesStageAndSetsFlag()
         {
             using var context = CreateInMemoryContext();
             var application = await SeedApplicationAsync(context);
@@ -161,16 +162,16 @@ namespace WiseRecruiter.Tests.Integration
             // No recommendation exists; proceedWithoutApproval = false (default)
             var result = await controller.UpdateApplicationStage(application.Id, "enum:Interview", proceedWithoutApproval: false);
 
-            // Should redirect back to CandidateDetails (server-driven warning pattern)
             var redirect = result.Should().BeOfType<RedirectToActionResult>().Subject;
             redirect.ActionName.Should().Be("CandidateDetails");
 
-            // TempData carries the warning signal for the next GET
-            controller.TempData["StageApprovalWarning"].Should().Be(application.Id);
+            // No warning flag — movement is non-blocking
+            controller.TempData.ContainsKey("StageApprovalWarning").Should().BeFalse();
 
-            // Stage should NOT have changed
-            var unchanged = await context.Applications.FindAsync(application.Id);
-            unchanged!.Stage.Should().Be(ApplicationStage.Applied);
+            // Stage must have changed and flag must be set
+            var updated = await context.Applications.FindAsync(application.Id);
+            updated!.Stage.Should().Be(ApplicationStage.Interview);
+            updated.MovedWithoutStage1Approval.Should().BeTrue();
         }
 
         [Fact]
@@ -364,10 +365,10 @@ namespace WiseRecruiter.Tests.Integration
             model.ApplicationStage.Should().Be(ApplicationStage.Interview);
         }
 
-        // --- 6. Draft recommendation still blocks stage advance ---
+        // --- 6. Draft recommendation does NOT block stage advance (non-blocking) ---
 
         [Fact]
-        public async Task UpdateApplicationStage_ToInterview_AfterSavingDraftViaService_StillRequiresApproval()
+        public async Task UpdateApplicationStage_ToInterview_AfterSavingDraftViaService_MovesStageAndSetsFlag()
         {
             using var context = CreateInMemoryContext();
             var application = await SeedApplicationAsync(context);
@@ -379,13 +380,13 @@ namespace WiseRecruiter.Tests.Integration
             var controller = CreateAdminController(context);
             var result = await controller.UpdateApplicationStage(application.Id, "enum:Interview", proceedWithoutApproval: false);
 
-            // Stage still blocked
             var redirect = result.Should().BeOfType<RedirectToActionResult>().Subject;
             redirect.ActionName.Should().Be("CandidateDetails");
-            controller.TempData["StageApprovalWarning"].Should().Be(application.Id);
+            controller.TempData.ContainsKey("StageApprovalWarning").Should().BeFalse();
 
-            var unchanged = await context.Applications.FindAsync(application.Id);
-            unchanged!.Stage.Should().Be(ApplicationStage.Applied);
+            var updated = await context.Applications.FindAsync(application.Id);
+            updated!.Stage.Should().Be(ApplicationStage.Interview);
+            updated.MovedWithoutStage1Approval.Should().BeTrue();
         }
 
         [Fact]
@@ -432,7 +433,7 @@ namespace WiseRecruiter.Tests.Integration
         }
 
         [Fact]
-        public async Task UpdateApplicationStage_WithStagePrefix_WithoutApproval_ShowsWarning()
+        public async Task UpdateApplicationStage_WithStagePrefix_WithoutApproval_MovesStageAndSetsFlag()
         {
             using var context = CreateInMemoryContext();
             var application = await SeedApplicationAsync(context);
@@ -445,12 +446,12 @@ namespace WiseRecruiter.Tests.Integration
 
             var redirect = result.Should().BeOfType<RedirectToActionResult>().Subject;
             redirect.ActionName.Should().Be("CandidateDetails");
-            controller.TempData["StageApprovalWarning"].Should().Be(application.Id);
+            controller.TempData.ContainsKey("StageApprovalWarning").Should().BeFalse();
 
-            // Stage should NOT have changed
-            var unchanged = await context.Applications.FindAsync(application.Id);
-            unchanged!.Stage.Should().Be(ApplicationStage.Applied);
-            unchanged.CurrentJobStageId.Should().BeNull();
+            var updated = await context.Applications.FindAsync(application.Id);
+            updated!.Stage.Should().Be(ApplicationStage.Interview);
+            updated.CurrentJobStageId.Should().Be(jobStage.Id);
+            updated.MovedWithoutStage1Approval.Should().BeTrue();
         }
 
         [Fact]

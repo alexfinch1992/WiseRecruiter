@@ -154,7 +154,7 @@ namespace WiseRecruiter.Tests.Integration
         // ── 2. Move to Interview without approval → warning flag set, stage unchanged ──
 
         [Fact]
-        public async Task UpdateApplicationStage_ToInterview_WithoutApproval_SetsWarningAndRedirectsToCandidateDetails()
+        public async Task UpdateApplicationStage_ToInterview_WithoutApproval_MovesStageAndSetsFlag()
         {
             using var context    = CreateInMemoryContext();
             var application      = await SeedApplicationAsync(context);
@@ -166,10 +166,12 @@ namespace WiseRecruiter.Tests.Integration
             var redirect = result.Should().BeOfType<RedirectToActionResult>().Subject;
             redirect.ActionName.Should().Be("CandidateDetails");
 
-            controller.TempData["StageApprovalWarning"].Should().Be(application.Id);
+            // No blocking — no warning flag
+            controller.TempData.ContainsKey("StageApprovalWarning").Should().BeFalse();
 
-            var unchanged = await context.Applications.FindAsync(application.Id);
-            unchanged!.Stage.Should().Be(ApplicationStage.Applied);
+            var updated = await context.Applications.FindAsync(application.Id);
+            updated!.Stage.Should().Be(ApplicationStage.Interview);
+            updated.MovedWithoutStage1Approval.Should().BeTrue();
         }
 
         // ── 3. Move with bypass → stage updated AND redirects to CandidateDetails ────

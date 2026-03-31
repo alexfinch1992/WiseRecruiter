@@ -93,11 +93,15 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 // Security headers — applied before routing so every response carries them.
+// /documents/ is excluded so PDF assets can be embedded inline on same-origin pages.
 app.Use(async (context, next) =>
 {
-    context.Response.Headers["X-Frame-Options"]        = "DENY";
-    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
-    context.Response.Headers["Referrer-Policy"]        = "strict-origin-when-cross-origin";
+    if (!context.Request.Path.StartsWithSegments("/documents"))
+    {
+        context.Response.Headers["X-Frame-Options"]        = "DENY";
+        context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+        context.Response.Headers["Referrer-Policy"]        = "strict-origin-when-cross-origin";
+    }
     await next();
 });
 
