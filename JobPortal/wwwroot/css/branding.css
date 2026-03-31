@@ -1,0 +1,13 @@
+/* WiseTech Global branding layer — comment out the <link> in _Layout.cshtml to revert */
+
+:root {
+    --wt-navy: #141E30;
+    --wt-blue: #2387EE;
+    --wt-bg: #F8F9FA;
+}
+
+.navbar { background-color: var(--wt-navy) !important; }
+.navbar .nav-link { color: rgba(255,255,255,0.9) !important; }
+.btn-primary, .user-avatar { background-color: var(--wt-blue) !important; border-color: var(--wt-blue) !important; }
+body { background-color: var(--wt-bg); }
+.card { border-radius: 4px; border: 1px solid #dee2e6; }

@@ -1,19 +1,29 @@
 using System.Security.Claims;
+using JobPortal.Data;
+using JobPortal.Models;
 using JobPortal.Models.ViewModels;
 using JobPortal.Services.Interfaces;
 using JobPortal.Services.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
-[Authorize(AuthenticationSchemes = "AdminAuth")]
+[Authorize]
 [Route("Admin/Recommendations")]
 public class RecommendationAdminController : Controller
 {
     private readonly IRecommendationService _recommendationService;
+    private readonly AppDbContext _context;
+    private readonly IAuditService _auditService;
 
-    public RecommendationAdminController(IRecommendationService recommendationService)
+    public RecommendationAdminController(
+        IRecommendationService recommendationService,
+        AppDbContext context,
+        IAuditService auditService)
     {
         _recommendationService = recommendationService ?? throw new ArgumentNullException(nameof(recommendationService));
+        _context = context ?? throw new ArgumentNullException(nameof(context));
+        _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
     }
 
     [HttpGet("Pending")]
@@ -81,5 +91,50 @@ public class RecommendationAdminController : Controller
             ApprovalResult.Forbidden       => Forbid(),
             _                              => RedirectToAction("CandidateDetails", "Admin", new { id = applicationId })
         };
+    }
+
+    // ===== SetRecommendationOutcome =====
+
+    [HttpPost("SetOutcome")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SetRecommendationOutcome(int recommendationId, RecommendationOutcome outcome, string? approvalFeedback = null)
+    {
+        var rec = await _context.CandidateRecommendations
+            .FirstOrDefaultAsync(r => r.Id == recommendationId);
+
+        if (rec == null)
+            return NotFound();
+
+        rec.Outcome = outcome;
+        rec.ReviewedUtc = DateTime.UtcNow;
+        if (!string.IsNullOrWhiteSpace(approvalFeedback))
+            rec.ApprovalFeedback = approvalFeedback;
+
+        // Mirror outcome back into Status for backward-compatible badge display
+        if (outcome == RecommendationOutcome.Proceed)
+            rec.Status = RecommendationStatus.Approved;
+        else if (outcome == RecommendationOutcome.NotSuitable)
+            rec.Status = RecommendationStatus.Rejected;
+        else if (outcome == RecommendationOutcome.MoreInfo)
+            rec.Status = RecommendationStatus.NeedsRevision;
+
+        await _context.SaveChangesAsync();
+
+        var callerId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "unknown";
+        var outcomeLabel = outcome switch
+        {
+            RecommendationOutcome.Proceed     => "marked candidate as Proceed",
+            RecommendationOutcome.MoreInfo    => "requested More Info on candidate",
+            RecommendationOutcome.NotSuitable => "marked candidate as Not Suitable",
+            _                                 => $"set outcome to {outcome}"
+        };
+        await _auditService.LogAsync(
+            "CandidateRecommendation",
+            rec.Id,
+            "OutcomeSet",
+            $"Lead {outcomeLabel}; RecId={rec.Id}; AppId={rec.ApplicationId}",
+            callerId);
+
+        return RedirectToAction("CandidateDetails", "Admin", new { id = rec.ApplicationId });
     }
 }

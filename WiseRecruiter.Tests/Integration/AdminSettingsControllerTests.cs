@@ -1,3 +1,5 @@
+﻿using Microsoft.AspNetCore.Identity;
+using Moq;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -29,7 +31,7 @@ namespace WiseRecruiter.Tests.Integration
             using var context = CreateInMemoryContext();
             IFacetService facetService = new FacetService(context);
             IScorecardTemplateService templateService = new ScorecardTemplateService(context);
-            var controller = new AdminSettingsController(context, facetService, templateService);
+            var controller = new AdminSettingsController(context, facetService, templateService, new Mock<UserManager<ApplicationUser>>(Mock.Of<IUserStore<ApplicationUser>>(), null, null, null, null, null, null, null, null).Object);
 
             Func<Task> act = async () =>
             {
@@ -56,7 +58,7 @@ namespace WiseRecruiter.Tests.Integration
             await templateService.AddFacetToTemplate(defaultTemplate.Id, quality.Id);
             await templateService.AddFacetToTemplate(technicalTemplate.Id, quality.Id);
 
-            var controller = new AdminSettingsController(context, facetService, templateService);
+            var controller = new AdminSettingsController(context, facetService, templateService, new Mock<UserManager<ApplicationUser>>(Mock.Of<IUserStore<ApplicationUser>>(), null, null, null, null, null, null, null, null).Object);
 
             var result = await controller.Index();
 
@@ -81,7 +83,7 @@ namespace WiseRecruiter.Tests.Integration
             var template = await templateService.CreateTemplate("Hiring Template");
             await templateService.AddFacetToTemplate(template.Id, facet.Id);
 
-            var controller = new AdminSettingsController(context, facetService, templateService);
+            var controller = new AdminSettingsController(context, facetService, templateService, new Mock<UserManager<ApplicationUser>>(Mock.Of<IUserStore<ApplicationUser>>(), null, null, null, null, null, null, null, null).Object);
 
             var result = await controller.EditTemplateFacets(template.Id, new List<TemplateFacetInput>());
 

@@ -71,6 +71,34 @@ main {
   color: var(--wr-accent) !important;
 }
 
+/* User Avatar Dropdown */
+.user-avatar {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2a2096 0%, #7B3FF2 100%);
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border: 2px solid rgba(255,255,255,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  padding: 0;
+  /* suppress Bootstrap dropdown caret */
+  --bs-btn-padding-x: 0;
+}
+.user-avatar::after { display: none; }
+.user-avatar:hover,
+.user-avatar:focus {
+  border-color: rgba(255,255,255,0.85);
+  box-shadow: 0 0 0 3px rgba(123,63,242,0.4);
+  outline: none;
+}
+
 /* Footer Styling */
 .wr-footer {
   background: linear-gradient(135deg, var(--wr-primary) 0%, var(--wr-primary-light) 100%);

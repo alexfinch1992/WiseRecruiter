@@ -47,7 +47,7 @@ export function CandidateActionPanel({
   const showSoftGate = requiresRec && !recCompleted;
   const [hardConfirmed, setHardConfirmed] = useState(false);
   const [bypassConfirmed, setBypassConfirmed] = useState(false);
-  const canMove = !!selectedId && (!isHardGate || hardConfirmed) && (!showSoftGate || bypassConfirmed);
+  const canMove = !!selectedId && (!isHardGate || hardConfirmed);
 
   function handleChange(id: string) {
     setSelectedId(id);

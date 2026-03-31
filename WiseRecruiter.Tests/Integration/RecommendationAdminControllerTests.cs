@@ -26,14 +26,14 @@ namespace WiseRecruiter.Tests.Integration
 
         private static RecommendationAdminController CreateController(AppDbContext context, int adminId = 1)
         {
-            var controller = new RecommendationAdminController(new RecommendationService(context, new StageOrderService()));
+            var controller = new RecommendationAdminController(new RecommendationService(context, new StageOrderService()), context, new AuditService(context));
             controller.ControllerContext = new ControllerContext
             {
                 HttpContext = new DefaultHttpContext
                 {
                     User = new ClaimsPrincipal(new ClaimsIdentity(
                         new[] { new Claim("AdminId", adminId.ToString()) },
-                        "AdminAuth"))
+                        "Identity.Application"))
                 }
             };
             return controller;
@@ -404,13 +404,13 @@ namespace WiseRecruiter.Tests.Integration
             var (application, _) = await SeedAsync(context, RecommendationStatus.Submitted);
 
             var controller = new RecommendationAdminController(
-                new RecommendationService(context, new StageOrderService(), authService: new DenyAllAuthService()));
+                new RecommendationService(context, new StageOrderService(), authService: new DenyAllAuthService()), context, new AuditService(context));
             controller.ControllerContext = new ControllerContext
             {
                 HttpContext = new DefaultHttpContext
                 {
                     User = new ClaimsPrincipal(new ClaimsIdentity(
-                        new[] { new Claim("AdminId", "1") }, "AdminAuth"))
+                        new[] { new Claim("AdminId", "1") }, "Identity.Application"))
                 }
             };
 
@@ -627,13 +627,13 @@ namespace WiseRecruiter.Tests.Integration
             var (application, _) = await SeedStage2Async(context, RecommendationStatus.Submitted);
 
             var controller = new RecommendationAdminController(
-                new RecommendationService(context, new StageOrderService(), authService: new DenyAllAuthService()));
+                new RecommendationService(context, new StageOrderService(), authService: new DenyAllAuthService()), context, new AuditService(context));
             controller.ControllerContext = new ControllerContext
             {
                 HttpContext = new DefaultHttpContext
                 {
                     User = new ClaimsPrincipal(new ClaimsIdentity(
-                        new[] { new Claim("AdminId", "1") }, "AdminAuth"))
+                        new[] { new Claim("AdminId", "1") }, "Identity.Application"))
                 }
             };
 

@@ -1,0 +1,61 @@
+@{
+    ViewData["Title"] = "My Profile";
+    var fullName = User.Identity?.Name ?? "Unknown";
+    var nameParts = fullName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+    var initials = nameParts.Length >= 2
+        ? $"{nameParts[0][0]}{nameParts[^1][0]}".ToUpper()
+        : (nameParts.Length == 1 ? nameParts[0][0].ToString().ToUpper() : "U");
+    var claims = User.Claims.ToList();
+}
+
+<div class="container py-5" style="max-width: 680px;">
+    <div class="d-flex align-items-center mb-4 gap-3">
+        <a asp-controller="Admin" asp-action="Index" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left me-1"></i>Back
+        </a>
+        <h4 class="fw-bold mb-0"><i class="fas fa-id-card me-2"></i>My Profile</h4>
+    </div>
+
+    <!-- Avatar + name card -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body d-flex align-items-center gap-4 py-4">
+            <div class="user-avatar" style="width:64px;height:64px;font-size:1.4rem;flex-shrink:0;">@initials</div>
+            <div>
+                <h5 class="fw-bold mb-1">@fullName</h5>
+                <div class="d-flex flex-wrap gap-1">
+                    @foreach (var role in User.Claims.Where(c => c.Type == System.Security.Claims.ClaimTypes.Role))
+                    {
+                        <span class="badge" style="background:#7B3FF2;">@role.Value</span>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Claims table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header fw-semibold" style="background:linear-gradient(135deg,#1E1765 0%,#7B3FF2 100%);color:#fff;">
+            <i class="fas fa-key me-2"></i>Session Claims
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-sm table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width:45%">Type</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var claim in claims)
+                    {
+                        var shortType = claim.Type.Contains('/') ? claim.Type.Split('/').Last() : claim.Type;
+                        <tr>
+                            <td class="text-muted small font-monospace text-truncate" style="max-width:200px;" title="@claim.Type">@shortType</td>
+                            <td class="small text-break">@claim.Value</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

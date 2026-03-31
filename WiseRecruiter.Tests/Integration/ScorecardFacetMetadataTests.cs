@@ -1,3 +1,4 @@
+﻿using Microsoft.AspNetCore.Identity;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -38,7 +39,7 @@ namespace WiseRecruiter.Tests.Integration
             IScorecardService scorecardService = new ScorecardService(context, templateService);
             IJobService jobService = new JobService(context);
             var env = new Mock<IWebHostEnvironment>().Object;
-            return new AdminController(context, env, applicationService, analyticsService, scorecardService, templateService, jobService, new ScorecardAnalyticsService(context), new InterviewService(context), new RecommendationService(context, new StageOrderService()), new ApplicationStageService(context, new RecommendationService(context, new StageOrderService())), new HiringPipelineService(), new GlobalSearchService(context));
+            return new AdminController(context, env, applicationService, analyticsService, scorecardService, templateService, jobService, new ScorecardAnalyticsService(context), new InterviewService(context), new RecommendationService(context, new StageOrderService()), new ApplicationStageService(context, new RecommendationService(context, new StageOrderService())), new HiringPipelineService(), new GlobalSearchService(context), new AuditService(context), new JobPortal.Services.Implementations.JobAccessService(context));
         }
 
         private async Task<(int applicationId, int facetId)> SeedApplicationWithFacetAsync(
@@ -297,7 +298,7 @@ namespace WiseRecruiter.Tests.Integration
             using var context = CreateInMemoryContext();
             IFacetService facetService = new FacetService(context);
             IScorecardTemplateService templateService = new ScorecardTemplateService(context);
-            var controller = new AdminSettingsController(context, facetService, templateService);
+            var controller = new AdminSettingsController(context, facetService, templateService, new Mock<UserManager<ApplicationUser>>(Mock.Of<IUserStore<ApplicationUser>>(), null, null, null, null, null, null, null, null).Object);
 
             // Empty name triggers validation error
             var result = await controller.Create(name: "   ", description: null, notesPlaceholder: null, categoryId: null);
@@ -314,7 +315,7 @@ namespace WiseRecruiter.Tests.Integration
             IFacetService facetService = new FacetService(context);
             IScorecardTemplateService templateService = new ScorecardTemplateService(context);
             var facet = await facetService.CreateFacet("Communication");
-            var controller = new AdminSettingsController(context, facetService, templateService);
+            var controller = new AdminSettingsController(context, facetService, templateService, new Mock<UserManager<ApplicationUser>>(Mock.Of<IUserStore<ApplicationUser>>(), null, null, null, null, null, null, null, null).Object);
 
             var result = await controller.Edit(facet.Id, name: "", description: null, notesPlaceholder: null, categoryId: null);
 
@@ -334,7 +335,7 @@ namespace WiseRecruiter.Tests.Integration
             await context.SaveChangesAsync();
 
             var facet = await facetService.CreateFacet("Communication");
-            var controller = new AdminSettingsController(context, facetService, templateService);
+            var controller = new AdminSettingsController(context, facetService, templateService, new Mock<UserManager<ApplicationUser>>(Mock.Of<IUserStore<ApplicationUser>>(), null, null, null, null, null, null, null, null).Object);
 
             var result = await controller.Edit(facet.Id, "Communication",
                 "Assess clarity", "e.g. concise answer", category.Id);

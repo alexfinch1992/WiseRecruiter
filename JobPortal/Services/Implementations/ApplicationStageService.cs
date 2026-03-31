@@ -28,22 +28,17 @@ namespace JobPortal.Services.Implementations
             if (application == null)
                 return new StageUpdateResult();
 
-            // Soft-gate: warn if moving past Screen without Stage 1 approval
-            if (newStage == ApplicationStage.Interview
+            // Record flag if moving past Screen without Stage 1 approval (non-blocking)
+            bool movingPastScreen = newStage == ApplicationStage.Interview
                 || newStage == ApplicationStage.Offer
-                || newStage == ApplicationStage.Hired)
+                || newStage == ApplicationStage.Hired;
+
+            if (movingPastScreen)
             {
                 var (_, isApproved) = await _recommendationService.GetOrPrepareStage1RecommendationAsync(
                     applicationId, proceedWithoutApproval, bypassReason: null, userId);
 
-                if (!isApproved && !proceedWithoutApproval)
-                {
-                    return new StageUpdateResult
-                    {
-                        RequiresApprovalWarning = true,
-                        PendingStage = ApplicationStage.Interview
-                    };
-                }
+                application.MovedWithoutStage1Approval = !isApproved;
             }
 
             application.Stage = newStage;

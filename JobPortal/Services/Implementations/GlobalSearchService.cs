@@ -21,34 +21,22 @@ namespace JobPortal.Services.Implementations
 
             var lowerQuery = query.ToLowerInvariant();
 
-            // Search Candidate table — one result per candidate, no Application duplicates
-            var candidateEntities = await _context.Candidates
-                .Where(c => c.FirstName.ToLower().Contains(lowerQuery)
-                         || c.LastName.ToLower().Contains(lowerQuery))
-                .OrderBy(c => c.FirstName)
+            // Application-based results: one entry per application so each candidate+job
+            // combination is visible. Results are ordered most-recent-first.
+            var candidates = await _context.Applications
+                .Where(a => a.Candidate != null &&
+                            (a.Candidate.FirstName.ToLower().Contains(lowerQuery) ||
+                             a.Candidate.LastName.ToLower().Contains(lowerQuery)))
+                .OrderByDescending(a => a.Id)
                 .Take(5)
-                .ToListAsync();
-
-            var candidates = new List<GlobalSearchResult>();
-            foreach (var c in candidateEntities)
-            {
-                // Get most recent Application.Id for navigation to Admin/CandidateDetails
-                var latestAppId = await _context.Applications
-                    .Where(a => a.CandidateId == c.Id)
-                    .OrderByDescending(a => a.Id)
-                    .Select(a => a.Id)
-                    .FirstOrDefaultAsync();
-
-                if (latestAppId != 0)
+                .Select(a => new GlobalSearchResult
                 {
-                    candidates.Add(new GlobalSearchResult
-                    {
-                        Type = "Candidate",
-                        Id = latestAppId,
-                        DisplayText = $"{c.FirstName} {c.LastName}"
-                    });
-                }
-            }
+                    Type        = "Candidate",
+                    Id          = a.Id,
+                    DisplayText = a.Candidate!.FirstName + " " + a.Candidate.LastName,
+                    SubText     = a.Job != null ? a.Job.Title ?? string.Empty : string.Empty,
+                })
+                .ToListAsync();
 
             // Search Job table by title
             var jobs = await _context.Jobs
@@ -57,9 +45,10 @@ namespace JobPortal.Services.Implementations
                 .Take(5)
                 .Select(j => new GlobalSearchResult
                 {
-                    Type = "Job",
-                    Id = j.Id,
-                    DisplayText = j.Title!
+                    Type        = "Job",
+                    Id          = j.Id,
+                    DisplayText = j.Title!,
+                    SubText     = string.Empty,
                 })
                 .ToListAsync();
 

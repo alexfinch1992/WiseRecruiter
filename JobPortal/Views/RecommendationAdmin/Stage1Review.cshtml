@@ -81,20 +81,47 @@
                     </div>
                 </div>
 
-                @if (rec.Status != JobPortal.Models.RecommendationStatus.Approved)
+                @if (rec.Status != JobPortal.Models.RecommendationStatus.Approved && rec.Outcome == JobPortal.Models.RecommendationOutcome.Pending)
                 {
-                    <form asp-controller="RecommendationAdmin" asp-action="Approve"
-                          asp-route-applicationId="@Model.ApplicationId" method="post">
+                    <form asp-controller="RecommendationAdmin" asp-action="SetRecommendationOutcome" method="post">
                         @Html.AntiForgeryToken()
+                        <input type="hidden" name="recommendationId" value="@rec.Id" />
                         <div class="mb-3">
-                            <label for="approvalFeedback" class="form-label fw-semibold">Manager Feedback <span class="text-muted fw-normal">(optional)</span></label>
+                            <label for="approvalFeedback" class="form-label fw-semibold">Lead Feedback <span class="text-muted fw-normal">(optional)</span></label>
                             <textarea id="approvalFeedback" name="approvalFeedback" class="form-control" rows="3"
                                       placeholder="Add any notes for the hiring team..."></textarea>
                         </div>
-                        <button type="submit" class="btn btn-success">
-                            <i class="fas fa-check me-2"></i>Approve Recommendation
-                        </button>
+                        <div class="btn-group" role="group" aria-label="Recommendation outcome">
+                            <button type="submit" name="outcome" value="Proceed" class="btn btn-sm btn-success">
+                                <i class="fas fa-check me-1"></i>Proceed
+                            </button>
+                            <button type="submit" name="outcome" value="MoreInfo" class="btn btn-sm btn-warning">
+                                <i class="fas fa-question me-1"></i>More Info
+                            </button>
+                            <button type="submit" name="outcome" value="NotSuitable" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i>Not Suitable
+                            </button>
+                        </div>
                     </form>
+                }
+                else if (rec.Outcome != JobPortal.Models.RecommendationOutcome.Pending)
+                {
+                    <p class="@(rec.Outcome switch {
+                        JobPortal.Models.RecommendationOutcome.Proceed     => "text-success",
+                        JobPortal.Models.RecommendationOutcome.MoreInfo    => "text-warning",
+                        _                                                  => "text-secondary"
+                    }) fw-semibold mb-0">
+                        <i class="fas @(rec.Outcome switch {
+                            JobPortal.Models.RecommendationOutcome.Proceed     => "fa-check-circle",
+                            JobPortal.Models.RecommendationOutcome.MoreInfo    => "fa-question-circle",
+                            _                                                  => "fa-times-circle"
+                        }) me-2"></i>
+                        @(rec.Outcome switch {
+                            JobPortal.Models.RecommendationOutcome.Proceed     => "Proceed",
+                            JobPortal.Models.RecommendationOutcome.MoreInfo    => "More Info Requested",
+                            _                                                  => "Not Suitable"
+                        })
+                    </p>
                 }
                 else
                 {

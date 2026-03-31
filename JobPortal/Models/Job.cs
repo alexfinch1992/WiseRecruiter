@@ -7,8 +7,10 @@ namespace JobPortal.Models
         public int Id { get; set; }
 
         [Required]
+        [StringLength(200)]
         public string? Title { get; set; }
 
+        [StringLength(10000)]
         public string? Description { get; set; }
 
         public int? ScorecardTemplateId { get; set; }
@@ -16,5 +18,9 @@ namespace JobPortal.Models
         public ICollection<Application>? Applications { get; set; }
         public ICollection<JobStage>? Stages { get; set; }
         public ScorecardTemplate? ScorecardTemplate { get; set; }
+
+        // Ownership / traceability fields (pre-multi-tenant)
+        public string CreatedByUserId { get; set; } = "System_Seed";
+        public string? AssignedToUserId { get; set; }
     }
 }

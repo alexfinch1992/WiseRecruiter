@@ -1,18 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using JobPortal.Data;
+using Microsoft.AspNetCore.Identity;
 using JobPortal.Models;
-using JobPortal.Helpers;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication;
 
 public class AccountController : Controller
 {
-    private readonly AppDbContext _context;
+    private readonly SignInManager<ApplicationUser> _signInManager;
 
-    public AccountController(AppDbContext context)
+    public AccountController(SignInManager<ApplicationUser> signInManager)
     {
-        _context = context;
+        _signInManager = signInManager;
     }
 
     public IActionResult Login()
@@ -30,34 +26,20 @@ public class AccountController : Controller
             return View();
         }
 
-        var adminUser = await _context.AdminUsers.FirstOrDefaultAsync(a => a.Username == username);
-        
-        if (adminUser == null || string.IsNullOrEmpty(adminUser.PasswordHash) || !PasswordHasher.Verify(password, adminUser.PasswordHash))
-        {
-            ModelState.AddModelError("", "Invalid username or password.");
-            return View();
-        }
+        var result = await _signInManager.PasswordSignInAsync(username, password, isPersistent: true, lockoutOnFailure: false);
 
-        var claims = new List<Claim>
-        {
-            new Claim(ClaimTypes.Name, adminUser.Username ?? ""),
-            new Claim("AdminId", adminUser.Id.ToString())
-        };
+        if (result.Succeeded)
+            return RedirectToAction("Index", "Admin");
 
-        var claimsIdentity = new ClaimsIdentity(claims, "AdminAuth");
-        var authProperties = new AuthenticationProperties
-        {
-            IsPersistent = true,
-            ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8)
-        };
-
-        await HttpContext.SignInAsync("AdminAuth", new ClaimsPrincipal(claimsIdentity), authProperties);
-        return RedirectToAction("Index", "Admin");
+        ModelState.AddModelError("", "Invalid username or password.");
+        return View();
     }
 
+    [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Logout()
     {
-        await HttpContext.SignOutAsync("AdminAuth");
+        await _signInManager.SignOutAsync();
         return RedirectToAction("Index", "Home");
     }
 }

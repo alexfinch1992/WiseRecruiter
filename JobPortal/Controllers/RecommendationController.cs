@@ -4,7 +4,7 @@ using JobPortal.Models.ViewModels;
 using JobPortal.Services.Interfaces;
 using JobPortal.Services.Models;
 
-[Authorize(AuthenticationSchemes = "AdminAuth")]
+[Authorize]
 public class RecommendationController : Controller
 {
     private readonly IRecommendationService _recommendationService;

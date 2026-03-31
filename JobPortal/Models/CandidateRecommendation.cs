@@ -9,6 +9,15 @@ namespace JobPortal.Models
         Rejected
     }
 
+    /// <summary>Three-way outcome set by the reviewing lead once a recommendation is submitted.</summary>
+    public enum RecommendationOutcome
+    {
+        Pending,
+        Proceed,
+        MoreInfo,
+        NotSuitable
+    }
+
     public enum RecommendationStage
     {
         Stage1,
@@ -24,6 +33,9 @@ namespace JobPortal.Models
 
         public RecommendationStage Stage { get; set; } = RecommendationStage.Stage1;
         public RecommendationStatus Status { get; set; } = RecommendationStatus.Draft;
+
+        /// <summary>Lead's three-way outcome decision (set independently of the Status workflow).</summary>
+        public RecommendationOutcome Outcome { get; set; } = RecommendationOutcome.Pending;
 
         public int? SubmittedByUserId { get; set; }
         public int? ReviewedByUserId { get; set; }

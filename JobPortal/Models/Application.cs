@@ -2,6 +2,13 @@ using System.ComponentModel.DataAnnotations;
 
 namespace JobPortal.Models
 {
+    public enum ApplicationStatus
+    {
+        Active,
+        Rejected,
+        Withdrawn
+    }
+
     public enum ApplicationStage
     {
         Applied,
@@ -47,5 +54,17 @@ namespace JobPortal.Models
 
         // Navigation property for documents
         public ICollection<Document> Documents { get; set; } = new List<Document>();
+
+        // Ownership / traceability fields (pre-multi-tenant)
+        public string CreatedByUserId { get; set; } = "System_Seed";
+        public string? AssignedToUserId { get; set; }
+
+        // Rejection tracking
+        public ApplicationStatus Status { get; set; } = ApplicationStatus.Active;
+        public string? RejectionReason { get; set; }
+        public string? RejectionNotes { get; set; }
+
+        // Stage transition audit: set when candidate is moved past Screen without a Stage 1 approval
+        public bool MovedWithoutStage1Approval { get; set; }
     }
 }

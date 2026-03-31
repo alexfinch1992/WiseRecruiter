@@ -101,34 +101,19 @@
                         @(Model.Applications?.Count == 1 ? "candidate has" : "candidates have") applied
                     </p>
                     
-                    @if (Model.Applications?.Any() == true && Model.Stages?.Any() == true)
+                    @if (Model.Applications?.Any() == true)
                     {
                         <hr class="my-3" />
                         <div class="small">
                             @{
-                                var stageGroups = Model.Applications.GroupBy(a => a.CurrentJobStageId)
-                                    .OrderBy(g => Model.Stages.FirstOrDefault(s => s.Id == g.Key)?.Order ?? int.MaxValue)
-                                    .ToList();
+                                var stageSummary = ViewBag.StageSummary as IReadOnlyList<JobPortal.Models.ViewModels.CandidateStageSummaryItem>
+                                                   ?? new List<JobPortal.Models.ViewModels.CandidateStageSummaryItem>();
                             }
-                            @foreach (var group in stageGroups)
+                            @foreach (var item in stageSummary)
                             {
-                                var stage = Model.Stages.FirstOrDefault(s => s.Id == group.Key);
-                                string stageName;
-                                if (stage != null)
-                                {
-                                    stageName = stage.Name;
-                                }
-                                else if (group.Key == null)
-                                {
-                                    stageName = "Unassigned";
-                                }
-                                else
-                                {
-                                    stageName = "Unknown stage";
-                                }
                                 <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span class="text-truncate me-2">@stageName</span>
-                                    <span class="badge bg-secondary" style="background-color: #7B3FF2 !important;">@group.Count()</span>
+                                    <span class="text-truncate me-2">@item.StageName</span>
+                                    <span class="badge bg-secondary" style="background-color: #7B3FF2 !important;">@item.Count</span>
                                 </div>
                             }
                         </div>

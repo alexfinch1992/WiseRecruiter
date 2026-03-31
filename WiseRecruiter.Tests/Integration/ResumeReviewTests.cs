@@ -41,8 +41,19 @@ namespace WiseRecruiter.Tests.Integration
                 new RecommendationService(context, new StageOrderService()),
                 new ApplicationStageService(context, new RecommendationService(context, new StageOrderService())),
                 new HiringPipelineService(),
-                new GlobalSearchService(context))
+                new GlobalSearchService(context), new AuditService(context), new JobPortal.Services.Implementations.JobAccessService(context))
             {
+                ControllerContext = new ControllerContext
+                {
+                    HttpContext = new DefaultHttpContext
+                    {
+                        User = new System.Security.Claims.ClaimsPrincipal(
+                            new System.Security.Claims.ClaimsIdentity(
+                                new[] { new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, "admin"),
+                                        new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, "Admin") },
+                                "Identity.Application"))
+                    }
+                },
                 TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>())
             };
 

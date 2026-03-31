@@ -51,8 +51,19 @@ namespace WiseRecruiter.Tests.Integration
                 new RecommendationService(context, new StageOrderService()),
                 new ApplicationStageService(context, new RecommendationService(context, new StageOrderService())),
                 new HiringPipelineService(),
-                new GlobalSearchService(context))
+                new GlobalSearchService(context), new AuditService(context), new JobPortal.Services.Implementations.JobAccessService(context))
             {
+                ControllerContext = new ControllerContext
+                {
+                    HttpContext = new DefaultHttpContext
+                    {
+                        User = new System.Security.Claims.ClaimsPrincipal(
+                            new System.Security.Claims.ClaimsIdentity(
+                                new[] { new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, "admin"),
+                                        new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, "Admin") },
+                                "Identity.Application"))
+                    }
+                },
                 TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>())
             };
 
@@ -61,14 +72,14 @@ namespace WiseRecruiter.Tests.Integration
 
         private static RecommendationAdminController CreateApprovalController(AppDbContext context, int adminId = 1)
         {
-            var controller = new RecommendationAdminController(new RecommendationService(context, new StageOrderService()));
+            var controller = new RecommendationAdminController(new RecommendationService(context, new StageOrderService()), context, new AuditService(context));
             controller.ControllerContext = new ControllerContext
             {
                 HttpContext = new DefaultHttpContext
                 {
                     User = new ClaimsPrincipal(new ClaimsIdentity(
                         new[] { new Claim("AdminId", adminId.ToString()) },
-                        "AdminAuth"))
+                        "Identity.Application"))
                 }
             };
             return controller;
@@ -143,7 +154,7 @@ namespace WiseRecruiter.Tests.Integration
         // ── 2. Move to Interview without approval → warning flag set, stage unchanged ──
 
         [Fact]
-        public async Task UpdateApplicationStage_ToInterview_WithoutApproval_SetsWarningAndRedirectsToCandidateDetails()
+        public async Task UpdateApplicationStage_ToInterview_WithoutApproval_MovesStageAndSetsFlag()
         {
             using var context    = CreateInMemoryContext();
             var application      = await SeedApplicationAsync(context);
@@ -155,10 +166,12 @@ namespace WiseRecruiter.Tests.Integration
             var redirect = result.Should().BeOfType<RedirectToActionResult>().Subject;
             redirect.ActionName.Should().Be("CandidateDetails");
 
-            controller.TempData["StageApprovalWarning"].Should().Be(application.Id);
+            // No blocking — no warning flag
+            controller.TempData.ContainsKey("StageApprovalWarning").Should().BeFalse();
 
-            var unchanged = await context.Applications.FindAsync(application.Id);
-            unchanged!.Stage.Should().Be(ApplicationStage.Applied);
+            var updated = await context.Applications.FindAsync(application.Id);
+            updated!.Stage.Should().Be(ApplicationStage.Interview);
+            updated.MovedWithoutStage1Approval.Should().BeTrue();
         }
 
         // ── 3. Move with bypass → stage updated AND redirects to CandidateDetails ────
