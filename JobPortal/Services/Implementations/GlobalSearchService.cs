@@ -21,22 +21,35 @@ namespace JobPortal.Services.Implementations
 
             var lowerQuery = query.ToLowerInvariant();
 
-            // Application-based results: one entry per application so each candidate+job
-            // combination is visible. Results are ordered most-recent-first.
-            var candidates = await _context.Applications
+            // Fetch candidate applications matching the query, ordered most-recent-first,
+            // then deduplicate in-memory so each candidate appears only once.
+            var matchingApps = await _context.Applications
                 .Where(a => a.Candidate != null &&
                             (a.Candidate.FirstName.ToLower().Contains(lowerQuery) ||
                              a.Candidate.LastName.ToLower().Contains(lowerQuery)))
                 .OrderByDescending(a => a.Id)
+                .Take(50)
+                .Select(a => new
+                {
+                    ApplicationId = a.Id,
+                    CandidateId   = a.CandidateId,
+                    DisplayText   = a.Candidate!.FirstName + " " + a.Candidate.LastName,
+                    SubText       = a.Job != null ? a.Job.Title ?? string.Empty : string.Empty,
+                })
+                .ToListAsync();
+
+            var candidates = matchingApps
+                .GroupBy(a => a.CandidateId)
+                .Select(g => g.First())
                 .Take(5)
                 .Select(a => new GlobalSearchResult
                 {
                     Type        = "Candidate",
-                    Id          = a.Id,
-                    DisplayText = a.Candidate!.FirstName + " " + a.Candidate.LastName,
-                    SubText     = a.Job != null ? a.Job.Title ?? string.Empty : string.Empty,
+                    Id          = a.ApplicationId,
+                    DisplayText = a.DisplayText,
+                    SubText     = a.SubText,
                 })
-                .ToListAsync();
+                .ToList();
 
             // Search Job table by title
             var jobs = await _context.Jobs
