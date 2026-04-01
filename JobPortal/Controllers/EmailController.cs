@@ -4,7 +4,7 @@ using JobPortal.Models;
 using JobPortal.Services.Interfaces;
 
 [Authorize]
-[Route("admin")]
+[Route("Admin")]
 public class EmailController : Controller
 {
     private readonly IEmailService _emailService;

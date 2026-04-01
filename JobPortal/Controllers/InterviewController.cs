@@ -33,7 +33,7 @@ public class InterviewController : Controller
                 _                                       => BadRequest()
             };
 
-        return RedirectToAction("CandidateDetails", "Admin", new { id = result.ApplicationId });
+        return RedirectToAction(nameof(AdminController.CandidateDetails), "Admin", new { id = result.ApplicationId });
     }
 
     [HttpPost("CancelInterview")]

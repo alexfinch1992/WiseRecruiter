@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using JobPortal.Data;
 using JobPortal.Models;
+using JobPortal.Services.Implementations;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
@@ -29,7 +30,7 @@ namespace WiseRecruiter.Tests.Integration
             context.Jobs.Add(job);
             await context.SaveChangesAsync();
 
-            var controller = new JobController(context);
+            var controller = new JobController(new JobQueryService(context), new JobCommandService(context));
 
             // Act
             var result = await controller.Delete(job.Id, "/Admin/Index");
@@ -50,7 +51,7 @@ namespace WiseRecruiter.Tests.Integration
             context.Jobs.Add(job);
             await context.SaveChangesAsync();
 
-            var controller = new JobController(context);
+            var controller = new JobController(new JobQueryService(context), new JobCommandService(context));
 
             // Act
             var result = await controller.DeleteConfirmed(job.Id, "/Admin/Index");
@@ -75,7 +76,7 @@ namespace WiseRecruiter.Tests.Integration
             context.Jobs.Add(job);
             await context.SaveChangesAsync();
 
-            var controller = new JobController(context);
+            var controller = new JobController(new JobQueryService(context), new JobCommandService(context));
 
             // Act
             var result = await controller.Details(job.Id);
@@ -97,7 +98,7 @@ namespace WiseRecruiter.Tests.Integration
             context.Jobs.Add(job);
             await context.SaveChangesAsync();
 
-            var controller = new JobController(context);
+            var controller = new JobController(new JobQueryService(context), new JobCommandService(context));
 
             // Act
             var result = await controller.Details(job.Id);
@@ -118,7 +119,7 @@ namespace WiseRecruiter.Tests.Integration
             context.Jobs.Add(job);
             await context.SaveChangesAsync();
 
-            var controller = new JobController(context);
+            var controller = new JobController(new JobQueryService(context), new JobCommandService(context));
 
             // Act
             var result = await controller.DeleteConfirmed(job.Id, null);

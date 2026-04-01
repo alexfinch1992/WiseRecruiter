@@ -62,6 +62,13 @@ namespace JobPortal.Services.Implementations
             return await _context.Jobs.FirstOrDefaultAsync(m => m.Id == id);
         }
 
+        public async Task<Job?> GetJobWithTemplateAsync(int id)
+        {
+            return await _context.Jobs
+                .Include(j => j.ScorecardTemplate)
+                .FirstOrDefaultAsync(m => m.Id == id);
+        }
+
         public async Task<bool> JobExistsAsync(int id)
         {
             return await _context.Jobs.AnyAsync(e => e.Id == id);

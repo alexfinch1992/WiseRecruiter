@@ -24,7 +24,7 @@ namespace JobPortal.Controllers
         public async Task<IActionResult> Applications()
         {
             var jobs = await _candidateQueryService.GetApplicationsForJobsAsync();
-            return View(jobs);
+            return View("~/Views/Admin/Applications.cshtml", jobs);
         }
 
         [HttpGet("JobDetailSearch")]
@@ -40,7 +40,7 @@ namespace JobPortal.Controllers
             ViewData["SearchQuery"] = searchQuery;
             ViewBag.HasApplicantsToReview = job.Applications?.Any(a => a.Stage == ApplicationStage.Applied) ?? false;
             ViewBag.StageSummary = _jobService.GetStageSummary(job);
-            return View("JobDetail", job);
+            return View("~/Views/Admin/JobDetail.cshtml", job);
         }
 
         [HttpGet("Candidates")]
@@ -48,14 +48,14 @@ namespace JobPortal.Controllers
         {
             var results = await _candidateQueryService.GetCandidatesAsync(search);
             ViewData["Search"] = search;
-            return View(results);
+            return View("~/Views/Admin/Candidates.cshtml", results);
         }
 
         [HttpGet("SearchCandidates")]
         public async Task<IActionResult> SearchCandidates(string? searchQuery)
         {
             var candidates = await _candidateQueryService.SearchCandidatesAsync(searchQuery);
-            return View(candidates);
+            return View("~/Views/Admin/SearchCandidates.cshtml", candidates);
         }
 
         [HttpGet("JobDetailSearchApi")]
