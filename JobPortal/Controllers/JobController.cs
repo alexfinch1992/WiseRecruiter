@@ -1,20 +1,21 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using JobPortal.Models;
-using JobPortal.Data;
+using JobPortal.Services.Interfaces;
 
 public class JobController : Controller
 {
-    private readonly AppDbContext _context;
+    private readonly IJobQueryService _jobQueryService;
+    private readonly IJobCommandService _jobCommandService;
 
-    public JobController(AppDbContext context)
+    public JobController(IJobQueryService jobQueryService, IJobCommandService jobCommandService)
     {
-        _context = context;
+        _jobQueryService = jobQueryService;
+        _jobCommandService = jobCommandService;
     }
 
-    public async Task<IActionResult> Index()    
+    public async Task<IActionResult> Index()
     {
-        return View(await _context.Jobs.ToListAsync());
+        return View(await _jobQueryService.GetJobsAsync());
     }
 
     public async Task<IActionResult> Details(int? id)
@@ -22,18 +23,17 @@ public class JobController : Controller
         if (id == null)
             return NotFound();
 
-        var job = await _context.Jobs
-            .Include(j => j.ScorecardTemplate)
-            .FirstOrDefaultAsync(m => m.Id == id);
+        var job = await _jobQueryService.GetJobWithTemplateAsync(id.Value);
         return job == null ? NotFound() : View(job);
     }
 
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int? id, string? returnUrl)
     {
         if (id == null)
             return NotFound();
 
-        var job = await _context.Jobs.FirstOrDefaultAsync(m => m.Id == id);
+        var job = await _jobQueryService.GetJobForDeleteAsync(id.Value);
         if (job == null)
             return NotFound();
 
@@ -44,14 +44,10 @@ public class JobController : Controller
 
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteConfirmed(int id, string? returnUrl)
     {
-        var job = await _context.Jobs.FindAsync(id);
-        if (job != null)
-        {
-            _context.Jobs.Remove(job);
-            await _context.SaveChangesAsync();
-        }
+        await _jobCommandService.DeleteJobAsync(id);
 
         if (!string.IsNullOrEmpty(returnUrl))
             return Redirect(returnUrl);

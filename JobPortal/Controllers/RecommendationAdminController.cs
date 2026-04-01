@@ -69,7 +69,7 @@ public class RecommendationAdminController : Controller
             ApprovalResult.AlreadyApproved => BadRequest(),
             ApprovalResult.InvalidState    => BadRequest(),
             ApprovalResult.Forbidden       => Forbid(),
-            _                              => RedirectToAction("CandidateDetails", "Admin", new { id = applicationId })
+            _                              => RedirectToAction(nameof(AdminController.CandidateDetails), "Admin", new { id = applicationId })
         };
     }
 
@@ -89,7 +89,7 @@ public class RecommendationAdminController : Controller
             ApprovalResult.AlreadyApproved => BadRequest(),
             ApprovalResult.InvalidState    => BadRequest(),
             ApprovalResult.Forbidden       => Forbid(),
-            _                              => RedirectToAction("CandidateDetails", "Admin", new { id = applicationId })
+            _                              => RedirectToAction(nameof(AdminController.CandidateDetails), "Admin", new { id = applicationId })
         };
     }
 
@@ -135,6 +135,6 @@ public class RecommendationAdminController : Controller
             $"Lead {outcomeLabel}; RecId={rec.Id}; AppId={rec.ApplicationId}",
             callerId);
 
-        return RedirectToAction("CandidateDetails", "Admin", new { id = rec.ApplicationId });
+        return RedirectToAction(nameof(AdminController.CandidateDetails), "Admin", new { id = rec.ApplicationId });
     }
 }

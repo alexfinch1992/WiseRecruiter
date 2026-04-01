@@ -8,6 +8,7 @@ namespace JobPortal.Services.Interfaces
         Task<Job?> GetJobDetailAsync(int id, string? sort);
         Task<Job?> GetJobForEditAsync(int id);
         Task<Job?> GetJobForDeleteAsync(int id);
+        Task<Job?> GetJobWithTemplateAsync(int id);
         Task<bool> JobExistsAsync(int id);
     }
 }

@@ -49,7 +49,7 @@ public class RecommendationController : Controller
         {
             TransitionResult.NotFound    => NotFound(),
             TransitionResult.InvalidState => BadRequest(),
-            _                            => RedirectToAction("CandidateDetails", "Admin", new { id = applicationId })
+            _                            => RedirectToAction(nameof(AdminController.CandidateDetails), "Admin", new { id = applicationId })
         };
     }
 
@@ -59,7 +59,7 @@ public class RecommendationController : Controller
     {
         var userIdStr = User?.FindFirst("AdminId")?.Value;
         if (!int.TryParse(userIdStr, out var userId))
-            return StatusCode(403, new { success = false, error = "Forbidden" });
+            return Forbid();
 
         var result = await _recommendationService.SubmitStage1RecommendationAsync(applicationId, userId);
 
@@ -106,7 +106,7 @@ public class RecommendationController : Controller
         {
             TransitionResult.NotFound     => NotFound(),
             TransitionResult.InvalidState => BadRequest(),
-            _                             => RedirectToAction("CandidateDetails", "Admin", new { id = applicationId })
+            _                             => RedirectToAction(nameof(AdminController.CandidateDetails), "Admin", new { id = applicationId })
         };
     }
 
@@ -124,7 +124,7 @@ public class RecommendationController : Controller
         {
             TransitionResult.NotFound     => NotFound(),
             TransitionResult.InvalidState => BadRequest(),
-            _                             => RedirectToAction("CandidateDetails", "Admin", new { id = applicationId })
+            _                             => RedirectToAction(nameof(AdminController.CandidateDetails), "Admin", new { id = applicationId })
         };
     }
 }

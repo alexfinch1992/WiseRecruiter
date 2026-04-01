@@ -12,15 +12,16 @@ namespace JobPortal.Services.Auth
     /// of the Identity user's email against AdminUser.Username
     /// (e.g. "admin@wiserecruiter.com" → "admin").
     /// </summary>
-    public class AdminClaimsPrincipalFactory : UserClaimsPrincipalFactory<ApplicationUser>
+    public class AdminClaimsPrincipalFactory : UserClaimsPrincipalFactory<ApplicationUser, IdentityRole>
     {
         private readonly AppDbContext _context;
 
         public AdminClaimsPrincipalFactory(
             UserManager<ApplicationUser> userManager,
+            RoleManager<IdentityRole> roleManager,
             IOptions<IdentityOptions> optionsAccessor,
             AppDbContext context)
-            : base(userManager, optionsAccessor)
+            : base(userManager, roleManager, optionsAccessor)
         {
             _context = context;
         }

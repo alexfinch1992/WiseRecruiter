@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using JobPortal.Models;
@@ -6,6 +7,7 @@ using JobPortal.Helpers;
 using JobPortal.Models.ViewModels;
 using JobPortal.Services.Interfaces;
 
+[Authorize]
 public class ApplicationsController : Controller
 {
 
