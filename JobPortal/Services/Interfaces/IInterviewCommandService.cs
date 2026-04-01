@@ -17,5 +17,11 @@ namespace JobPortal.Services.Interfaces
             bool       proceedWithoutApproval,
             string?    bypassReason,
             string     userId);
+
+        /// <summary>
+        /// Cancels an interview. Returns (false, false) when not found, (false, true) when candidateId
+        /// does not match the interview owner, and (true, false) on success.
+        /// </summary>
+        Task<(bool Success, bool InvalidOwnership)> CancelInterviewAsync(int interviewId, int candidateId);
     }
 }

@@ -1,4 +1,4 @@
-@{
+﻿@{
     ViewData["Title"] = "Settings";
 }
 <div class="container-fluid py-4">
@@ -25,7 +25,7 @@
 
             <h5 class="mt-4 text-muted fw-semibold text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.05em;">Communications</h5>
             <div class="list-group mb-3">
-                <a asp-controller="Admin" asp-action="EmailTemplates" class="list-group-item list-group-item-action">
+                <a asp-controller="Email" asp-action="EmailTemplates" class="list-group-item list-group-item-action">
                     <i class="fas fa-envelope me-2"></i>Communication Templates
                     <small class="text-muted d-block">Manage automated screening invites and offer letters.</small>
                 </a>

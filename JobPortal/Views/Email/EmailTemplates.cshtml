@@ -1,0 +1,158 @@
+﻿@model IEnumerable<JobPortal.Models.EmailTemplate>
+@{
+    ViewData["Title"] = "Email Templates";
+}
+
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-controller="Admin" asp-action="Settings"><i class="fas fa-sliders-h me-1"></i>Settings</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Email Template Library</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-envelope me-2"></i>Email Template Library</h2>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newTemplateModal">
+        <i class="fas fa-plus me-1"></i>New Template
+    </button>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="row row-cols-1 row-cols-md-2 g-4">
+    @foreach (var template in Model)
+    {
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <strong><i class="fas fa-file-alt me-2 text-primary"></i>@template.Name</strong>
+                    <small class="text-muted">Modified @template.LastModified.ToString("dd MMM yyyy")</small>
+                </div>
+                <div class="card-body">
+                    <p class="mb-1 text-muted small fw-semibold">SUBJECT</p>
+                    <p class="mb-3">@template.Subject</p>
+                    <p class="mb-1 text-muted small fw-semibold">BODY PREVIEW</p>
+                    <p class="text-truncate text-secondary" style="max-width:100%;">@template.BodyContent</p>
+                </div>
+                <div class="card-footer d-flex gap-2">
+                    <button class="btn btn-outline-secondary btn-sm js-preview"
+                            data-name="@template.Name"
+                            data-subject="@template.Subject"
+                            data-body="@template.GetParsedBody("John Doe")">
+                        <i class="fas fa-eye me-1"></i>Preview
+                    </button>
+                    <button class="btn btn-outline-primary btn-sm js-edit"
+                            data-id="@template.Id"
+                            data-name="@template.Name"
+                            data-subject="@template.Subject"
+                            data-body="@template.BodyContent">
+                        <i class="fas fa-edit me-1"></i>Edit
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@if (!Model.Any())
+{
+    <div class="text-center text-muted py-5">
+        <i class="fas fa-envelope-open fa-3x mb-3 d-block"></i>
+        No email templates yet. Create your first one above.
+    </div>
+}
+
+<!-- ── Preview Modal ────────────────────────────────────────────────── -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="previewModalLabel">
+                    <i class="fas fa-eye me-2"></i>Preview — <span id="previewTemplateName"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-1 fw-semibold">SUBJECT (parsed with "John Doe")</p>
+                <div class="alert alert-light border fw-semibold" id="previewSubject"></div>
+                <p class="text-muted small mb-1 fw-semibold">BODY (parsed with "John Doe")</p>
+                <pre class="bg-light border rounded p-3" id="previewBody" style="white-space:pre-wrap;"></pre>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── New / Edit Template Modal ────────────────────────────────────── -->
+<div class="modal fade" id="newTemplateModal" tabindex="-1" aria-labelledby="newTemplateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="newTemplateModalLabel">
+                    <i class="fas fa-file-alt me-2"></i><span id="editModalTitle">New Template</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="SaveTemplate" asp-controller="Email" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" id="editTemplateId" value="0" />
+                <div class="modal-body">
+                    <p class="text-muted small mb-3">
+                        Use <code>{{FirstName}}</code> as a placeholder — it will be replaced with the candidate's first name when previewed or sent.
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Template Name</label>
+                        <input type="text" class="form-control" name="Name" id="editName" required placeholder="e.g. Rejection Notice" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Subject</label>
+                        <input type="text" class="form-control" name="Subject" id="editSubject" required placeholder="e.g. Update on your application, {{FirstName}}" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Body</label>
+                        <textarea class="form-control font-monospace" name="BodyContent" id="editBody" rows="8" required
+                                  placeholder="Dear {{FirstName}},&#10;&#10;..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Save Template
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.querySelectorAll('.js-preview').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            document.getElementById('previewTemplateName').textContent = btn.dataset.name;
+            document.getElementById('previewSubject').textContent      = btn.dataset.subject;
+            document.getElementById('previewBody').textContent          = btn.dataset.body;
+            new bootstrap.Modal(document.getElementById('previewModal')).show();
+        });
+    });
+
+    document.querySelectorAll('.js-edit').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            document.getElementById('editModalTitle').textContent  = 'Edit Template';
+            document.getElementById('editTemplateId').value        = btn.dataset.id;
+            document.getElementById('editName').value              = btn.dataset.name;
+            document.getElementById('editSubject').value           = btn.dataset.subject;
+            document.getElementById('editBody').value              = btn.dataset.body;
+            new bootstrap.Modal(document.getElementById('newTemplateModal')).show();
+        });
+    });
+</script>
+}

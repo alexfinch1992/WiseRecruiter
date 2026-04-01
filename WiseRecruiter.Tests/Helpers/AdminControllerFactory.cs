@@ -49,10 +49,13 @@ namespace WiseRecruiter.Tests.Helpers
             var template       = templateService ?? new ScorecardTemplateService(context);
             var scorecardSvc   = new ScorecardService(context, template);
             var recSvc         = new RecommendationService(context, new StageOrderService());
+            var jobCommandSvc  = new JobCommandService(context);
             var jobAccessSvc   = new JobAccessService(context);
+            var jobQuerySvc    = new JobQueryService(context);
             var interviewSvc   = new InterviewService(context);
             var hiringPipeline = new HiringPipelineService();
             var analytics      = new ScorecardAnalyticsService(context);
+            var resumeReview   = new ResumeReviewService(context);
 
             var candidateDetails = new CandidateDetailsService(
                 new CandidateCoreService(context, jobAccessSvc),
@@ -74,6 +77,8 @@ namespace WiseRecruiter.Tests.Helpers
                 scorecardSvc,
                 template,
                 new JobService(context),
+                jobCommandSvc,
+                jobQuerySvc,
                 analytics,
                 appStageSvc,
                 hiringPipeline,
@@ -82,7 +87,8 @@ namespace WiseRecruiter.Tests.Helpers
                 jobAccessSvc,
                 candidateDetails,
                 new MoveApplicationStageService(context, appStageSvc, auditSvc),
-                new JobStageCommandService(context))
+                resumeReview,
+                new ScorecardCommandService(context, scorecardSvc))
             {
                 ControllerContext = new ControllerContext
                 {

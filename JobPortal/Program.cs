@@ -68,7 +68,13 @@ builder.Services.AddScoped<IRecommendationSummaryService, RecommendationSummaryS
 builder.Services.AddScoped<IWriteRecommendationService, WriteRecommendationService>();
 builder.Services.AddScoped<IMoveApplicationStageService, MoveApplicationStageService>();
 builder.Services.AddScoped<IInterviewCommandService, InterviewCommandService>();
+builder.Services.AddScoped<IJobCommandService, JobCommandService>();
+builder.Services.AddScoped<IJobQueryService, JobQueryService>();
 builder.Services.AddScoped<IJobStageCommandService, JobStageCommandService>();
+builder.Services.AddScoped<ICandidateQueryService, CandidateQueryService>();
+builder.Services.AddScoped<IResumeReviewService, ResumeReviewService>();
+builder.Services.AddScoped<IScorecardCommandService, ScorecardCommandService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<RecommendationCommandService>();
 builder.Services.AddScoped<IRecommendationActionService>(sp => sp.GetRequiredService<RecommendationCommandService>());
 builder.Services.AddScoped<IRecommendationDraftService>(sp => sp.GetRequiredService<RecommendationCommandService>());
