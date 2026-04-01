@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.EntityFrameworkCore;
+using JobPortal.Controllers;
 using Moq;
 using WiseRecruiter.Tests.Helpers;
 using Xunit;
@@ -34,8 +35,14 @@ namespace WiseRecruiter.Tests.Unit
                     .UseInMemoryDatabase("unification_db_" + Guid.NewGuid())
                     .Options);
 
-        private static AdminController CreateController(AppDbContext context)
-            => AdminControllerFactory.Create(context);
+        private static CandidateSearchController CreateController(AppDbContext context)
+        {
+            var svc = new CandidateQueryService(context);
+            return new CandidateSearchController(svc, Mock.Of<IJobService>())
+            {
+                ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
+            };
+        }
 
         /// <summary>
         /// Seeds a minimal Job + Candidate + Application triple for a given email.

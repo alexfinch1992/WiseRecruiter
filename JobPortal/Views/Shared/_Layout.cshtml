@@ -60,7 +60,7 @@
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="settingsDropdown">
                                     <li><a class="dropdown-item" asp-area="" asp-controller="Admin" asp-action="Settings"><i class="fas fa-cog me-2"></i>Configuration</a></li>
-                                    <li><a class="dropdown-item" asp-area="" asp-controller="Admin" asp-action="EmailTemplates"><i class="fas fa-envelope me-2"></i>Email Library</a></li>
+                                    <li><a class="dropdown-item" asp-area="" asp-controller="Email" asp-action="EmailTemplates"><i class="fas fa-envelope me-2"></i>Email Library</a></li>
                                     @if (User.IsInRole("Admin"))
                                     {
                                         <li><hr class="dropdown-divider" /></li>

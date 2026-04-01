@@ -270,5 +270,78 @@ namespace WiseRecruiter.Tests.Unit.Services
             // InterviewService normalises to UTC, so Kind must be Utc
             interview.ScheduledAt.Kind.Should().Be(DateTimeKind.Utc);
         }
+
+        // ── CancelInterviewAsync ─────────────────────────────────────────────
+
+        private static async Task<(int interviewId, int candidateId)> SeedInterviewAsync(AppDbContext ctx)
+        {
+            var (candidateId, applicationId) = await SeedApplicationAsync(ctx);
+            var interview = new Interview
+            {
+                CandidateId   = candidateId,
+                ApplicationId = applicationId,
+                ScheduledAt   = DateTime.UtcNow.AddDays(1),
+                IsCancelled   = false
+            };
+            ctx.Interviews.Add(interview);
+            await ctx.SaveChangesAsync();
+            return (interview.Id, candidateId);
+        }
+
+        [Fact]
+        public async Task CancelInterviewAsync_Should_SetIsCancelledTrue()
+        {
+            using var ctx = CreateInMemoryContext();
+            var (interviewId, candidateId) = await SeedInterviewAsync(ctx);
+            var svc = CreateService(ctx);
+
+            var result = await svc.CancelInterviewAsync(interviewId, candidateId);
+
+            result.Success.Should().BeTrue();
+            result.InvalidOwnership.Should().BeFalse();
+            var interview = await ctx.Interviews.FindAsync(interviewId);
+            interview!.IsCancelled.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task CancelInterviewAsync_Should_ReturnNotFound_WhenInterviewMissing()
+        {
+            using var ctx = CreateInMemoryContext();
+            var svc = CreateService(ctx);
+
+            var result = await svc.CancelInterviewAsync(9999, candidateId: 1);
+
+            result.Success.Should().BeFalse();
+            result.InvalidOwnership.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task CancelInterviewAsync_Should_ReturnInvalidOwnership_WhenCandidateIdMismatch()
+        {
+            using var ctx = CreateInMemoryContext();
+            var (interviewId, _) = await SeedInterviewAsync(ctx);
+            var svc = CreateService(ctx);
+
+            var result = await svc.CancelInterviewAsync(interviewId, candidateId: 9999);
+
+            result.Success.Should().BeFalse();
+            result.InvalidOwnership.Should().BeTrue();
+            var interview = await ctx.Interviews.FindAsync(interviewId);
+            interview!.IsCancelled.Should().BeFalse(); // not cancelled on mismatch
+        }
+
+        [Fact]
+        public async Task CancelInterviewAsync_Should_NotCancel_WhenCandidateMismatch()
+        {
+            using var ctx = CreateInMemoryContext();
+            var (interviewId, candidateId) = await SeedInterviewAsync(ctx);
+            var svc = CreateService(ctx);
+
+            await svc.CancelInterviewAsync(interviewId, candidateId: candidateId + 1);
+
+            var interview = await ctx.Interviews.FindAsync(interviewId);
+            interview!.IsCancelled.Should().BeFalse();
+            (await ctx.Interviews.CountAsync()).Should().Be(1);
+        }
     }
 }

@@ -30,6 +30,9 @@ namespace WiseRecruiter.Tests.Integration
         private static AdminController CreateAdminController(AppDbContext context)
             => AdminControllerFactory.Create(context);
 
+        private static InterviewController CreateInterviewController(AppDbContext context)
+            => InterviewControllerFactory.Create(context);
+
         private static async Task<(Candidate candidate, Application application, JobStage stage)> SeedAsync(AppDbContext context)
         {
             var candidate = new Candidate
@@ -92,13 +95,41 @@ namespace WiseRecruiter.Tests.Integration
             using var context = CreateInMemoryContext();
             var (candidate, application, stage) = await SeedAsync(context);
             var interview = await SeedInterviewAsync(context, candidate, application, stage);
-            var controller = CreateAdminController(context);
+            var controller = CreateInterviewController(context);
 
             var result = await controller.CancelInterview(interview.Id, candidate.Id);
 
-            result.Should().BeOfType<RedirectToActionResult>();
+            result.Should().BeOfType<OkResult>();
             var updated = await context.Interviews.FindAsync(interview.Id);
             updated!.IsCancelled.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task CancelInterview_ReturnsNotFound_WhenInterviewMissing()
+        {
+            using var context = CreateInMemoryContext();
+            var (candidate, _, _) = await SeedAsync(context);
+            var controller = CreateInterviewController(context);
+
+            var result = await controller.CancelInterview(interviewId: 9999, candidateId: candidate.Id);
+
+            result.Should().BeOfType<NotFoundResult>();
+        }
+
+        [Fact]
+        public async Task CancelInterview_ReturnsBadRequest_WhenCandidateIdMismatch()
+        {
+            using var context = CreateInMemoryContext();
+            var (candidate, application, stage) = await SeedAsync(context);
+            var interview = await SeedInterviewAsync(context, candidate, application, stage);
+            var controller = CreateInterviewController(context);
+
+            var result = await controller.CancelInterview(interview.Id, candidateId: candidate.Id + 999);
+
+            result.Should().BeOfType<BadRequestObjectResult>()
+                .Which.Value.Should().Be("Invalid interview for this candidate.");
+            var updated = await context.Interviews.FindAsync(interview.Id);
+            updated!.IsCancelled.Should().BeFalse();
         }
 
         [Fact]
@@ -108,13 +139,14 @@ namespace WiseRecruiter.Tests.Integration
             await SeedDefaultTemplateAsync(context);
             var (candidate, application, stage) = await SeedAsync(context);
             var interview = await SeedInterviewAsync(context, candidate, application, stage);
-            var controller = CreateAdminController(context);
+            var controller = CreateInterviewController(context);
 
             // Cancel the interview
             await controller.CancelInterview(interview.Id, candidate.Id);
 
             // Trigger the CreateScorecard GET which populates AvailableInterviews
-            var result = await controller.CreateScorecard(application.Id);
+            var adminController = CreateAdminController(context);
+            var result = await adminController.CreateScorecard(application.Id);
 
             var viewResult = result.Should().BeOfType<ViewResult>().Subject;
             var model = viewResult.Model.Should().BeAssignableTo<JobPortal.Models.ViewModels.CreateScorecardViewModel>().Subject;

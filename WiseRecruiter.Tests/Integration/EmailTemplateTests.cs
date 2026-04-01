@@ -1,17 +1,15 @@
-using System;
+﻿using System;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using FluentAssertions;
 using JobPortal.Data;
 using JobPortal.Models;
 using JobPortal.Services.Implementations;
-using JobPortal.Services.Interfaces;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.EntityFrameworkCore;
 using Moq;
-using WiseRecruiter.Tests.Helpers;
 using Xunit;
 
 namespace WiseRecruiter.Tests.Integration
@@ -26,17 +24,39 @@ namespace WiseRecruiter.Tests.Integration
     /// </summary>
     public class EmailTemplateTests
     {
-        // ── helpers ─────────────────────────────────────────────────────────────
+        // ── helpers ────────────────────────────────────────────────────────────
 
         private static AppDbContext CreateContext() =>
             new AppDbContext(new DbContextOptionsBuilder<AppDbContext>()
                 .UseInMemoryDatabase("email_tmpl_" + Guid.NewGuid())
                 .Options);
 
-        private static AdminController CreateAdminController(AppDbContext context)
-            => AdminControllerFactory.Create(context);
+        private static ClaimsPrincipal DefaultAdmin =>
+            new ClaimsPrincipal(
+                new ClaimsIdentity(
+                    new[]
+                    {
+                        new Claim(ClaimTypes.Name, "admin"),
+                        new Claim(ClaimTypes.Role, "Admin"),
+                    },
+                    "Identity.Application"));
 
-        // ── Test 1: placeholder replacement ─────────────────────────────────────
+        private static EmailController CreateEmailController(AppDbContext context)
+        {
+            var auditSvc  = new AuditService(context);
+            var emailSvc  = new EmailService(context, auditSvc);
+            var controller = new EmailController(emailSvc)
+            {
+                ControllerContext = new ControllerContext
+                {
+                    HttpContext = new DefaultHttpContext { User = DefaultAdmin }
+                },
+                TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>())
+            };
+            return controller;
+        }
+
+        // ── Test 1: placeholder replacement ────────────────────────────────────
 
         [Fact]
         public void GetParsedBody_ReplacesFirstNamePlaceholder()
@@ -57,14 +77,14 @@ namespace WiseRecruiter.Tests.Integration
             result.Should().Be("Dear Jane, we would love to connect.");
         }
 
-        // ── Test 2: SaveTemplate persists subject and body ───────────────────────
+        // ── Test 2: SaveTemplate persists subject and body ──────────────────────
 
         [Fact]
         public async Task SaveTemplate_PersistsSubjectAndBody()
         {
             // Arrange
             var context    = CreateContext();
-            var controller = CreateAdminController(context);
+            var controller = CreateEmailController(context);
 
             var template = new EmailTemplate
             {
@@ -90,14 +110,14 @@ namespace WiseRecruiter.Tests.Integration
             saved.BodyContent.Should().Be("Hi {{FirstName}}, we are pleased to make you an offer.");
         }
 
-        // ── Test 3: SendMockEmail creates an audit log entry ─────────────────────
+        // ── Test 3: SendMockEmail creates an audit log entry ────────────────────
 
         [Fact]
         public async Task SendMockEmail_CreatesAuditLogWithTemplateNameAndRecipient()
         {
             // Arrange
             var context    = CreateContext();
-            var controller = CreateAdminController(context);
+            var controller = CreateEmailController(context);
 
             var template = new EmailTemplate
             {

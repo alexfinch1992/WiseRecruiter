@@ -35,4 +35,19 @@ public class InterviewController : Controller
 
         return RedirectToAction("CandidateDetails", "Admin", new { id = result.ApplicationId });
     }
+
+    [HttpPost("CancelInterview")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CancelInterview(int interviewId, int candidateId)
+    {
+        var result = await _interviewCommandService.CancelInterviewAsync(interviewId, candidateId);
+
+        if (!result.Success && result.InvalidOwnership)
+            return BadRequest("Invalid interview for this candidate.");
+
+        if (!result.Success)
+            return NotFound();
+
+        return Ok();
+    }
 }

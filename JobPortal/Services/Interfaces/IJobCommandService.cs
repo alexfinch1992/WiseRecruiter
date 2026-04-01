@@ -1,0 +1,15 @@
+using JobPortal.Models;
+using JobPortal.Services.Models;
+
+namespace JobPortal.Services.Interfaces
+{
+    public interface IJobCommandService
+    {
+        Task<Job> CreateJobAsync(Job job);
+        Task UpdateJobAsync(Job job);
+        Task DeleteJobAsync(int id);
+        Task<JobStageCommandResult> AddStageAsync(int jobId, string stageName);
+        Task<JobStageCommandResult> RemoveStageAsync(int stageId);
+        Task<JobStageCommandResult> MoveStageAsync(int stageId, int jobId, string direction);
+    }
+}

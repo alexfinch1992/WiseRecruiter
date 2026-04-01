@@ -88,5 +88,20 @@ namespace JobPortal.Services.Implementations
 
             return new InterviewCreateResult { Success = true, ApplicationId = applicationId };
         }
+
+        public async Task<(bool Success, bool InvalidOwnership)> CancelInterviewAsync(int interviewId, int candidateId)
+        {
+            var interview = await _context.Interviews.FindAsync(interviewId);
+            if (interview == null)
+                return (false, false);
+
+            if (interview.CandidateId != candidateId)
+                return (false, true);
+
+            interview.IsCancelled = true;
+            await _context.SaveChangesAsync();
+
+            return (true, false);
+        }
     }
 }
