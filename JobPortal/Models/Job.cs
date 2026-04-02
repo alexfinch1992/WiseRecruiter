@@ -22,5 +22,8 @@ namespace JobPortal.Models
         // Ownership / traceability fields (pre-multi-tenant)
         public string CreatedByUserId { get; set; } = "System_Seed";
         public string? AssignedToUserId { get; set; }
+
+        public string? OwnerUserId { get; set; }
+        public ApplicationUser? OwnerUser { get; set; }
     }
 }

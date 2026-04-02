@@ -27,6 +27,11 @@ namespace JobPortal.Services.Alerts
 
             var recruiterIds = jobUsers.Select(ju => ju.UserId).ToList();
 
+            // Step 1b — Include job owner
+            var job = await _context.Jobs.FindAsync(jobId);
+            if (job?.OwnerUserId != null)
+                recruiterIds.Add(job.OwnerUserId);
+
             // Step 2 — Get all Admin users
             var admins = await _userManager.GetUsersInRoleAsync("Admin");
             var adminIds = admins.Select(a => a.Id).ToList();
@@ -56,6 +61,7 @@ namespace JobPortal.Services.Alerts
                     // Default: Admins OFF, Recruiters ON
                     return !adminIdSet.Contains(userId);
                 })
+                .Distinct()
                 .ToList();
 
             return enabledUserIds;

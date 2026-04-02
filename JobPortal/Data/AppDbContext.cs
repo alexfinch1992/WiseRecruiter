@@ -100,6 +100,12 @@ namespace JobPortal.Data
                 .HasForeignKey(j => j.ScorecardTemplateId)
                 .OnDelete(DeleteBehavior.SetNull);
 
+            modelBuilder.Entity<Job>()
+                .HasOne(j => j.OwnerUser)
+                .WithMany()
+                .HasForeignKey(j => j.OwnerUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             modelBuilder.Entity<Facet>()
                 .HasOne(f => f.Category)
                 .WithMany()
