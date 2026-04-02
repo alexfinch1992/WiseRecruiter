@@ -1,0 +1,42 @@
+public AdminController(
+        AppDbContext context,
+        IWebHostEnvironment webHostEnvironment,
+        IApplicationService applicationService,
+        IAnalyticsService analyticsService,
+        IScorecardService scorecardService,
+        IScorecardTemplateService scorecardTemplateService,
+        IJobService jobService,
+        IScorecardAnalyticsService scorecardAnalyticsService,
+        IInterviewService interviewService,
+        IRecommendationService recommendationService,
+        IApplicationStageService applicationStageService,
+        IHiringPipelineService hiringPipelineService,
+        IGlobalSearchService globalSearchService,
+        IAuditService auditService,
+        IJobAccessService jobAccessService,
+        ICandidateDetailsService candidateDetailsService,
+        IMoveApplicationStageService moveApplicationStageService)
+    {
+        _context = context;
+        _webHostEnvironment = webHostEnvironment;
+        _applicationService = applicationService;
+        _analyticsService = analyticsService;
+        _scorecardService = scorecardService;
+        _scorecardTemplateService = scorecardTemplateService;
+        _jobService = jobService;
+        _scorecardAnalyticsService = scorecardAnalyticsService;
+        _interviewService = interviewService;
+        _recommendationService = recommendationService;
+        _applicationStageService = applicationStageService;
+        _hiringPipelineService = hiringPipelineService;
+        _globalSearchService = globalSearchService;
+        _auditService = auditService;
+
+        _jobAccessService = jobAccessService;
+        _candidateDetailsService = candidateDetailsService;
+        _moveApplicationStageService = moveApplicationStageService;
+    }
+
+    // ===== Jobs =====
+
+  

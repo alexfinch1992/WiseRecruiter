@@ -206,12 +206,14 @@ export function RecommendationPanel({
     setS1Saving(true);
     setS1Error(null);
     try {
-      const token =
-        document.querySelector<HTMLInputElement>('[name="__RequestVerificationToken"]')?.value ?? '';
+      const token = (window as any).__CSRF_TOKEN__ ?? '';
       const resp = await fetch('/Recommendation/SubmitStage1', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ applicationId: String(applicationId), __RequestVerificationToken: token }),
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'RequestVerificationToken': token,
+        },
+        body: new URLSearchParams({ applicationId: String(applicationId) }),
       });
       const data = await resp.json() as { success: boolean; error?: string };
       console.log('SubmitStage1:', resp.status, data);

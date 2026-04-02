@@ -158,6 +158,12 @@ public class ApplicationsController : Controller
         if (id != application.Id)
             return NotFound();
 
+        var existing = await _context.Applications.FindAsync(id);
+        if (existing == null)
+            return NotFound();
+        if (existing.Email != User.Identity.Name)
+            return Forbid();
+
         if (ModelState.IsValid)
         {
             try
@@ -184,7 +190,11 @@ public class ApplicationsController : Controller
             return NotFound();
 
         var application = await _context.Applications.FirstOrDefaultAsync(m => m.Id == id);
-        return application == null ? NotFound() : View(application);
+        if (application == null)
+            return NotFound();
+        if (application.Email != User.Identity.Name)
+            return Forbid();
+        return View(application);
     }
 
     [HttpPost, ActionName("Delete")]
@@ -192,11 +202,13 @@ public class ApplicationsController : Controller
     public async Task<IActionResult> DeleteConfirmed(int? id)
     {
         var application = await _context.Applications.FindAsync(id);
-        if (application != null)
-        {
-            FileUploadHelper.DeleteResume(application.ResumePath, _webHostEnvironment.WebRootPath);
-            _context.Applications.Remove(application);
-        }
+        if (application == null)
+            return NotFound();
+        if (application.Email != User.Identity.Name)
+            return Forbid();
+
+        FileUploadHelper.DeleteResume(application.ResumePath, _webHostEnvironment.WebRootPath);
+        _context.Applications.Remove(application);
 
         await _context.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
@@ -208,6 +220,8 @@ public class ApplicationsController : Controller
         var application = await _context.Applications.FindAsync(applicationId);
         if (application == null)
             return NotFound();
+        if (application.Email != User.Identity.Name)
+            return Forbid();
 
         var (isValid, errorMessage) = FileUploadHelper.ValidateDocument(document);
         if (!isValid)
@@ -246,6 +260,10 @@ public class ApplicationsController : Controller
         var document = await _context.Documents.FindAsync(documentId);
         if (document == null)
             return NotFound();
+
+        var application = await _context.Applications.FindAsync(document.ApplicationId);
+        if (application == null || application.Email != User.Identity.Name)
+            return Forbid();
 
         FileUploadHelper.DeleteDocument(document.FilePath, _webHostEnvironment.WebRootPath);
         _context.Documents.Remove(document);

@@ -1,0 +1,138 @@
+n/octet-stream", Path.GetFileName(application.ResumePath));
+    }
+
+    private bool JobExists(int id) => _context.Jobs.Any(e => e.Id == id);
+
+    [HttpPost]
+    public async Task<IActionResult> AddStage(int jobId, string stageName)
+    {
+        if (string.IsNullOrWhiteSpace(stageName))
+            return BadRequest("Stage name cannot be empty");
+
+        var job = await _context.Jobs.FindAsync(jobId);
+        if (job == null)
+            return NotFound();
+
+        var existingStage = await _context.JobStages
+            .FirstOrDefaultAsync(s => s.JobId == jobId && s.Name == stageName);
+        
+        if (existingStage != null)
+            return BadRequest("Stage already exists for this job");
+
+        var maxOrder = await _context.JobStages
+            .Where(s => s.JobId == jobId)
+            .MaxAsync(s => (int?)s.Order) ?? -1;
+
+        var newStage = new JobStage
+        {
+            JobId = jobId,
+            Name = stageName,
+            Order = maxOrder + 1
+        };
+
+        _context.JobStages.Add(newStage);
+        await _context.SaveChangesAsync();
+
+        return RedirectToAction("JobDetail", new { id = jobId });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> RemoveStage(int stageId, int jobId)
+    {
+        var stage = await _context.JobStages.FindAsync(stageId);
+        if (stage == null)
+            return NotFound();
+
+        _context.JobStages.Remove(stage);
+        await _context.SaveChangesAsync();
+
+        // Return JSON for AJAX, redirect for regular requests
+        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            return Ok(new { success = true });
+
+        return RedirectToAction("JobDetail", new { id = jobId });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> MoveStage(int stageId, int jobId, string direction)
+    {
+        var stage = await _context.JobStages.FirstOrDefaultAsync(s => s.Id == stageId && s.JobId == jobId);
+        if (stage == null)
+            return NotFound();
+
+        var allStages = await _context.JobStages
+            .Where(s => s.JobId == jobId)
+            .OrderBy(s => s.Order)
+            .ToListAsync();
+
+        var currentIndex = allStages.FindIndex(s => s.Id == stageId);
+        if (currentIndex == -1)
+            return NotFound();
+
+        int swapIndex = -1;
+        if (direction == "up" && currentIndex > 0)
+            swapIndex = currentIndex - 1;
+        else if (direction == "down" && currentIndex < allStages.Count - 1)
+            swapIndex = currentIndex + 1;
+
+        if (swapIndex == -1)
+            return BadRequest("Cannot move stage in that direction");
+
+        // Swap Order values
+        var temp = allStages[currentIndex].Order;
+        allStages[currentIndex].Order = allStages[swapIndex].Order;
+        allStages[swapIndex].Order = temp;
+
+        _context.Update(allStages[currentIndex]);
+        _context.Update(allStages[swapIndex]);
+        await _context.SaveChangesAsync();
+
+        // Return JSON for AJAX, redirect for regular requests
+        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            return Ok(new { success = true });
+        
+        return RedirectToAction("JobDetail", new { id = jobId });
+    }
+
+    // ===== Search =====
+
+    [HttpGet]
+    public async Task<IActionResult> JobDetailSearch(int? id, string? searchQuery, string? sort = "stage")
+    {
+        if (id == null)
+            return NotFound();
+
+        var job = await _context.Jobs
+            .Include(j => j.Applications)
+            .ThenInclude(a => a.CurrentStage)
+            .Include(j => j.Stages)
+            .Include(j => j.Applications).ThenInclude(a => a.Candidate)
+            .FirstOrDefaultAsync(j => j.Id == id);
+
+        if (job == null)
+            return NotFound();
+
+        // Filter applications by search query
+        if (job.Applications != null && !string.IsNullOrWhiteSpace(searchQuery))
+        {
+            var query = searchQuery.ToLowerInvariant();
+            job.Applications = job.Applications
+                .Where(a => (a.Name?.ToLowerInvariant().Contains(query) ?? false) ||
+                           (a.Email?.ToLowerInvariant().Contains(query) ?? false))
+                .ToList();
+        }
+
+        // Sort applications
+        if (job.Applications != null)
+        {
+            job.Applications = sort switch
+            {
+                "name" => job.Applications.OrderBy(a => a.Name).ToList(),
+                "date" => job.Applications.OrderByDescending(a => a.AppliedDate).ToList(),
+                _ => job.Applications.OrderBy(a => a.CurrentStage?.Order ?? 0).ThenBy(a => a.Name).ToList()
+            };
+        }
+
+        ViewData["SearchQuery"] = searchQuery;
+        ViewBag.HasApplicantsToReview = job.Applications?.Any(a => a.Stage == ApplicationStage.Applied) ?? false;
+        ViewBag.StageSummary = _jobService.GetStageSumma

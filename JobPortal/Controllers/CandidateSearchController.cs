@@ -52,10 +52,20 @@ namespace JobPortal.Controllers
         }
 
         [HttpGet("SearchCandidates")]
-        public async Task<IActionResult> SearchCandidates(string? searchQuery)
+        public async Task<IActionResult> SearchCandidates(string? searchQuery, int? pageNumber = null)
         {
             var candidates = await _candidateQueryService.SearchCandidatesAsync(searchQuery);
-            return View("~/Views/Admin/SearchCandidates.cshtml", candidates);
+            int page = Math.Max(1, pageNumber ?? 1);
+            int pageSize = Math.Min(25, 100);
+            int totalCount = candidates.Count;
+            var paged = candidates
+                .OrderByDescending(c => c.AppliedDate)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+            return View("~/Views/Admin/SearchCandidates.cshtml", paged);
         }
 
         [HttpGet("JobDetailSearchApi")]

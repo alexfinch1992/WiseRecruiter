@@ -1,0 +1,68 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - navigation [ref=e3]:
+      - generic [ref=e4]:
+        - link " WiseTech Global" [ref=e5] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e6]:
+            - generic [ref=e7]: 
+            - text: WiseTech Global
+        - list [ref=e9]:
+          - listitem [ref=e10]:
+            - link "Home" [ref=e11] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=e12]:
+            - link "Browse Jobs" [ref=e13] [cursor=pointer]:
+              - /url: /Job
+          - listitem [ref=e14]:
+            - link "My Applications" [ref=e15] [cursor=pointer]:
+              - /url: /Applications
+          - listitem [ref=e16]:
+            - link " Admin Login" [ref=e17] [cursor=pointer]:
+              - /url: /Account/Login
+              - generic [ref=e18]: 
+              - text: Admin Login
+  - main [ref=e20]:
+    - generic [ref=e21]:
+      - generic [ref=e23]:
+        - link " Back to Candidate Profile" [ref=e24] [cursor=pointer]:
+          - /url: /Admin/CandidateDetails/1322
+          - generic [ref=e25]: 
+          - text: Back to Candidate Profile
+        - heading " Stage 1 Recommendation" [level=1] [ref=e26]:
+          - generic [ref=e27]: 
+          - text: Stage 1 Recommendation
+        - paragraph [ref=e28]:
+          - text: E2E_1775140841559_RecApplicant —
+          - emphasis [ref=e29]: E2E_1775140841559_RecJob
+      - generic [ref=e32]:
+        - heading " Evaluation" [level=5] [ref=e34]:
+          - generic [ref=e35]: 
+          - text: Evaluation
+        - generic [ref=e40]:
+          - generic [ref=e41]:
+            - strong [ref=e42]: Stage 1 Recommendation
+            - generic [ref=e43]: None
+          - textbox "Notes / summary" [ref=e44]
+          - textbox "Strengths" [ref=e45]
+          - textbox "Concerns" [ref=e46]
+          - generic [ref=e47]:
+            - checkbox "Recommend to hire" [ref=e48]
+            - generic [ref=e49]: Recommend to hire
+          - button "Save Draft" [ref=e51] [cursor=pointer]
+  - contentinfo [ref=e52]:
+    - generic [ref=e54]:
+      - generic [ref=e55]:
+        - heading " WiseRecruiter" [level=6] [ref=e56]:
+          - generic [ref=e57]: 
+          - text: WiseRecruiter
+        - paragraph [ref=e58]: Do you have bold ideas and a passion to build bold products?
+      - generic [ref=e59]:
+        - paragraph [ref=e60]: © 2026 WiseRecruiter. All rights reserved.
+        - paragraph [ref=e61]:
+          - link "Privacy Policy" [ref=e62] [cursor=pointer]:
+            - /url: /Home/Privacy
+```

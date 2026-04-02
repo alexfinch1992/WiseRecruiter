@@ -58,25 +58,22 @@ namespace WiseRecruiter.Tests.Integration
 
         // GET: loads empty model when no recommendation exists
         [Fact]
-        public async Task Stage1_Get_WhenNoRecommendation_ReturnsViewWithEmptyModel()
+        public async Task Stage1_Get_WhenNoRecommendation_RedirectsToWriteRecommendation()
         {
             using var context = CreateInMemoryContext();
             var (_, application, _) = await SeedAsync(context);
             var controller = new RecommendationController(new RecommendationService(context, new StageOrderService()));
 
-            var result = await controller.Stage1(application.Id);
+            var result = controller.Stage1(application.Id);
 
-            var view = result.Should().BeOfType<ViewResult>().Subject;
-            var model = view.Model.Should().BeOfType<Stage1RecommendationViewModel>().Subject;
-            model.Notes.Should().BeNull();
-            model.Strengths.Should().BeNull();
-            model.Concerns.Should().BeNull();
-            model.HireRecommendation.Should().BeNull();
+            var redirect = result.Should().BeOfType<RedirectToActionResult>().Subject;
+            redirect.ActionName.Should().Be("WriteRecommendation");
+            redirect.ControllerName.Should().Be("Candidate");
         }
 
         // GET: pre-populates fields from existing recommendation
         [Fact]
-        public async Task Stage1_Get_WithExistingRecommendation_PrePopulatesModel()
+        public async Task Stage1_Get_WithExistingRecommendation_RedirectsToWriteRecommendation()
         {
             using var context = CreateInMemoryContext();
             var (_, application, _) = await SeedAsync(context);
@@ -96,14 +93,11 @@ namespace WiseRecruiter.Tests.Integration
 
             var controller = new RecommendationController(new RecommendationService(context, new StageOrderService()));
 
-            var result = await controller.Stage1(application.Id);
+            var result = controller.Stage1(application.Id);
 
-            var view = result.Should().BeOfType<ViewResult>().Subject;
-            var model = view.Model.Should().BeOfType<Stage1RecommendationViewModel>().Subject;
-            model.Notes.Should().Be("Existing notes");
-            model.Strengths.Should().Be("Strong fit");
-            model.Concerns.Should().Be("Minor concern");
-            model.HireRecommendation.Should().BeTrue();
+            var redirect = result.Should().BeOfType<RedirectToActionResult>().Subject;
+            redirect.ActionName.Should().Be("WriteRecommendation");
+            redirect.ControllerName.Should().Be("Candidate");
         }
 
         // POST: creates new recommendation when none exists
@@ -182,14 +176,16 @@ namespace WiseRecruiter.Tests.Integration
 
         // GET: returns NotFound for unknown applicationId
         [Fact]
-        public async Task Stage1_Get_WithUnknownApplicationId_ReturnsNotFound()
+        public async Task Stage1_Get_WithUnknownApplicationId_RedirectsToWriteRecommendation()
         {
             using var context = CreateInMemoryContext();
             var controller = new RecommendationController(new RecommendationService(context, new StageOrderService()));
 
-            var result = await controller.Stage1(applicationId: 9999);
+            var result = controller.Stage1(applicationId: 9999);
 
-            result.Should().BeOfType<NotFoundResult>();
+            var redirect = result.Should().BeOfType<RedirectToActionResult>().Subject;
+            redirect.ActionName.Should().Be("WriteRecommendation");
+            redirect.ControllerName.Should().Be("Candidate");
         }
 
         // POST: saving a recommendation never elevates its status to Approved

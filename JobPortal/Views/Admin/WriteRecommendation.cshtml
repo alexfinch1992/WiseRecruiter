@@ -1,7 +1,10 @@
+
 @model JobPortal.Models.ViewModels.WriteRecommendationViewModel
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 
 @{
     ViewData["Title"] = $"Stage 1 Recommendation — {Model.Name}";
+    var tokens = Antiforgery.GetAndStoreTokens(Context);
 }
 
 <div class="container-fluid py-5">
@@ -45,5 +48,6 @@
 </div>
 
 @section Scripts {
+    <script>window.__CSRF_TOKEN__ = '@tokens.RequestToken';</script>
     <script type="module" src="~/js/dist/recommendation-editor.js" asp-append-version="true"></script>
 }

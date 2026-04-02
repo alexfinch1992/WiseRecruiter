@@ -89,6 +89,15 @@
                         </table>
                     </div>
                 </div>
+            @if (ViewBag.TotalPages > 1)
+            {
+                <div>
+                    @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                    {
+                        <a href="?page=@i">@i</a>
+                    }
+                </div>
+            }
             }
         </div>
     </div>

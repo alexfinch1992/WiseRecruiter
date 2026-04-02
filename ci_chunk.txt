@@ -1,0 +1,91 @@
+CreateInterview(int candidateId, int applicationId, string selectedStage, DateTime scheduledAt, List<int>? SelectedInterviewerIds = null, bool proceedWithoutApproval = false, string? bypassReason = null)
+    {
+        var application = await _context.Applications.FindAsync(applicationId);
+        if (application == null || application.CandidateId != candidateId)
+            return BadRequest("Invalid application for this candidate.");
+
+        int resolvedJobStageId = 0;
+        if (selectedStage.StartsWith("stage:"))
+        {
+            if (!int.TryParse(selectedStage["stage:".Length..], out resolvedJobStageId))
+                return BadRequest();
+        }
+        else if (!selectedStage.StartsWith("enum:"))
+        {
+            return BadRequest();
+        }
+
+        // datetime-local inputs arrive as DateTimeKind.Unspecified (browser local time); convert to UTC.
+        // If already UTC (e.g. from API callers), preserve as-is.
+        var scheduledAtUtc = scheduledAt.Kind == DateTimeKind.Utc
+            ? scheduledAt
+            : DateTime.SpecifyKind(scheduledAt, DateTimeKind.Local).ToUniversalTime();
+        var interview = await _interviewService.CreateInterviewAsync(candidateId, applicationId, resolvedJobStageId, scheduledAtUtc);
+
+        if (SelectedInterviewerIds != null)
+        {
+            SelectedInterviewerIds = SelectedInterviewerIds
+                .Where(id => id > 0)
+                .Distinct()
+                .ToList();
+        }
+
+        if (SelectedInterviewerIds != null && SelectedInterviewerIds.Any())
+        {
+            var validIds = await _context.AdminUsers
+                .Where(a => SelectedInterviewerIds.Contains(a.Id))
+                .Select(a => a.Id)
+                .ToListAsync();
+
+            if (validIds.Count != SelectedInterviewerIds.Count)
+                return BadRequest("One or more selected interviewers are invalid.");
+
+            foreach (var adminUserId in SelectedInterviewerIds)
+            {
+                _context.InterviewInterviewers.Add(new InterviewInterviewer
+                {
+                    InterviewId = interview.Id,
+                    AdminUserId = adminUserId
+                });
+            }
+            await _context.SaveChangesAsync();
+        }
+
+        var userId = User?.FindFirst("AdminId")?.Value ?? string.Empty;
+        await _recommendationService.GetOrPrepareStage1RecommendationAsync(applicationId, proceedWithoutApproval, bypassReason, userId);
+
+        return RedirectToAction(nameof(CandidateDetails), new { id = applicationId });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CancelInterview(int interviewId, int candidateId)
+    {
+        var interview = await _context.Interviews.FindAsync(interviewId);
+        if (interview == null || interview.CandidateId != candidateId)
+            return BadRequest("Invalid interview for this candidate.");
+
+        interview.IsCancelled = true;
+        await _context.SaveChangesAsync();
+
+        return RedirectToAction(nameof(CandidateDetails), new { id = interview.ApplicationId });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateApplicationStage(int applicationId, string selectedStage, bool proceedWithoutApproval = false)
+    {
+        var userId  = User?.FindFirst("AdminId")?.Value ?? string.Empty;
+        var outcome = await _moveApplicationStageService.MoveForFormAsync(
+            applicationId, selectedStage, proceedWithoutApproval, userId);
+
+        if (outcome == null) return NotFound();
+        if (!outcome.Success) return BadRequest();
+
+        if (outcome.RequiresApproval)
+        {
+            TempData["StageApprovalWarning"] = applicationId;
+            return RedirectToAction(nameof(CandidateDetails), new { id = applicationId });
+        }
+
+        return RedirectToAction(nameof(CandidateDetails), new { id = appli

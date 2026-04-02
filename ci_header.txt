@@ -1,0 +1,64 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using JobPortal.Models;
+using JobPortal.Data;
+using JobPortal.Services.Interfaces;
+using JobPortal.Services.Models;
+using JobPortal.Models.ViewModels;
+
+[Authorize]
+public class AdminController : Controller
+{
+    private readonly AppDbContext _context;
+    private readonly IWebHostEnvironment _webHostEnvironment;
+    private readonly IApplicationService _applicationService;
+    private readonly IAnalyticsService _analyticsService;
+    private readonly IScorecardService _scorecardService;
+    private readonly IScorecardTemplateService _scorecardTemplateService;
+    private readonly IJobService _jobService;
+    private readonly IScorecardAnalyticsService _scorecardAnalyticsService;
+    private readonly IInterviewService _interviewService;
+    private readonly IRecommendationService _recommendationService;
+    private readonly IApplicationStageService _applicationStageService;
+    private readonly IHiringPipelineService _hiringPipelineService;
+    private readonly IGlobalSearchService _globalSearchService;
+    private readonly IAuditService _auditService;
+
+    private readonly IJobAccessService _jobAccessService;
+    private readonly ICandidateDetailsService _candidateDetailsService;
+    private readonly IMoveApplicationStageService _moveApplicationStageService;
+
+    public AdminController(
+        AppDbContext context,
+        IWebHostEnvironment webHostEnvironment,
+        IApplicationService applicationService,
+        IAnalyticsService analyticsService,
+        IScorecardService scorecardService,
+        IScorecardTemplateService scorecardTemplateService,
+        IJobService jobService,
+        IScorecardAnalyticsService scorecardAnalyticsService,
+        IInterviewService interviewService,
+        IRecommendationService recommendationService,
+        IApplicationStageService applicationStageService,
+        IHiringPipelineService hiringPipelineService,
+        IGlobalSearchService globalSearchService,
+        IAuditService auditService,
+        IJobAccessService jobAccessService,
+        ICandidateDetailsService candidateDetailsService,
+        IMoveApplicationStageService moveApplicationStageService)
+    {
+        _context = context;
+        _webHostEnvironment = webHostEnvironment;
+        _applicationService = applicationService;
+        _analyticsService = analyticsService;
+        _scorecardService = scorecardService;
+        _scorecardTemplateService = scorecardTemplateService;
+        _jobService = jobService;
+        _scorecardAnalyticsService = scorecardAnalyticsService;
+        _interviewService = interviewService;
+        _recommendationService = recommendationService;
+        _applicationStageService = applicationStageService;
+        _hiringPipelineService = hiringPipelineServic
