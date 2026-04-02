@@ -1,0 +1,119 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - navigation [ref=e3]:
+      - generic [ref=e4]:
+        - link " WiseTech Global" [ref=e5] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e6]:
+            - generic [ref=e7]: 
+            - text: WiseTech Global
+        - generic [ref=e8]:
+          - list [ref=e9]:
+            - listitem [ref=e10]:
+              - link " Jobs" [ref=e11] [cursor=pointer]:
+                - /url: /Admin
+                - generic [ref=e12]: 
+                - text: Jobs
+            - listitem [ref=e13]:
+              - link " Candidates" [ref=e14] [cursor=pointer]:
+                - /url: /Admin/Candidates
+                - generic [ref=e15]: 
+                - text: Candidates
+            - listitem [ref=e16]:
+              - link " Analytics" [ref=e17] [cursor=pointer]:
+                - /url: /Admin/Analytics
+                - generic [ref=e18]: 
+                - text: Analytics
+            - listitem [ref=e19]:
+              - button " Settings" [ref=e20] [cursor=pointer]:
+                - generic [ref=e21]: 
+                - text: Settings
+              - text:   
+          - generic [ref=e22]:
+            - textbox "Search candidates and jobs" [ref=e24]:
+              - /placeholder: Search candidates and jobs...
+            - button "" [ref=e25] [cursor=pointer]:
+              - generic [ref=e26]: 
+          - generic [ref=e27]:
+            - button "A" [ref=e28] [cursor=pointer]
+            - text:   
+  - main [ref=e30]:
+    - generic [ref=e31]:
+      - generic [ref=e32]:
+        - generic [ref=e33]:
+          - heading " E2E_1775140841610_Job" [level=1] [ref=e34]:
+            - generic [ref=e35]: 
+            - text: E2E_1775140841610_Job
+          - paragraph [ref=e36]: "Job ID: 37"
+        - link " Back to Jobs" [ref=e38] [cursor=pointer]:
+          - /url: /Admin
+          - generic [ref=e39]: 
+          - text: Back to Jobs
+      - generic [ref=e40]:
+        - generic [ref=e42]:
+          - heading " Job Description" [level=5] [ref=e44]:
+            - generic [ref=e45]: 
+            - text: Job Description
+          - paragraph [ref=e47]: E2E automated test job
+          - group [ref=e49]:
+            - link " Edit" [ref=e50] [cursor=pointer]:
+              - /url: /Admin/Edit/37
+              - generic [ref=e51]: 
+              - text: Edit
+            - link " Delete" [ref=e52] [cursor=pointer]:
+              - /url: /Job/Delete/37?returnUrl=%2FAdmin
+              - generic [ref=e53]: 
+              - text: Delete
+            - button "Seed Test Applicants" [ref=e55] [cursor=pointer]
+        - generic [ref=e57]:
+          - heading " Candidates" [level=5] [ref=e59]:
+            - generic [ref=e60]: 
+            - text: Candidates
+          - generic [ref=e61]:
+            - heading "0" [level=2] [ref=e62]
+            - paragraph [ref=e63]: candidates have applied
+      - generic [ref=e64]:
+        - generic [ref=e65]:
+          - heading " Interview Stages" [level=5] [ref=e66]:
+            - generic [ref=e67]: 
+            - text: Interview Stages
+          - button "Toggle interview stages" [ref=e68] [cursor=pointer]:
+            - generic [ref=e69]: 
+        - text:               + 
+        - generic [ref=e71]:
+          - generic [ref=e72]:
+            - generic [ref=e73]: 
+            - text: Applied
+          - generic [ref=e74]:
+            - generic [ref=e75]: 
+            - text: Screen
+          - generic [ref=e76]: Applied
+          - generic [ref=e77]: Interview
+          - generic [ref=e78]: Offer
+          - generic [ref=e79]: E2E_1775140841610_Stage
+          - generic [ref=e80]:
+            - generic [ref=e81]: 
+            - text: Offer
+          - generic [ref=e82]:
+            - generic [ref=e83]: 
+            - text: Hired
+      - generic [ref=e84]:
+        - generic [ref=e85]: 
+        - heading "No Candidates Yet" [level=5] [ref=e86]
+        - paragraph [ref=e87]: No one has applied for this position yet. Check back soon!
+  - contentinfo [ref=e88]:
+    - generic [ref=e90]:
+      - generic [ref=e91]:
+        - heading " WiseRecruiter" [level=6] [ref=e92]:
+          - generic [ref=e93]: 
+          - text: WiseRecruiter
+        - paragraph [ref=e94]: Do you have bold ideas and a passion to build bold products?
+      - generic [ref=e95]:
+        - paragraph [ref=e96]: © 2026 WiseRecruiter. All rights reserved.
+        - paragraph [ref=e97]:
+          - link "Privacy Policy" [ref=e98] [cursor=pointer]:
+            - /url: /Home/Privacy
+```

@@ -1,0 +1,8 @@
+CreateInterview(int candidateId, int applicationId, string selectedStage, DateTime scheduledAt, List<int>? SelectedInterviewerIds = null, bool proceedWithoutApproval = false, string? bypassReason = null)
+    {
+        var userId = User?.FindFirst("AdminId")?.Value ?? string.Empty;
+        var result = await _interviewCommandService.CreateAsync(
+            candidateId, applicationId, selectedStage, scheduledAt,
+            SelectedInterviewerIds, proceedWithoutApproval, bypassReason, userId);
+
+ 

@@ -15,27 +15,11 @@ public class RecommendationController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Stage1(int applicationId)
+    public IActionResult Stage1(int applicationId)
     {
-        var context = await _recommendationService.GetStage1ContextAsync(applicationId);
-        if (context == null)
-            return NotFound();
-
-        var (rec, candidateName, jobTitle) = context.Value;
-
-        var model = new Stage1RecommendationViewModel
-        {
-            Notes = rec?.Summary,
-            Strengths = rec?.ExperienceFit,
-            Concerns = rec?.Concerns,
-            HireRecommendation = rec?.HireRecommendation
-        };
-
-        ViewData["ApplicationId"] = applicationId;
-        ViewData["CandidateName"] = candidateName;
-        ViewData["JobTitle"] = jobTitle;
-
-        return View(model);
+        // Legacy Razor page — redirect to the React-based editor.
+        // WriteRecommendation is on CandidateController with route [HttpGet("Admin/WriteRecommendation")].
+        return RedirectToAction("WriteRecommendation", "Candidate", new { applicationId });
     }
 
     [HttpPost]

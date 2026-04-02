@@ -1,0 +1,26 @@
+ await _context.SaveChangesAsync();
+
+        return RedirectToAction("JobDetail", new { id = jobId });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> RemoveStage(int stageId, int jobId)
+    {
+        var stage = await _context.JobStages.FindAsync(stageId);
+        if (stage == null)
+            return NotFound();
+
+        _context.JobStages.Remove(stage);
+        await _context.SaveChangesAsync();
+
+        // Return JSON for AJAX, redirect for regular requests
+        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            return Ok(new { success = true });
+
+        return RedirectToAction("JobDetail", new { id = jobId });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> MoveStage(int stageId, int jobId, string direction)
+    {
+        var stage = await _context.JobStages.FirstOrDefaultAsync(s => s.Id == stageId && s.JobId =

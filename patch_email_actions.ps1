@@ -1,4 +1,4 @@
-$p = "C:\Users\alex.finch\OneDrive - WiseTech Global Pty Ltd\Documents\Coding Projects\Application Site\JobPortal\Controllers\AdminController.cs"
+$p = "C:\Dev\Application Site\JobPortal\Controllers\AdminController.cs"
 $t = [System.IO.File]::ReadAllText($p, [System.Text.Encoding]::Unicode)
 
 $newActions = "
