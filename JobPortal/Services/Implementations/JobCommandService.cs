@@ -138,5 +138,56 @@ namespace JobPortal.Services.Implementations
             _context.JobStages.AddRange(defaultStages);
             await _context.SaveChangesAsync();
         }
+
+        public async Task AssignRecruiterAsync(int jobId, string userId, string role = "Recruiter")
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("UserId is required.", nameof(userId));
+
+            var job = await _context.Jobs.FindAsync(jobId);
+            if (job == null)
+                throw new ArgumentException("Job not found.", nameof(jobId));
+
+            _context.JobUsers.Add(new JobUser
+            {
+                JobId = jobId,
+                UserId = userId,
+                Role = role,
+                IsActive = true
+            });
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeactivateRecruiterAsync(int jobUserId)
+        {
+            var jobUser = await _context.JobUsers.FindAsync(jobUserId);
+            if (jobUser == null)
+                throw new ArgumentException("JobUser not found.", nameof(jobUserId));
+
+            // Check if removing this recruiter would leave the job with none
+            var otherActiveCount = await _context.JobUsers
+                .CountAsync(ju => ju.JobId == jobUser.JobId && ju.IsActive && ju.Id != jobUserId);
+
+            if (otherActiveCount == 0)
+            {
+                throw new InvalidOperationException(
+                    "A job must have at least one active recruiter assigned.");
+            }
+
+            jobUser.IsActive = false;
+            await _context.SaveChangesAsync();
+        }
+
+        private async Task EnsureJobHasActiveRecruiterAsync(int jobId)
+        {
+            var hasRecruiter = await _context.JobUsers
+                .AnyAsync(ju => ju.JobId == jobId && ju.IsActive);
+
+            if (!hasRecruiter)
+            {
+                throw new InvalidOperationException(
+                    "A job must have at least one active recruiter assigned.");
+            }
+        }
     }
 }

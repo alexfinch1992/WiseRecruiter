@@ -120,6 +120,12 @@ else
                                     data-user-name="@user.FullName">
                                 <i class="fas fa-trash me-1"></i>Delete
                             </button>
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-warning login-as-btn ms-1"
+                                    data-user-id="@user.UserId"
+                                    data-user-name="@user.FullName">
+                                <i class="fas fa-sign-in-alt me-1"></i>Login as
+                            </button>
                         </td>
                     </tr>
                 }
@@ -374,5 +380,30 @@ else
         wrap.style.display = 'block';
         setTimeout(function () { wrap.style.display = 'none'; }, 2500);
     }
+
+    // ── Login As User ──────────────────────────────────────────────
+    document.querySelectorAll('.login-as-btn').forEach(function (btn) {
+        btn.addEventListener('click', async function () {
+            const userId   = this.dataset.userId;
+            const userName = this.dataset.userName;
+            if (!confirm(`Switch to "${userName}"? You will be signed out of your current session.`)) return;
+
+            try {
+                const res = await fetch('@Url.Action("LoginAs", "AdminSettings")', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': csrfToken },
+                    body: new URLSearchParams({ userId })
+                });
+                if (res.ok) {
+                    location.href = '/Admin';
+                } else {
+                    const data = await res.json();
+                    alert(data.error || 'Failed to switch user.');
+                }
+            } catch {
+                alert('Network error — please try again.');
+            }
+        });
+    });
 </script>
 }

@@ -2,6 +2,7 @@ using System.Security.Claims;
 using JobPortal.Data;
 using JobPortal.Models;
 using JobPortal.Models.ViewModels;
+using JobPortal.Services.Alerts;
 using JobPortal.Services.Interfaces;
 using JobPortal.Services.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -15,15 +16,18 @@ public class RecommendationAdminController : Controller
     private readonly IRecommendationService _recommendationService;
     private readonly AppDbContext _context;
     private readonly IAuditService _auditService;
+    private readonly AlertService? _alertService;
 
     public RecommendationAdminController(
         IRecommendationService recommendationService,
         AppDbContext context,
-        IAuditService auditService)
+        IAuditService auditService,
+        AlertService? alertService = null)
     {
         _recommendationService = recommendationService ?? throw new ArgumentNullException(nameof(recommendationService));
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
+        _alertService = alertService;
     }
 
     [HttpGet("Pending")]
@@ -134,6 +138,34 @@ public class RecommendationAdminController : Controller
             "OutcomeSet",
             $"Lead {outcomeLabel}; RecId={rec.Id}; AppId={rec.ApplicationId}",
             callerId);
+
+        if (_alertService != null)
+        {
+            var application = await _context.Applications.FindAsync(rec.ApplicationId);
+            if (application != null)
+            {
+                var candidateName = application.Name ?? "Unknown";
+                var stageLabel = rec.Stage == RecommendationStage.Stage1 ? "Stage 1" : "Stage 2";
+                var alertType = rec.Stage == RecommendationStage.Stage1
+                    ? "RecommendationStage1Result"
+                    : "RecommendationStage2Result";
+                var resultLabel = outcome switch
+                {
+                    RecommendationOutcome.Proceed     => "Proceed",
+                    RecommendationOutcome.MoreInfo    => "Needs more info",
+                    RecommendationOutcome.NotSuitable => "Not suitable",
+                    _                                 => outcome.ToString()
+                };
+                var message = $"{stageLabel} recommendation for {candidateName}: {resultLabel}";
+                await _alertService.CreateJobAlertAsync(
+                    application.JobId,
+                    alertType,
+                    message,
+                    linkUrl: $"/Admin/CandidateDetails/{application.Id}",
+                    relatedEntityId: rec.Id,
+                    relatedEntityType: "Recommendation");
+            }
+        }
 
         return RedirectToAction(nameof(AdminController.CandidateDetails), "Admin", new { id = rec.ApplicationId });
     }

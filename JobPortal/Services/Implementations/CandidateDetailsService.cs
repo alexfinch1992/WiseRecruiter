@@ -70,17 +70,7 @@ namespace JobPortal.Services.Implementations
                 JobTitle = application.Job?.Title,
                 CurrentJobStageId = application.CurrentJobStageId,
                 CurrentStageName = application.CurrentStage?.Name ?? "Applied",
-                Documents = application.Documents
-                    .Select(d => new DocumentDto
-                    {
-                        Id = d.Id,
-                        FileName = d.FileName,
-                        FilePath = d.FilePath,
-                        Type = d.Type,
-                        FileSize = d.FileSize,
-                        UploadDate = d.UploadDate
-                    })
-                    .ToList(),
+                Documents = BuildDocumentList(application),
                 StageProgression = (application.Job?.Stages?.OrderBy(s => s.Order) ?? Enumerable.Empty<JobStage>())
                     .Select(s => new JobStageDto
                     {
@@ -134,6 +124,38 @@ namespace JobPortal.Services.Implementations
             viewModel.Pipeline = _hiringPipelineService.GetPipeline(application, application.Job?.Stages?.OrderBy(s => s.Order).ToList() ?? new());
 
             return viewModel;
+        }
+
+        private static List<DocumentDto> BuildDocumentList(Application application)
+        {
+            var docs = application.Documents
+                .Select(d => new DocumentDto
+                {
+                    Id = d.Id,
+                    FileName = d.FileName,
+                    FilePath = d.FilePath,
+                    Type = d.Type,
+                    FileSize = d.FileSize,
+                    UploadDate = d.UploadDate
+                })
+                .ToList();
+
+            // Include legacy resume if it exists but has no matching Document entity
+            if (!string.IsNullOrEmpty(application.ResumePath)
+                && !docs.Any(d => d.Type == DocumentType.Resume))
+            {
+                docs.Insert(0, new DocumentDto
+                {
+                    Id = 0,
+                    FileName = Path.GetFileName(application.ResumePath),
+                    FilePath = application.ResumePath,
+                    Type = DocumentType.Resume,
+                    FileSize = 0,
+                    UploadDate = application.AppliedDate
+                });
+            }
+
+            return docs;
         }
     }
 }
