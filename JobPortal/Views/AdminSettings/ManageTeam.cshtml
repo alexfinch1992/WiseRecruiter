@@ -79,6 +79,7 @@ else
                     <th>Name</th>
                     <th>Role</th>
                     <th class="text-center">Jobs Assigned</th>
+                    <th class="text-center">Primary Recruiter</th>
                     <th class="text-center" style="width:140px">Access</th>
                 </tr>
             </thead>
@@ -102,6 +103,36 @@ else
                             else
                             {
                                 <span class="badge bg-secondary rounded-pill job-count-badge">0</span>
+                            }
+                        </td>
+                        <td class="text-center">
+                            @if (user.Role == "Recruiter" || user.Role == "Admin")
+                            {
+                                var ownedJobs = Model.AllJobs.Where(j => j.OwnerUserId == user.UserId).ToList();
+                                @if (ownedJobs.Any())
+                                {
+                                    <span class="badge bg-primary rounded-pill"
+                                          title="@string.Join(", ", ownedJobs.Select(j => j.Title))">
+                                        @ownedJobs.Count
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary rounded-pill">0</span>
+                                }
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-info manage-owner-btn ms-1"
+                                        data-user-id="@user.UserId"
+                                        data-user-name="@user.FullName"
+                                        data-owned-ids="@System.Text.Json.JsonSerializer.Serialize(ownedJobs.Select(j => j.Id))"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#manageOwnerModal">
+                                    <i class="fas fa-user-tie me-1"></i>Assign
+                                </button>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Not Eligible</span>
                             }
                         </td>
                         <td class="text-center">
@@ -171,6 +202,37 @@ else
 
 {{!-- Hidden form just to expose the CSRF token to vanilla JS --}}
 <form id="csrf-form" style="display:none">@Html.AntiForgeryToken()</form>
+
+<!-- Primary Recruiter Modal -->
+<div class="modal fade" id="manageOwnerModal" tabindex="-1" aria-labelledby="manageOwnerLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="manageOwnerLabel">
+                    <i class="fas fa-user-tie me-2"></i>Primary Recruiter — <span id="mo-username"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="mo-alert" class="alert d-none" role="alert"></div>
+                <p class="text-muted small mb-3">Check the jobs where this user should be the Primary Recruiter.</p>
+                <div id="mo-job-list" class="overflow-auto" style="max-height:420px;">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <small class="text-muted" id="mo-count-label"></small>
+                <div>
+                    <button type="button" class="btn btn-secondary me-1" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="mo-save-btn">
+                        <span id="mo-spinner" class="spinner-border spinner-border-sm me-1 d-none" role="status" aria-hidden="true"></span>
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div id="save-status" class="position-fixed bottom-0 end-0 p-3" style="z-index:1080;display:none">
     <div id="save-toast" class="toast text-white border-0 show" role="status">
@@ -404,6 +466,98 @@ else
                 alert('Network error — please try again.');
             }
         });
+    });
+
+    // ── Primary Recruiter Modal ────────────────────────────────────
+    let activeOwnerUserId = null;
+    let originalOwnedIds = [];
+
+    document.querySelectorAll('.manage-owner-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            activeOwnerUserId = this.dataset.userId;
+            originalOwnedIds = JSON.parse(this.dataset.ownedIds || '[]');
+
+            document.getElementById('mo-username').textContent = this.dataset.userName;
+            document.getElementById('mo-alert').className = 'alert d-none';
+
+            const list = document.getElementById('mo-job-list');
+            list.innerHTML = allJobs.map(j => {
+                const isOwned = originalOwnedIds.includes(j.id);
+                return `<div class="form-check border-bottom py-2 px-3">
+                    <input class="form-check-input mo-cb" type="checkbox" value="${j.id}"
+                           id="mo-cb-${j.id}" ${isOwned ? 'checked' : ''}>
+                    <label class="form-check-label w-100" for="mo-cb-${j.id}">${j.title}</label>
+                </div>`;
+            }).join('');
+            updateOwnerCount();
+        });
+    });
+
+    function getCheckedOwnerJobIds() {
+        return Array.from(document.querySelectorAll('#mo-job-list .mo-cb:checked'))
+                    .map(cb => parseInt(cb.value, 10));
+    }
+
+    function updateOwnerCount() {
+        const n = getCheckedOwnerJobIds().length;
+        document.getElementById('mo-count-label').textContent =
+            n === 0 ? 'No jobs owned' : `${n} job${n === 1 ? '' : 's'} owned`;
+    }
+
+    document.getElementById('mo-job-list').addEventListener('change', updateOwnerCount);
+
+    document.getElementById('mo-save-btn').addEventListener('click', async function () {
+        if (!activeOwnerUserId) return;
+
+        const alertEl = document.getElementById('mo-alert');
+        alertEl.className = 'alert d-none';
+
+        const saveBtn = this;
+        const spinner = document.getElementById('mo-spinner');
+        saveBtn.disabled = true;
+        spinner.classList.remove('d-none');
+
+        const newOwnedIds = getCheckedOwnerJobIds();
+        const toAssign = newOwnedIds.filter(id => !originalOwnedIds.includes(id));
+        const toUnassign = originalOwnedIds.filter(id => !newOwnedIds.includes(id));
+
+        try {
+            const requests = [];
+            for (const jobId of toAssign) {
+                requests.push(fetch('@Url.Action("AssignJobOwner", "AdminSettings")', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': csrfToken },
+                    body: new URLSearchParams({ jobId, userId: activeOwnerUserId })
+                }));
+            }
+            for (const jobId of toUnassign) {
+                requests.push(fetch('@Url.Action("AssignJobOwner", "AdminSettings")', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': csrfToken },
+                    body: new URLSearchParams({ jobId, userId: '' })
+                }));
+            }
+            const results = await Promise.all(requests);
+            if (results.every(r => r.ok)) {
+                showToast('✓ Primary Recruiter updated', 'bg-success');
+                bootstrap.Modal.getInstance(document.getElementById('manageOwnerModal')).hide();
+                window.location.reload();
+            } else {
+                alertEl.className = 'alert alert-danger';
+                alertEl.textContent = 'Some updates failed — please try again.';
+            }
+        } catch {
+            alertEl.className = 'alert alert-danger';
+            alertEl.textContent = 'Network error — please try again.';
+        } finally {
+            saveBtn.disabled = false;
+            spinner.classList.add('d-none');
+        }
+    });
+
+    document.getElementById('manageOwnerModal').addEventListener('hidden.bs.modal', function () {
+        activeOwnerUserId = null;
+        originalOwnedIds = [];
     });
 </script>
 }

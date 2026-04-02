@@ -453,6 +453,38 @@ public class AdminSettingsController : Controller
         return Ok(new { message = $"Logged in as {user.FullName ?? user.Email}" });
     }
 
+    [HttpPost]
+    [Authorize(Roles = "Admin")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AssignJobOwner(int jobId, string? userId)
+    {
+        var job = await _context.Jobs.FindAsync(jobId);
+        if (job == null)
+            return NotFound(new { error = "Job not found." });
+
+        if (!string.IsNullOrWhiteSpace(userId))
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return NotFound(new { error = "User not found." });
+
+            var isRecruiter = await _userManager.IsInRoleAsync(user, "Recruiter");
+            var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
+            if (!isRecruiter && !isAdmin)
+                return BadRequest(new { error = "Only recruiters or admins can be assigned as Primary Recruiter." });
+
+            job.OwnerUserId = userId;
+        }
+        else
+        {
+            job.OwnerUserId = null;
+        }
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new { success = true });
+    }
+
     private async Task<EditTemplateFacetsViewModel?> BuildTemplateFacetEditorViewModel(int templateId, List<TemplateFacetInput>? postedFacets = null)
     {
         var template = await _templateService.GetTemplateById(templateId);
