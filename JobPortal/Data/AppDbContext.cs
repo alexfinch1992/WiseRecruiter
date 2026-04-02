@@ -43,6 +43,9 @@ namespace JobPortal.Data
         public DbSet<AuditLog> AuditLogs { get; set; } = null!;
         public DbSet<JobAssignment> JobAssignments { get; set; } = null!;
         public DbSet<EmailTemplate> EmailTemplates { get; set; } = null!;
+        public DbSet<JobUser> JobUsers { get; set; } = null!;
+        public DbSet<JobAlertSubscription> JobAlertSubscriptions { get; set; } = null!;
+        public DbSet<Alert> Alerts { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -182,6 +185,57 @@ namespace JobPortal.Data
                 .HasForeignKey(r => r.ApplicationId)
                 .IsRequired()
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<JobUser>()
+                .HasOne(ju => ju.Job)
+                .WithMany()
+                .HasForeignKey(ju => ju.JobId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<JobUser>()
+                .HasOne(ju => ju.User)
+                .WithMany()
+                .HasForeignKey(ju => ju.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<JobAlertSubscription>()
+                .HasOne(jas => jas.Job)
+                .WithMany()
+                .HasForeignKey(jas => jas.JobId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<JobAlertSubscription>()
+                .HasOne(jas => jas.User)
+                .WithMany()
+                .HasForeignKey(jas => jas.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<JobAlertSubscription>()
+                .HasIndex(jas => new { jas.JobId, jas.UserId })
+                .IsUnique();
+
+            modelBuilder.Entity<Alert>()
+                .HasOne(a => a.User)
+                .WithMany()
+                .HasForeignKey(a => a.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Alert>()
+                .HasIndex(a => a.UserId);
+
+            modelBuilder.Entity<Alert>()
+                .HasIndex(a => a.CreatedAt);
+
+            modelBuilder.Entity<Alert>()
+                .HasIndex(a => new
+                {
+                    a.UserId,
+                    a.Type,
+                    a.RelatedEntityId,
+                    a.RelatedEntityType
+                })
+                .IsUnique()
+                .HasFilter(null);
         }
     }
 

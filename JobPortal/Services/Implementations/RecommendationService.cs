@@ -227,6 +227,7 @@ namespace JobPortal.Services.Implementations
             }
 
             await _context.SaveChangesAsync();
+
             return ApprovalResult.Approved;
         }
 
@@ -253,6 +254,7 @@ namespace JobPortal.Services.Implementations
             rec.ApprovalFeedback = approvalFeedback;
 
             await _context.SaveChangesAsync();
+
             return ApprovalResult.Approved;
         }
 

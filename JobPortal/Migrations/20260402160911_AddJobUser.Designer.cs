@@ -3,6 +3,7 @@ using System;
 using JobPortal.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace JobPortal.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260402160911_AddJobUser")]
+    partial class AddJobUser
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.13");
@@ -37,51 +40,6 @@ namespace JobPortal.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("AdminUsers");
-                });
-
-            modelBuilder.Entity("JobPortal.Models.Alert", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsRead")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("LinkUrl")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<int?>("RelatedEntityId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("RelatedEntityType")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedAt");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("UserId", "Type", "RelatedEntityId", "RelatedEntityType")
-                        .IsUnique();
-
-                    b.ToTable("Alerts");
                 });
 
             modelBuilder.Entity("JobPortal.Models.Application", b =>
@@ -617,32 +575,6 @@ namespace JobPortal.Migrations
                     b.ToTable("Jobs");
                 });
 
-            modelBuilder.Entity("JobPortal.Models.JobAlertSubscription", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("IsEnabled")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("JobId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("JobId", "UserId")
-                        .IsUnique();
-
-                    b.ToTable("JobAlertSubscriptions");
-                });
-
             modelBuilder.Entity("JobPortal.Models.JobAssignment", b =>
                 {
                     b.Property<int>("Id")
@@ -950,17 +882,6 @@ namespace JobPortal.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("JobPortal.Models.Alert", b =>
-                {
-                    b.HasOne("JobPortal.Models.ApplicationUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("JobPortal.Models.Application", b =>
                 {
                     b.HasOne("JobPortal.Models.Candidate", "Candidate")
@@ -1072,25 +993,6 @@ namespace JobPortal.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("ScorecardTemplate");
-                });
-
-            modelBuilder.Entity("JobPortal.Models.JobAlertSubscription", b =>
-                {
-                    b.HasOne("JobPortal.Models.Job", "Job")
-                        .WithMany()
-                        .HasForeignKey("JobId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("JobPortal.Models.ApplicationUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Job");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("JobPortal.Models.JobAssignment", b =>

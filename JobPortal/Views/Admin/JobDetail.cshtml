@@ -54,6 +54,7 @@
         </div>
         <div class="col-md-4 text-end">
             <a asp-action="Index" class="btn btn-outline-primary"><i class="fas fa-arrow-left me-2"></i>Back to Jobs</a>
+            <div id="job-alert-toggle-root" data-job-id="@Model.Id" class="mt-2"></div>
         </div>
     </div>
 
@@ -623,3 +624,4 @@ document.addEventListener('mouseout', function(e) {
     }
 }, true);
 </script>
+<script type="module" src="~/js/dist/job-alert-toggle.js" asp-append-version="true"></script>

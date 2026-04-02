@@ -1,6 +1,7 @@
 using JobPortal.Data;
 using JobPortal.Models;
 using JobPortal.Models.ViewModels;
+using JobPortal.Services.Alerts;
 using JobPortal.Services.Interfaces;
 using JobPortal.Services.Models;
 using Microsoft.EntityFrameworkCore;
@@ -11,11 +12,13 @@ namespace JobPortal.Services.Implementations
     {
         private readonly AppDbContext    _context;
         private readonly IScorecardService _scorecardService;
+        private readonly AlertService? _alertService;
 
-        public ScorecardCommandService(AppDbContext context, IScorecardService scorecardService)
+        public ScorecardCommandService(AppDbContext context, IScorecardService scorecardService, AlertService? alertService = null)
         {
             _context          = context          ?? throw new ArgumentNullException(nameof(context));
             _scorecardService = scorecardService ?? throw new ArgumentNullException(nameof(scorecardService));
+            _alertService = alertService;
         }
 
         public async Task<CreateScorecardViewModel?> GetCreateScorecardModelAsync(int applicationId)
@@ -122,6 +125,24 @@ namespace JobPortal.Services.Implementations
             });
 
             await _scorecardService.AddResponsesAsync(scorecard.Id, responses);
+
+            if (_alertService != null)
+            {
+                var application = await _context.Applications
+                    .FirstOrDefaultAsync(a => a.CandidateId == model.CandidateId);
+                if (application != null)
+                {
+                    var candidateName = model.CandidateName ?? "Unknown";
+                    var message = $"Interview completed for {candidateName}";
+                    await _alertService.CreateJobAlertAsync(
+                        application.JobId,
+                        "InterviewCompleted",
+                        message,
+                        linkUrl: $"/Admin/CandidateDetails/{application.Id}",
+                        relatedEntityId: scorecard.Id,
+                        relatedEntityType: "Interview");
+                }
+            }
 
             return (CreateScorecardResult.Success, scorecard.Id);
         }

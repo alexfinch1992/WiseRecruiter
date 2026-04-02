@@ -16,13 +16,17 @@ public class AdminSettingsController : Controller
     private readonly IFacetService _facetService;
     private readonly IScorecardTemplateService _templateService;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly SignInManager<ApplicationUser>? _signInManager;
+    private readonly IWebHostEnvironment? _environment;
 
-    public AdminSettingsController(AppDbContext context, IFacetService facetService, IScorecardTemplateService templateService, UserManager<ApplicationUser> userManager)
+    public AdminSettingsController(AppDbContext context, IFacetService facetService, IScorecardTemplateService templateService, UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser>? signInManager = null, IWebHostEnvironment? environment = null)
     {
         _context = context;
         _facetService = facetService;
         _templateService = templateService;
         _userManager = userManager;
+        _signInManager = signInManager;
+        _environment = environment;
     }
 
     [HttpGet]
@@ -426,6 +430,27 @@ public class AdminSettingsController : Controller
         await _context.SaveChangesAsync();
 
         return Ok(new { assigned = jobIds.Count });
+    }
+
+    [HttpPost]
+    [Authorize(Roles = "Admin")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> LoginAs(string userId)
+    {
+        if (_environment == null || !_environment.IsDevelopment() || _signInManager == null)
+            return NotFound();
+
+        if (string.IsNullOrWhiteSpace(userId))
+            return BadRequest(new { error = "userId is required." });
+
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null)
+            return NotFound(new { error = "User not found." });
+
+        await _signInManager.SignOutAsync();
+        await _signInManager.SignInAsync(user, isPersistent: true);
+
+        return Ok(new { message = $"Logged in as {user.FullName ?? user.Email}" });
     }
 
     private async Task<EditTemplateFacetsViewModel?> BuildTemplateFacetEditorViewModel(int templateId, List<TemplateFacetInput>? postedFacets = null)

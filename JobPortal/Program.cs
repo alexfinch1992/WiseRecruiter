@@ -68,6 +68,8 @@ builder.Services.AddScoped<IRecommendationSummaryService, RecommendationSummaryS
 builder.Services.AddScoped<IWriteRecommendationService, WriteRecommendationService>();
 builder.Services.AddScoped<IMoveApplicationStageService, MoveApplicationStageService>();
 builder.Services.AddScoped<IInterviewCommandService, InterviewCommandService>();
+builder.Services.AddScoped<JobPortal.Services.Alerts.AlertRecipientResolver>();
+builder.Services.AddScoped<JobPortal.Services.Alerts.AlertService>();
 builder.Services.AddScoped<IJobCommandService, JobCommandService>();
 builder.Services.AddScoped<IJobQueryService, JobQueryService>();
 builder.Services.AddScoped<IJobStageCommandService, JobStageCommandService>();
