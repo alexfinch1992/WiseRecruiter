@@ -1,182 +1,171 @@
 # WiseRecruiter
 
-WiseRecruiter is an ASP.NET Core MVC application for managing the hiring lifecycle — including jobs, candidates, interviews, scorecards, and recommendations.
+A full-featured recruiting and applicant tracking system built with ASP.NET Core MVC, React, and SQLite.
 
-The system is admin-driven and designed to support structured evaluation workflows while remaining flexible for custom hiring processes.
+## Overview
 
----
+WiseRecruiter helps hiring teams manage the entire recruitment pipeline — from job posting and candidate intake through interviews, evaluations, and hiring decisions. It includes structured scorecard-based evaluations, a two-stage recommendation approval workflow, interview scheduling, in-app alerts, and team-based job ownership.
 
-## 🧾 Overview
+## Tech Stack
 
-Core capabilities:
+| Layer | Technology |
+|-------|-----------|
+| **Backend** | ASP.NET Core 9.0 MVC, C# |
+| **Database** | SQLite via EF Core |
+| **Auth** | ASP.NET Core Identity (roles: Admin, Recruiter, HiringManager) |
+| **Frontend** | Razor Views + React 18 (TypeScript, Vite) |
+| **Testing** | xUnit, Moq, FluentAssertions, Playwright |
+| **Container** | Docker (multi-stage build) |
 
-- Job and stage management (including fixed + custom stages)
-- Candidate tracking across stages
-- Interview scheduling and evaluation
-- Scorecard creation and feedback capture
-- Candidate recommendations (multi-stage)
-- Resume review workflows
-- Search and filtering across candidates/jobs
+## Getting Started
 
----
+### Prerequisites
 
-## 🏗️ Architecture
+- [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
+- [Node.js 18+](https://nodejs.org/) (for React client build and Playwright tests)
 
-The application follows a **Controller → Service → DbContext** pattern:
+### Run Locally
 
-Controller → Service → AppDbContext
-
-### Responsibilities
-
-- **Controllers**
-  - Orchestrate requests
-  - Handle routing and HTTP concerns
-  - Must remain thin (no business logic)
-
-- **Services**
-  - Own all business logic
-  - Handle validation, workflows, and side effects
-  - Are unit-testable
-
-- **AppDbContext (EF Core)**
-  - Data access layer
-  - No business logic
-
-- **ViewModels**
-  - Used for UI binding
-  - Not treated as domain DTOs (avoiding DTO explosion)
-
----
-
-## 📦 Domain Areas
-
-The system is organized around these domains:
-
-- **Jobs & Stages**
-  - Fixed stages (Application, Screen, Offer, Hired)
-  - Custom per-job stages between fixed stages
-
-- **Candidates**
-  - Applications tied to jobs
-  - Stage progression and lifecycle tracking
-
-- **Interviews**
-  - Scheduling and interviewer assignment
-  - Linked to candidates and stages
-
-- **Scorecards**
-  - Structured evaluation forms
-  - Linked to interviews and candidates
-
-- **Recommendations**
-  - Stage-based candidate recommendations
-  - Draft + submit workflows
-
-- **Resume Review**
-  - Resume viewing and advancement flow
-
-- **Search**
-  - Candidate and job filtering APIs
-
-- **Email Templates & Analytics**
-  - Supporting features for admin workflows
-
----
-
-## 🧪 Testing Strategy
-
-The project uses a mix of **integration and unit tests**.
-
-### Integration Tests
-- Exercise controllers end-to-end
-- Validate routing, responses, and DB behavior
-- Located under: `WiseRecruiter.Tests/Integration`
-
-### Unit Tests
-- Target service-layer logic
-- Validate business rules in isolation
-- Located under: `WiseRecruiter.Tests/Unit`
-
-### Test Factory Pattern
-- `AdminControllerFactory` centralizes controller construction
-- Prevents duplication across tests
-- Makes refactoring safer
-
----
-
-## ⚠️ Important Testing Rule
-
-Always use:
-
-dotnet build  
-dotnet test
-
-Do **NOT** use `dotnet run` during automated workflows or refactoring — it can cause file locking issues in this environment.
-
----
-
-## 🚧 Refactor Status (Active Work)
-
-The codebase is currently undergoing a **controlled refactor** to decompose a large `AdminController`.
-
-### Completed
-- Recommendation workflows extracted to services
-- Stage movement logic extracted
-- Interview cancellation extracted (with full test coverage)
-- Recommendation API split into dedicated controller
-
-### In Progress
-- Scorecard creation extraction
-- Interview creation extraction
-
-### Planned
-- Split AdminController into domain controllers:
-  - CandidateController
-  - InterviewController
-  - ScorecardController
-  - JobController
-  - SearchController
-
----
-
-## 📐 Engineering Conventions
-
-These rules are actively enforced:
-
-- Controllers must remain **thin**
-- No direct `_context` usage in controllers (target state)
-- Services own all business logic
-- Preserve behavior when refactoring (no silent changes)
-- Avoid unnecessary abstractions
-- Avoid DTO proliferation unless justified
-- Prefer explicit logic over “clever” patterns
-
----
-
-## 🛠️ Getting Started
-
-Build and test the project:
-
-dotnet build  
-dotnet test
-
-If running locally (optional):
-
+```bash
+cd JobPortal
 dotnet run
+```
 
----
+The app starts at `http://localhost:5236`. On first run, the database is auto-created with migrations and seed data.
 
-## 🧭 Future Direction
+### Default Admin Account
 
-- Complete AdminController decomposition
-- Standardize command/query service patterns
-- Reduce duplication in search/filter logic
-- Continue increasing unit test coverage for services
+| Field | Value |
+|-------|-------|
+| Username | `admin@wiserecruiter.com` |
+| Password | `Password123!` |
 
----
+### Build
 
-## 📌 Notes
+```bash
+dotnet build
+```
 
-This project is intentionally evolving toward a **service-oriented MVC architecture** while maintaining full backward compatibility via tests.
+The client-side React app (`ClientApp/`) is built automatically during Debug builds via `npm install && npm run build`.
 
-Refactors are done incrementally with strict validation to avoid regressions.
+### Run Tests
+
+**Unit & Integration tests:**
+
+```bash
+dotnet test
+```
+
+**E2E tests (Playwright):**
+
+```bash
+npm install
+npx playwright install
+npx playwright test
+```
+
+### Docker
+
+```bash
+cd JobPortal
+docker build -t wiserecruiter .
+docker run -p 8080:8080 wiserecruiter
+```
+
+## Project Structure
+
+```
+Application Site.sln
+├── JobPortal/                      # Main web application
+│   ├── Controllers/                # MVC + API controllers
+│   ├── Models/                     # EF Core entities and ViewModels
+│   ├── Views/                      # Razor views (Admin, Job, Candidate, etc.)
+│   ├── Services/
+│   │   ├── Interfaces/             # Service contracts
+│   │   ├── Implementations/        # Service implementations
+│   │   ├── Alerts/                 # Alert service, recipient/reviewer resolvers
+│   │   └── Auth/                   # Custom claims factory
+│   ├── Domain/
+│   │   └── Recommendations/        # State machine for approval workflow
+│   ├── Data/                       # AppDbContext, migrations
+│   ├── Helpers/                    # DbInitializer, PasswordHasher, FileUpload
+│   ├── ClientApp/                  # React 18 + TypeScript + Vite
+│   │   └── src/components/         # AlertBell, CandidateDashboard, etc.
+│   └── wwwroot/                    # Static assets, compiled JS bundles
+├── WiseRecruiter.Tests/            # xUnit unit & integration tests
+└── tests/                          # Playwright E2E specs
+```
+
+## Core Features
+
+### Jobs & Pipeline
+
+- Create jobs with title, description, and optional scorecard template
+- Assign a **Primary Recruiter** (owner) and **Reviewers** per job
+- Each job gets default pipeline stages (Screen, Interview, Offer) on creation
+- Candidates move through stages with audit logging
+
+### Candidates & Applications
+
+- Candidates apply to jobs; multiple applications from the same email are unified
+- Application status tracking: Active → Rejected / Withdrawn
+- Stage progression: Applied → Screen → Interview → Offer → Hired
+- Resume upload and inline PDF viewing
+- Global search across candidates, jobs, and applications
+
+### Interviews
+
+- Schedule interviews linked to specific pipeline stages
+- Assign multiple interviewers per interview
+- Cancel or complete interviews with status tracking
+
+### Scorecards & Evaluation
+
+- **Scorecard Templates** define reusable evaluation criteria (facets)
+- Facets are grouped into categories with display ordering
+- Interviewers fill out scorecards with per-facet ratings and notes
+- Overall recommendation captured per scorecard
+- Analytics: average scores, facet breakdowns
+
+### Recommendations (Two-Stage Approval)
+
+- **Stage 1**: Initial recommendation with strengths, concerns, and hire recommendation
+- **Stage 2**: Follow-up evaluation
+- Workflow states: Draft → Submitted → Approved / Rejected / NeedsRevision
+- Lead reviewer sets outcome: Proceed / MoreInfo / NotSuitable
+- State machine enforces valid transitions
+
+### Alerts & Notifications
+
+- In-app notification system with bell icon dropdown
+- Alerts fired on recommendation submissions to assigned reviewers
+- Per-job alert subscriptions (toggle on/off)
+- Alerts link directly to the relevant candidate detail page
+
+### Team & Access Control
+
+- **Roles**: Admin, Recruiter, HiringManager
+- Admins manage team membership and reviewer assignments per job
+- Job-level access control via `JobUser` assignments
+- Stage transition authorization checks
+
+### Email
+
+- Template-based email system with placeholder substitution (`{{FirstName}}`)
+- Admin-managed email templates
+
+### Audit Trail
+
+- Entity-level audit logging (entity name, action, changes JSON, user, timestamp)
+- Compliance-ready change tracking
+
+## Architecture Notes
+
+- **Service Layer**: Controllers delegate to injected services for business logic; some controllers also access `AppDbContext` directly for simpler operations.
+- **State Machine**: The recommendation approval workflow uses a generic `IStageStateMachine<TContext>` pattern with separate Stage1/Stage2 implementations.
+- **React Embedding**: React components are built via Vite into `wwwroot/js/dist/` and mounted into Razor views using `createRoot`.
+- **Legacy Compatibility**: The `AdminUser` table predates Identity. A custom `AdminClaimsPrincipalFactory` bridges the two by injecting `AdminId` claims at sign-in.
+
+## License
+
+Proprietary. All rights reserved.
