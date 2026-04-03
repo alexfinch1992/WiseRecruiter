@@ -237,7 +237,7 @@ namespace WiseRecruiter.Tests.Integration
         {
             using var context = CreateInMemoryContext();
             var (_, application, _) = await SeedAsync(context);
-            var controller = new RecommendationController(new RecommendationService(context, new StageOrderService()));
+            var controller = new RecommendationController(new RecommendationService(context, new StageOrderService()), context);
 
             var model = new Stage1RecommendationViewModel
             {
@@ -279,7 +279,7 @@ namespace WiseRecruiter.Tests.Integration
             });
             await context.SaveChangesAsync();
 
-            var controller = new RecommendationController(new RecommendationService(context, new StageOrderService()));
+            var controller = new RecommendationController(new RecommendationService(context, new StageOrderService()), context);
 
             var model = new Stage1RecommendationViewModel
             {
@@ -344,7 +344,7 @@ namespace WiseRecruiter.Tests.Integration
         {
             using var context = CreateInMemoryContext();
             var (_, application, _) = await SeedAsync(context);
-            var controller = new RecommendationController(new RecommendationService(context, new StageOrderService()));
+            var controller = new RecommendationController(new RecommendationService(context, new StageOrderService()), context);
 
             var model = new Stage2RecommendationViewModel
             {

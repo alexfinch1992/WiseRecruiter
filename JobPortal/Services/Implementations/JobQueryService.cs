@@ -32,6 +32,8 @@ namespace JobPortal.Services.Implementations
                 .Include(j => j.Stages)
                 .Include(j => j.Applications!).ThenInclude(a => a.Candidate)
                 .Include(j => j.OwnerUser)
+                .Include(j => j.JobUsers!)
+                    .ThenInclude(ju => ju.User)
                 .FirstOrDefaultAsync(j => j.Id == id);
 
             if (job == null)

@@ -1,7 +1,11 @@
-@model JobPortal.Models.Job
+@model JobPortal.Models.ViewModels.CreateJobViewModel
 
 @{
     ViewData["Title"] = "Post New Job";
+    var ownerOptions = ViewBag.OwnerOptions as List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>
+                       ?? new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+    var reviewerUsers = ViewBag.ReviewerEligibleUsersForCreate as List<JobPortal.Models.ApplicationUser>
+                        ?? new List<JobPortal.Models.ApplicationUser>();
 }
 
 <div class="container py-5">
@@ -15,6 +19,8 @@
                     <form asp-controller="Admin" asp-action="Create" method="post">
                         <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
+                        <h5 class="fw-bold text-muted text-uppercase mb-3" style="font-size: 0.8rem; letter-spacing: 0.05em;">Basic Info</h5>
+
                         <div class="mb-3">
                             <label asp-for="Title" class="form-label fw-bold">Job Title *</label>
                             <input asp-for="Title" class="form-control form-control-lg" placeholder="e.g., Senior Software Engineer" />
@@ -22,15 +28,43 @@
                         </div>
 
                         <div class="mb-3">
-                            <label asp-for="Description" class="form-label fw-bold">Job Description *</label>
+                            <label asp-for="Description" class="form-label fw-bold">Job Description</label>
                             <textarea asp-for="Description" class="form-control" rows="6" placeholder="Describe the job responsibilities, requirements, and benefits"></textarea>
                             <span asp-validation-for="Description" class="text-danger small"></span>
                         </div>
+
+                        <hr class="my-4" />
+                        <h5 class="fw-bold text-muted text-uppercase mb-3" style="font-size: 0.8rem; letter-spacing: 0.05em;">Evaluation</h5>
 
                         <div class="mb-3">
                             <label asp-for="ScorecardTemplateId" class="form-label fw-bold">Scorecard Template</label>
                             <select asp-for="ScorecardTemplateId" asp-items="ViewBag.ScorecardTemplates" class="form-select"></select>
                             <span asp-validation-for="ScorecardTemplateId" class="text-danger small"></span>
+                        </div>
+
+                        <hr class="my-4" />
+                        <h5 class="fw-bold text-muted text-uppercase mb-3" style="font-size: 0.8rem; letter-spacing: 0.05em;">Ownership</h5>
+
+                        <div class="mb-3">
+                            <label asp-for="OwnerUserId" class="form-label fw-bold">Primary Recruiter</label>
+                            <select asp-for="OwnerUserId" asp-items="@ownerOptions" class="form-select"></select>
+                            <span asp-validation-for="OwnerUserId" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Reviewers</label>
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach (var user in reviewerUsers)
+                                {
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox"
+                                               name="ReviewerUserIds" value="@user.Id"
+                                               id="reviewer-create-@user.Id"
+                                               @(Model.ReviewerUserIds.Contains(user.Id) ? "checked" : "") />
+                                        <label class="form-check-label" for="reviewer-create-@user.Id">@user.FullName</label>
+                                    </div>
+                                }
+                            </div>
                         </div>
 
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
