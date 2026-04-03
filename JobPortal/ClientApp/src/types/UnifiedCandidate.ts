@@ -10,6 +10,8 @@ export interface UnifiedCandidate {
   email: string;
   /** Full name from the most recent application. */
   name: string;
+  /** Application ID used for navigation links (most recent application). */
+  primaryApplicationId: number;
   /** All application IDs associated with this email. */
   applicationIds: number[];
   /** Count of applications that are NOT in a terminal stage (Rejected / Hired). */

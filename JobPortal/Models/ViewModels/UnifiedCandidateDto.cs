@@ -13,6 +13,9 @@ namespace JobPortal.Models.ViewModels
         /// <summary>Full name from the most recent application.</summary>
         public string Name { get; set; } = string.Empty;
 
+        /// <summary>Application ID used for navigation links (most recent application).</summary>
+        public int PrimaryApplicationId { get; set; }
+
         /// <summary>All application IDs associated with this email.</summary>
         public List<int> ApplicationIds { get; set; } = new();
 

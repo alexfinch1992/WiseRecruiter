@@ -46,9 +46,9 @@ namespace JobPortal.Services.Implementations
             {
                 job.Applications = sort switch
                 {
-                    "name" => job.Applications.OrderBy(a => a.Name).ToList(),
+                    "name" => job.Applications.OrderBy(a => a.Candidate?.LastName).ThenBy(a => a.Candidate?.FirstName).ToList(),
                     "date" => job.Applications.OrderByDescending(a => a.AppliedDate).ToList(),
-                    _ => job.Applications.OrderBy(a => a.CurrentStage?.Order ?? 0).ThenBy(a => a.Name).ToList()
+                    _ => job.Applications.OrderBy(a => a.CurrentStage?.Order ?? 0).ThenBy(a => a.Candidate?.LastName).ThenBy(a => a.Candidate?.FirstName).ToList()
                 };
             }
 
