@@ -108,7 +108,7 @@
             </div>
         </div>
         <div class="col-md-4 text-end">
-            <a asp-action="Index" class="btn btn-outline-primary"><i class="fas fa-arrow-left me-2"></i>Back to Jobs</a>
+            <a asp-controller="Admin" asp-action="Index" class="btn btn-outline-primary"><i class="fas fa-arrow-left me-2"></i>Back to Jobs</a>
         </div>
     </div>
 
@@ -125,6 +125,7 @@
                     <div class="btn-group" role="group">
                         <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-sm btn-outline-warning"><i class="fas fa-edit me-1"></i>Edit</a>
                         <a asp-controller="Job" asp-action="Delete" asp-route-id="@Model.Id" asp-route-returnUrl="@Url.Action("Index", "Admin")" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash me-1"></i>Delete</a>
+                        <a asp-controller="Admin" asp-action="AddCandidate" asp-route-jobId="@Model.Id" class="btn btn-sm btn-outline-primary"><i class="fas fa-user-plus me-1"></i>Add Candidate</a>
                         @if (ViewBag.HasApplicantsToReview == true)
                         {
                             <a asp-action="ResumeReview" asp-route-jobId="@Model.Id" class="btn btn-outline-primary">
@@ -274,7 +275,8 @@
     @if (Model.Applications?.Any() == true)
     {
         <div class="mb-4">
-            <form asp-action="JobDetailSearch" asp-route-id="@Model.Id" method="get" class="d-flex gap-2 mb-3" id="jobSearchForm">
+            <form action="/Admin/JobDetailSearch" method="get" class="d-flex gap-2 mb-3" id="jobSearchForm">
+                <input type="hidden" name="id" value="@Model.Id" />
                 <div class="flex-grow-1 position-relative">
                     <input type="text" name="searchQuery" class="form-control" 
                            id="jobSearchInput"
@@ -307,13 +309,13 @@
             }
 
             <div class="btn-group" role="group">
-                <a href="@Url.Action("JobDetailSearch", new { id = Model.Id, searchQuery = ViewData["SearchQuery"], sort = "name" })" class="btn btn-sm btn-outline-secondary">
+                <a href="/Admin/JobDetailSearch?id=@Model.Id&searchQuery=@(Uri.EscapeDataString(ViewData["SearchQuery"]?.ToString() ?? ""))&sort=name" class="btn btn-sm btn-outline-secondary">
                     <i class="fas fa-sort-alpha-down me-1"></i>Sort by Name
                 </a>
-                <a href="@Url.Action("JobDetailSearch", new { id = Model.Id, searchQuery = ViewData["SearchQuery"], sort = "stage" })" class="btn btn-sm btn-outline-secondary">
+                <a href="/Admin/JobDetailSearch?id=@Model.Id&searchQuery=@(Uri.EscapeDataString(ViewData["SearchQuery"]?.ToString() ?? ""))&sort=stage" class="btn btn-sm btn-outline-secondary">
                     <i class="fas fa-filter me-1"></i>Sort by Stage
                 </a>
-                <a href="@Url.Action("JobDetailSearch", new { id = Model.Id, searchQuery = ViewData["SearchQuery"], sort = "date" })" class="btn btn-sm btn-outline-secondary">
+                <a href="/Admin/JobDetailSearch?id=@Model.Id&searchQuery=@(Uri.EscapeDataString(ViewData["SearchQuery"]?.ToString() ?? ""))&sort=date" class="btn btn-sm btn-outline-secondary">
                     <i class="fas fa-calendar me-1"></i>Sort by Date
                 </a>
             </div>
@@ -337,11 +339,18 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var app in Model.Applications)
+                        @{
+                            var appList = (Model.Applications ?? Enumerable.Empty<Application>())
+                                .OrderBy(a => a.AppliedDate)
+                                .ToList();
+                            var appIds = string.Join(",", appList.Select(a => a.Id));
+                        }
+                        @for (var appIdx = 0; appIdx < appList.Count; appIdx++)
                         {
+                            var app = appList[appIdx];
                             <tr>
                                 <td>
-                                    <a asp-controller="Admin" asp-action="CandidateDetails" asp-route-id="@app.Id" style="color: #1E1765; text-decoration: none;">
+                                    <a href="@Url.Action("CandidateDetails", "Admin", new { id = app.Id, ids = appIds, idx = appIdx })" style="color: #1E1765; text-decoration: none;">
                                         <strong>@app.Name</strong>
                                     </a>
                                 </td>
@@ -356,18 +365,43 @@
                                 </td>
                                 <td class="text-center">
                                     @{
-                                        var _stageName = app.CurrentJobStageId != null
-                                            ? Model.Stages?.FirstOrDefault(s => s.Id == app.CurrentJobStageId)?.Name
-                                            : null;
+                                        string? _stageBadgeClass = null;
+                                        string? _stageBadgeStyle = null;
+                                        string _stageLabel;
+
+                                        if (app.Stage == ApplicationStage.Hired)
+                                        {
+                                            _stageBadgeClass = "badge bg-success";
+                                            _stageLabel = "Hired";
+                                        }
+                                        else if (app.Stage == ApplicationStage.Rejected)
+                                        {
+                                            _stageBadgeClass = "badge bg-danger";
+                                            _stageLabel = "Rejected";
+                                        }
+                                        else if (app.Stage == ApplicationStage.Offer)
+                                        {
+                                            _stageBadgeClass = "badge bg-warning text-dark";
+                                            _stageLabel = "Offer";
+                                        }
+                                        else
+                                        {
+                                            var _customName = app.CurrentJobStageId != null
+                                                ? Model.Stages?.FirstOrDefault(s => s.Id == app.CurrentJobStageId)?.Name
+                                                : null;
+                                            if (_customName != null)
+                                            {
+                                                _stageBadgeClass = "badge bg-primary";
+                                                _stageLabel = _customName;
+                                            }
+                                            else
+                                            {
+                                                _stageBadgeStyle = "background-color: #7B3FF2;";
+                                                _stageLabel = app.Stage.ToString();
+                                            }
+                                        }
                                     }
-                                    @if (_stageName != null)
-                                    {
-                                        <span class="badge bg-primary">@_stageName</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge" style="background-color: #7B3FF2;">@app.Stage</span>
-                                    }
+                                    <span class="@(_stageBadgeClass ?? "badge")" style="@(_stageBadgeStyle ?? "")">@_stageLabel</span>
                                 </td>
                                 <td class="text-center">
                                     @{
@@ -626,7 +660,7 @@ document.getElementById('jobSearchInput')?.addEventListener('input', async funct
     }
     
     try {
-        const response = await fetch(`@Url.Action("JobDetailSearchApi", "Admin")?id=@Model.Id&searchQuery=${encodeURIComponent(searchQuery)}`);
+        const response = await fetch(`/Admin/JobDetailSearchApi?id=@Model.Id&searchQuery=${encodeURIComponent(searchQuery)}`);
         const results = await response.json();
         
         if (results.length === 0) {

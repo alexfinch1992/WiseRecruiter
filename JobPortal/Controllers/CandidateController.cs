@@ -22,7 +22,7 @@ public class CandidateController : Controller
     }
 
     // Route: /Candidate/CandidateDetails  (AdminController still owns /Admin/CandidateDetails)
-    public async Task<IActionResult> CandidateDetails(int? id)
+    public async Task<IActionResult> CandidateDetails(int? id, string? ids = null, int? idx = null)
     {
         if (id == null)
             return NotFound();
@@ -32,12 +32,33 @@ public class CandidateController : Controller
         {
             var viewModel = await _candidateDetailsService.GetCandidateDetailsAsync(id.Value, User, stageApprovalWarnAppId);
             if (viewModel == null) return NotFound();
+            SetCandidateNavigation(ids, idx);
             return View("~/Views/Admin/CandidateDetails.cshtml", viewModel);
         }
         catch (CandidateAccessForbiddenException)
         {
             return Forbid();
         }
+    }
+
+    private void SetCandidateNavigation(string? ids, int? idx)
+    {
+        if (string.IsNullOrEmpty(ids) || !idx.HasValue) return;
+
+        var idList = new List<int>();
+        foreach (var s in ids.Split(','))
+            if (int.TryParse(s.Trim(), out var v)) idList.Add(v);
+
+        var i = idx.Value;
+        if (i < 0 || i >= idList.Count) return;
+
+        ViewBag.NavIds = ids;
+        ViewBag.NavIdx = i;
+        ViewBag.NavTotal = idList.Count;
+        ViewBag.NavPrevId = i > 0 ? idList[i - 1] : (int?)null;
+        ViewBag.NavPrevIdx = i > 0 ? i - 1 : (int?)null;
+        ViewBag.NavNextId = i < idList.Count - 1 ? idList[i + 1] : (int?)null;
+        ViewBag.NavNextIdx = i < idList.Count - 1 ? i + 1 : (int?)null;
     }
 
     // Preserve existing route /Admin/WriteRecommendation

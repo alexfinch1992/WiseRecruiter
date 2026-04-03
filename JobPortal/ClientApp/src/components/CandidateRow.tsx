@@ -4,6 +4,8 @@ import { StageBadge } from './StageBadge';
 
 interface CandidateRowProps {
   candidate: UnifiedCandidate;
+  ids?: number[];
+  idx?: number;
 }
 
 
@@ -15,16 +17,16 @@ function formatAppliedDate(isoDate: string): string {
   });
 }
 
-export function CandidateRow({ candidate: c }: CandidateRowProps) {
-  // Link to the most recent application (first ID in the ordered list)
-  const primaryId = c.applicationIds[0];
+export function CandidateRow({ candidate: c, ids, idx }: CandidateRowProps) {
+  const primaryId = c.primaryApplicationId;
+  const navQuery = ids && idx != null ? `?ids=${ids.join(',')}&idx=${idx}` : '';
 
   return (
     <tr>
       {/* Candidate name + email */}
       <td className="ps-4 py-3">
         <a
-          href={`/Admin/CandidateDetails/${primaryId}`}
+          href={`/Admin/CandidateDetails/${primaryId}${navQuery}`}
           className="fw-semibold text-decoration-none"
           style={{ color: '#1E1765' }}
         >
@@ -55,7 +57,7 @@ export function CandidateRow({ candidate: c }: CandidateRowProps) {
       {/* Actions */}
       <td className="py-3">
         <a
-          href={`/Admin/CandidateDetails/${primaryId}`}
+          href={`/Admin/CandidateDetails/${primaryId}${navQuery}`}
           className="btn btn-sm btn-outline-primary"
         >
           <i className="fas fa-eye me-1" />

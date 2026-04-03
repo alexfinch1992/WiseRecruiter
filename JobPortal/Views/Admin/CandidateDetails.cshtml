@@ -3,14 +3,56 @@
 
 @{
     ViewData["Title"] = $"{Model.Name} - Candidate Profile";
+    var navIds = ViewBag.NavIds as string;
+    var navIdx = ViewBag.NavIdx as int?;
+    var navTotal = ViewBag.NavTotal as int?;
+    var navPrevId = ViewBag.NavPrevId as int?;
+    var navPrevIdx = ViewBag.NavPrevIdx as int?;
+    var navNextId = ViewBag.NavNextId as int?;
+    var navNextIdx = ViewBag.NavNextIdx as int?;
+    var hasNav = navIds != null && navIdx.HasValue;
 }
 
 <div class="container-fluid py-5">
     <div class="row mb-4">
         <div class="col-12">
-            <a asp-action="JobDetail" asp-controller="Admin" asp-route-id="@Model.JobId" class="btn btn-outline-secondary mb-3">
-                <i class="fas fa-arrow-left me-2"></i>Back
-            </a>
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <a asp-action="JobDetail" asp-controller="Admin" asp-route-id="@Model.JobId" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back
+                </a>
+                @if (hasNav)
+                {
+                    <div class="d-flex align-items-center gap-1 ms-auto">
+                        @if (navPrevId.HasValue)
+                        {
+                            <a href="@Url.Action("CandidateDetails", new { id = navPrevId.Value, ids = navIds, idx = navPrevIdx!.Value })"
+                               class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-chevron-left me-1"></i>Previous
+                            </a>
+                        }
+                        else
+                        {
+                            <button class="btn btn-outline-secondary btn-sm" disabled>
+                                <i class="fas fa-chevron-left me-1"></i>Previous
+                            </button>
+                        }
+                        <span class="text-muted small mx-2">@(navIdx!.Value + 1) of @navTotal</span>
+                        @if (navNextId.HasValue)
+                        {
+                            <a href="@Url.Action("CandidateDetails", new { id = navNextId.Value, ids = navIds, idx = navNextIdx!.Value })"
+                               class="btn btn-outline-primary btn-sm">
+                                Next<i class="fas fa-chevron-right ms-1"></i>
+                            </a>
+                        }
+                        else
+                        {
+                            <button class="btn btn-outline-secondary btn-sm" disabled>
+                                Next<i class="fas fa-chevron-right ms-1"></i>
+                            </button>
+                        }
+                    </div>
+                }
+            </div>
             <h1 class="fw-bold mb-2" style="color: #1E1765;">
                 <i class="fas fa-user-circle me-3"></i>@Model.Name
             </h1>
@@ -485,9 +527,14 @@
                                 </thead>
                                 <tbody>
                                     @{
-                                        var stageName = Model.CurrentJobStageId != null
-                                            ? (Model.JobStages.FirstOrDefault(s => s.Id == Model.CurrentJobStageId)?.Name ?? Model.ApplicationStage.ToString())
-                                            : Model.ApplicationStage.ToString();
+                                        var isTerminalStage = Model.ApplicationStage == ApplicationStage.Hired
+                                            || Model.ApplicationStage == ApplicationStage.Rejected
+                                            || Model.ApplicationStage == ApplicationStage.Offer;
+                                        var stageName = isTerminalStage
+                                            ? Model.ApplicationStage.ToString()
+                                            : Model.CurrentJobStageId != null
+                                                ? (Model.JobStages.FirstOrDefault(s => s.Id == Model.CurrentJobStageId)?.Name ?? Model.ApplicationStage.ToString())
+                                                : Model.ApplicationStage.ToString();
                                     }
                                     @foreach (var interview in Model.Interviews)
                                     {
@@ -685,8 +732,16 @@
                     <div class="mb-4">
                         <small class="fw-bold text-muted">CURRENT STAGE</small>
                         <p class="lead">
+                            @{
+                                var sidebarIsTerminal = Model.ApplicationStage == ApplicationStage.Hired
+                                    || Model.ApplicationStage == ApplicationStage.Rejected
+                                    || Model.ApplicationStage == ApplicationStage.Offer;
+                                var sidebarStage = sidebarIsTerminal
+                                    ? Model.ApplicationStage.ToString()
+                                    : Model.CurrentStageName;
+                            }
                             <span class="badge stage-badge" style="background: #7B3FF2; font-size: 0.9rem;">
-                                @Model.CurrentStageName
+                                @sidebarStage
                             </span>
                         </p>
                     </div>

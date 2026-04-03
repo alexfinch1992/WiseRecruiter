@@ -1,0 +1,70 @@
+@model JobPortal.Models.ViewModels.AddCandidateVm
+
+@{
+    ViewData["Title"] = "Add Candidate";
+}
+
+<div class="container py-5" style="max-width: 680px;">
+    <div class="mb-4">
+        <a asp-controller="Admin" asp-action="JobDetail" asp-route-id="@Model.JobId" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Job
+        </a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
+            <h5 class="text-white fw-bold mb-0">
+                <i class="fas fa-user-plus me-2"></i>Add Candidate
+            </h5>
+            @if (!string.IsNullOrEmpty(Model.JobTitle))
+            {
+                <small class="text-white-50">to @Model.JobTitle</small>
+            }
+        </div>
+        <div class="card-body p-4">
+            <form asp-action="AddCandidate" method="post" enctype="multipart/form-data">
+                <input type="hidden" asp-for="JobId" />
+                <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label asp-for="FirstName" class="form-label fw-semibold">First Name <span class="text-danger">*</span></label>
+                        <input asp-for="FirstName" class="form-control" placeholder="e.g. Jane" />
+                        <span asp-validation-for="FirstName" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="LastName" class="form-label fw-semibold">Last Name <span class="text-danger">*</span></label>
+                        <input asp-for="LastName" class="form-control" placeholder="e.g. Smith" />
+                        <span asp-validation-for="LastName" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Email" class="form-label fw-semibold">Email <span class="text-danger">*</span></label>
+                    <input asp-for="Email" class="form-control" type="email" placeholder="jane.smith@@example.com" />
+                    <span asp-validation-for="Email" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="City" class="form-label fw-semibold">City <span class="text-danger">*</span></label>
+                    <input asp-for="City" class="form-control" placeholder="e.g. Sydney" />
+                    <span asp-validation-for="City" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-4">
+                    <label asp-for="Resume" class="form-label fw-semibold">Resume</label>
+                    <input asp-for="Resume" class="form-control" type="file" accept=".pdf,.docx,.txt" />
+                    <span asp-validation-for="Resume" class="text-danger small"></span>
+                    <small class="form-text text-muted">PDF, DOCX, or TXT — max 5 MB</small>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%); border: none;">
+                        <i class="fas fa-user-plus me-2"></i>Add Candidate
+                    </button>
+                    <a asp-controller="Admin" asp-action="JobDetail" asp-route-id="@Model.JobId" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

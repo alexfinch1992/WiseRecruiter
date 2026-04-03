@@ -67,27 +67,9 @@ namespace JobPortal.Services.Implementations
                     throw new InvalidOperationException("Application references an invalid candidate.");
             }
 
-            // Auto-assign to first stage if not specified
-            if (application.CurrentJobStageId == null)
-            {
-                var firstStage = await _context.JobStages
-                    .Where(s => s.JobId == application.JobId)
-                    .OrderBy(s => s.Order)
-                    .FirstOrDefaultAsync();
-
-                if (firstStage == null)
-                    throw new InvalidOperationException("Application cannot be created without a valid stage.");
-
-                application.CurrentJobStageId = firstStage.Id;
-            }
-            else
-            {
-                var selectedStageExists = await _context.JobStages.AnyAsync(
-                    s => s.Id == application.CurrentJobStageId && s.JobId == application.JobId);
-
-                if (!selectedStageExists)
-                    throw new InvalidOperationException("Application stage is invalid for the selected job.");
-            }
+            // New applications start with no custom stage; the display layer
+            // falls back to Application.Stage (Applied) when this is null.
+            application.CurrentJobStageId = null;
 
             _context.Applications.Add(application);
             await _context.SaveChangesAsync();

@@ -121,8 +121,13 @@ export function CandidateDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((c) => (
-                  <CandidateRow key={c.applicationId} candidate={c} />
+                {filtered.map((c, rowIndex) => (
+                  <CandidateRow
+                    key={c.primaryApplicationId}
+                    candidate={c}
+                    ids={filtered.map((f) => f.primaryApplicationId)}
+                    idx={rowIndex}
+                  />
                 ))}
               </tbody>
             </table>
