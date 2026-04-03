@@ -25,5 +25,7 @@ namespace JobPortal.Models
 
         public string? OwnerUserId { get; set; }
         public ApplicationUser? OwnerUser { get; set; }
+
+        public ICollection<JobUser>? JobUsers { get; set; }
     }
 }

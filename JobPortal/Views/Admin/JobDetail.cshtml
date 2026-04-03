@@ -62,10 +62,53 @@
                     <span class="text-muted fst-italic">Unassigned</span>
                 }
             </div>
+            @{
+                var eligibleUsers = ViewBag.ReviewerEligibleUsers as List<JobPortal.Models.ApplicationUser>
+                                    ?? new List<JobPortal.Models.ApplicationUser>();
+                var reviewerUserIds = (Model.JobUsers ?? new List<JobPortal.Models.JobUser>())
+                    .Where(x => x.Role == "Reviewer")
+                    .Select(x => x.UserId)
+                    .ToHashSet();
+            }
+            @if (User.IsInRole("Admin") && eligibleUsers.Any())
+            {
+                <div class="mt-3">
+                    <span class="text-muted fw-semibold"><i class="fas fa-user-check me-1"></i>Reviewers:</span>
+                    <div class="d-flex flex-wrap gap-2 mt-1">
+                        @foreach (var user in eligibleUsers)
+                        {
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input reviewer-toggle"
+                                       type="checkbox"
+                                       id="reviewer-@user.Id"
+                                       data-user-id="@user.Id"
+                                       @(reviewerUserIds.Contains(user.Id) ? "checked" : "")
+                                       onchange="toggleReviewer('@user.Id', this)" />
+                                <label class="form-check-label" for="reviewer-@user.Id">@user.FullName</label>
+                                <span class="save-indicator" style="display:none; margin-left:8px; color:green;">Saved</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                var reviewerNames = (Model.JobUsers ?? new List<JobPortal.Models.JobUser>())
+                    .Where(x => x.Role == "Reviewer" && x.IsActive && x.User != null)
+                    .Select(x => x.User.FullName)
+                    .ToList();
+                <div class="mt-3">
+                    <span class="text-muted fw-semibold"><i class="fas fa-user-check me-1"></i>Reviewers:</span>
+                    <span class="ms-1">@(reviewerNames.Any() ? string.Join(", ", reviewerNames) : "None assigned")</span>
+                </div>
+            }
+            <div class="mt-3 d-flex align-items-center gap-2">
+                <span class="text-muted fw-semibold"><i class="fas fa-bell me-1"></i>Alerts (Notifications):</span>
+                <div id="job-alert-toggle-root" data-job-id="@Model.Id"></div>
+            </div>
         </div>
         <div class="col-md-4 text-end">
             <a asp-action="Index" class="btn btn-outline-primary"><i class="fas fa-arrow-left me-2"></i>Back to Jobs</a>
-            <div id="job-alert-toggle-root" data-job-id="@Model.Id" class="mt-2"></div>
         </div>
     </div>
 
@@ -634,5 +677,29 @@ document.addEventListener('mouseout', function(e) {
         e.target.closest('.hover-light').style.backgroundColor = 'white';
     }
 }, true);
+
+async function toggleReviewer(userId, checkbox) {
+    try {
+        const response = await fetch(`/api/jobs/@Model.Id/reviewers/${userId}`, {
+            method: 'POST'
+        });
+        if (!response.ok) {
+            alert('Failed to update reviewer');
+            checkbox.checked = !checkbox.checked;
+            return;
+        }
+        const indicator = checkbox.closest('.form-check').querySelector('.save-indicator');
+        if (indicator) {
+            indicator.style.display = 'inline';
+            setTimeout(() => {
+                indicator.style.display = 'none';
+            }, 1500);
+        }
+    } catch (error) {
+        alert('Failed to update reviewer');
+        checkbox.checked = !checkbox.checked;
+        console.error('Toggle reviewer error:', error);
+    }
+}
 </script>
 <script type="module" src="~/js/dist/job-alert-toggle.js" asp-append-version="true"></script>

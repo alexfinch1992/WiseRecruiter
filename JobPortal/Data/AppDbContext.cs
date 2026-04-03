@@ -194,7 +194,7 @@ namespace JobPortal.Data
 
             modelBuilder.Entity<JobUser>()
                 .HasOne(ju => ju.Job)
-                .WithMany()
+                .WithMany(j => j.JobUsers)
                 .HasForeignKey(ju => ju.JobId)
                 .OnDelete(DeleteBehavior.Cascade);
 

@@ -29,10 +29,13 @@
 
             <h5 class="mt-4 text-muted fw-semibold text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.05em;">People</h5>
             <div class="list-group mb-3">
+                @if (User.IsInRole("Admin"))
+                {
                 <a asp-controller="AdminSettings" asp-action="ManageTeam" class="list-group-item list-group-item-action">
                     <i class="fas fa-users-cog me-2"></i>Manage Team
                     <small class="text-muted d-block">Create users &amp; control job visibility</small>
                 </a>
+                }
             </div>
         </div>
     </div>
