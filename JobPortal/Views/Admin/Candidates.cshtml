@@ -97,31 +97,30 @@
                                 {
                                     <tr>
                                         <td>
-                                            <a href="@Url.Action("CandidateDetails", "Admin", new { id = app.Id })" style="color: #1E1765; text-decoration: none;">
+                                            <a href="@Url.Action("CandidateDetails", "Admin", new { id = app.ApplicationId })" style="color: #1E1765; text-decoration: none;">
                                                 <strong>@app.Name</strong>
                                             </a>
                                         </td>
                                         <td><a href="mailto:@app.Email">@app.Email</a></td>
-                                        <td>@(app.Job?.Title ?? "N/A")</td>
+                                        <td>@app.JobTitle</td>
                                         <td><span class="badge badge-primary">@(app.City ?? "Not specified")</span></td>
                                         <td><small class="text-muted">@app.AppliedDate.ToString("MMM dd, yyyy")</small></td>
                                         <td class="text-center">
                                             @{
                                                 var stageBadge = app.Stage switch
                                                 {
-                                                    ApplicationStage.Hired => "badge bg-success",
-                                                    ApplicationStage.Rejected => "badge bg-danger",
-                                                    ApplicationStage.Offer => "badge bg-warning text-dark",
+                                                    "Hired" => "badge bg-success",
+                                                    "Rejected" => "badge bg-danger",
+                                                    "Offer" => "badge bg-warning text-dark",
                                                     _ => "badge"
                                                 };
                                                 var stageStyle = app.Stage switch
                                                 {
-                                                    ApplicationStage.Hired or ApplicationStage.Rejected or ApplicationStage.Offer => "",
+                                                    "Hired" or "Rejected" or "Offer" => "",
                                                     _ => "background-color: #7B3FF2;"
                                                 };
-                                                var stageLabel = app.CurrentStage?.Name ?? app.Stage.ToString();
                                             }
-                                            <span class="@stageBadge" style="@stageStyle">@stageLabel</span>
+                                            <span class="@stageBadge" style="@stageStyle">@app.Stage</span>
                                         </td>
                                     </tr>
                                 }

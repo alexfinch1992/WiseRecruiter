@@ -26,9 +26,6 @@ namespace JobPortal.Services.Implementations
         public async Task<CandidateSearchResultViewModel> SearchAsync(CandidateSearchParams p)
         {
             IQueryable<Application> query = _context.Applications
-                .Include(a => a.Job)
-                .Include(a => a.Candidate)
-                .Include(a => a.CurrentStage)
                 .Where(a => a.Candidate == null || !a.Candidate.IsArchived);
 
             // Apply search (name/email)
@@ -79,25 +76,38 @@ namespace JobPortal.Services.Implementations
                 .OrderByDescending(x => x.Count)
                 .ToListAsync();
 
+            // Project to DTO
+            var projected = query.Select(a => new CandidateListItemDto
+            {
+                ApplicationId = a.Id,
+                Name = a.Name,
+                Email = a.Email,
+                City = a.City,
+                Stage = a.Stage.ToString(),
+                JobId = a.JobId,
+                JobTitle = a.Job.Title,
+                AppliedDate = a.AppliedDate
+            });
+
             // Apply sort
             var ascending = string.Equals(p.Dir, "asc", StringComparison.OrdinalIgnoreCase);
-            query = p.Sort?.ToLowerInvariant() switch
+            projected = p.Sort?.ToLowerInvariant() switch
             {
                 "name" => ascending
-                    ? query.OrderBy(a => a.Name)
-                    : query.OrderByDescending(a => a.Name),
+                    ? projected.OrderBy(a => a.Name)
+                    : projected.OrderByDescending(a => a.Name),
                 "stage" => ascending
-                    ? query.OrderBy(a => a.Stage)
-                    : query.OrderByDescending(a => a.Stage),
+                    ? projected.OrderBy(a => a.Stage)
+                    : projected.OrderByDescending(a => a.Stage),
                 _ => ascending
-                    ? query.OrderBy(a => a.AppliedDate)
-                    : query.OrderByDescending(a => a.AppliedDate),
+                    ? projected.OrderBy(a => a.AppliedDate)
+                    : projected.OrderByDescending(a => a.AppliedDate),
             };
 
             // Apply pagination (Skip/Take)
             var pageSize = Math.Clamp(p.PageSize, 1, 100);
             var page = Math.Max(1, p.Page);
-            var applications = await query
+            var applications = await projected
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -112,14 +122,6 @@ namespace JobPortal.Services.Implementations
                 JobFacets = jobFacets,
                 Params = p
             };
-        }
-
-        public async Task<List<Job>> GetApplicationsForJobsAsync()
-        {
-            return await _context.Jobs
-                .Include(j => j.Applications)
-                .OrderByDescending(j => j.Id)
-                .ToListAsync();
         }
 
         public async Task<List<Application>> GetCandidatesAsync(string? search)

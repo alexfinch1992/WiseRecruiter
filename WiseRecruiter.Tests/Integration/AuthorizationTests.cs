@@ -71,7 +71,7 @@ namespace WiseRecruiter.Tests.Integration
         {
             // Arrange
             var adminControllerType = typeof(AdminController);
-            var publicMethods = new[] { "Index", "JobDetail", "Create", "Edit", "Delete", "Applications" };
+            var publicMethods = new[] { "Index", "JobDetail", "Create", "Edit", "Delete" };
 
             // Act
             foreach (var methodName in publicMethods)

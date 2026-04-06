@@ -20,13 +20,6 @@ namespace JobPortal.Controllers
             _jobService = jobService ?? throw new ArgumentNullException(nameof(jobService));
         }
 
-        [HttpGet("Applications")]
-        public async Task<IActionResult> Applications()
-        {
-            var jobs = await _candidateQueryService.GetApplicationsForJobsAsync();
-            return View("~/Views/Admin/Applications.cshtml", jobs);
-        }
-
         [HttpGet("JobDetailSearch")]
         [Obsolete("Use AdminController.JobDetail instead — unified sort/search/pagination.")]
         public IActionResult JobDetailSearch(int? id, string? searchQuery, string? sort = "stage", string? dir = "desc")
