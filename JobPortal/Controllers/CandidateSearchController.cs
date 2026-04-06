@@ -28,19 +28,10 @@ namespace JobPortal.Controllers
         }
 
         [HttpGet("JobDetailSearch")]
-        public async Task<IActionResult> JobDetailSearch(int? id, string? searchQuery, string? sort = "stage", string? dir = "desc")
+        [Obsolete("Use AdminController.JobDetail instead — unified sort/search/pagination.")]
+        public IActionResult JobDetailSearch(int? id, string? searchQuery, string? sort = "stage", string? dir = "desc")
         {
-            if (id == null)
-                return NotFound();
-
-            var job = await _candidateQueryService.GetJobDetailSearchAsync(id.Value, searchQuery, sort, dir);
-            if (job == null)
-                return NotFound();
-
-            ViewData["SearchQuery"] = searchQuery;
-            ViewBag.HasApplicantsToReview = job.Applications?.Any(a => a.Stage == ApplicationStage.Applied) ?? false;
-            ViewBag.StageSummary = _jobService.GetStageSummary(job);
-            return View("~/Views/Admin/JobDetail.cshtml", job);
+            return RedirectToAction("JobDetail", "Admin", new { id, searchQuery, sort, dir });
         }
 
         [HttpGet("Candidates")]
