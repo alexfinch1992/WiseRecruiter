@@ -55,11 +55,11 @@ namespace WiseRecruiter.Tests.Unit.Services
             var result = await service.CreateApplicationAsync(application);
 
             // Assert
-            result.CurrentJobStageId.Should().Be(stage1.Id);
+            result.CurrentJobStageId.Should().BeNull("new applications start with no custom stage");
             result.CandidateId.Should().BeGreaterThan(0);
             context.Candidates.Any(c => c.Id == result.CandidateId).Should().BeTrue();
             context.Applications.Should().HaveCount(1);
-            context.Applications.First().CurrentJobStageId.Should().Be(stage1.Id);
+            context.Applications.First().CurrentJobStageId.Should().BeNull();
         }
 
         [Fact]
@@ -92,7 +92,7 @@ namespace WiseRecruiter.Tests.Unit.Services
             var result = await service.CreateApplicationAsync(application);
 
             // Assert
-            result.CurrentJobStageId.Should().Be(stage2.Id);
+            result.CurrentJobStageId.Should().BeNull("CreateApplicationAsync always starts with null stage");
             result.CandidateId.Should().BeGreaterThan(0);
             context.Candidates.Any(c => c.Id == result.CandidateId).Should().BeTrue();
         }

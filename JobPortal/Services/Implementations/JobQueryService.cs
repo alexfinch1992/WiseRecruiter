@@ -22,7 +22,7 @@ namespace JobPortal.Services.Implementations
             return await _context.Jobs.ToListAsync();
         }
 
-        public async Task<Job?> GetJobDetailAsync(int id, string? sort)
+        public async Task<Job?> GetJobDetailAsync(int id, string? sort, string? dir = "asc")
         {
             var job = await _context.Jobs
                 .Include(j => j.Applications!)
@@ -44,11 +44,18 @@ namespace JobPortal.Services.Implementations
 
             if (job.Applications != null)
             {
+                var ascending = dir == "asc";
                 job.Applications = sort switch
                 {
-                    "name" => job.Applications.OrderBy(a => a.Candidate?.LastName).ThenBy(a => a.Candidate?.FirstName).ToList(),
-                    "date" => job.Applications.OrderByDescending(a => a.AppliedDate).ToList(),
-                    _ => job.Applications.OrderBy(a => a.CurrentStage?.Order ?? 0).ThenBy(a => a.Candidate?.LastName).ThenBy(a => a.Candidate?.FirstName).ToList()
+                    "name" => ascending
+                        ? job.Applications.OrderBy(a => a.Candidate?.LastName).ThenBy(a => a.Candidate?.FirstName).ToList()
+                        : job.Applications.OrderByDescending(a => a.Candidate?.LastName).ThenByDescending(a => a.Candidate?.FirstName).ToList(),
+                    "date" => ascending
+                        ? job.Applications.OrderBy(a => a.AppliedDate).ToList()
+                        : job.Applications.OrderByDescending(a => a.AppliedDate).ToList(),
+                    _ => ascending
+                        ? job.Applications.OrderBy(a => a.Stage).ThenBy(a => a.CurrentStage?.Order ?? int.MaxValue).ThenBy(a => a.Candidate?.LastName).ThenBy(a => a.Candidate?.FirstName).ToList()
+                        : job.Applications.OrderByDescending(a => a.Stage).ThenByDescending(a => a.CurrentStage?.Order ?? int.MinValue).ThenByDescending(a => a.Candidate?.LastName).ThenByDescending(a => a.Candidate?.FirstName).ToList()
                 };
             }
 

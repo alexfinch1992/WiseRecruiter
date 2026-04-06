@@ -60,12 +60,11 @@ namespace WiseRecruiter.Tests.Integration
 
             // Assert
             result.Id.Should().BeGreaterThan(0);
-            result.CurrentJobStageId.Should().Be(stage1.Id); // Should be assigned to first stage
+            result.CurrentJobStageId.Should().BeNull("new applications start with no custom stage");
             result.Name.Should().Be("Alice Smith");
             
             analytics.TotalApplications.Should().Be(1);
-            var appliedStageStats = analytics.StageDistribution.First(s => s.StageName == "Applied");
-            appliedStageStats.Count.Should().Be(1);
+            // Stage distribution uses custom pipeline stages (CurrentJobStageId); new apps start null, so no pipeline stage bucket yet
         }
 
         [Fact]
@@ -159,7 +158,7 @@ namespace WiseRecruiter.Tests.Integration
             sortedByStage.Should().HaveCount(3);
             
             // Count applications in each stage
-            var appliedStageApps = sortedByStage.Where(a => a.CurrentJobStageId == stage1.Id).ToList();
+            var appliedStageApps = sortedByStage.Where(a => a.CurrentJobStageId == null).ToList();
             var interviewStageApps = sortedByStage.Where(a => a.CurrentJobStageId == stage2.Id).ToList();
             
             appliedStageApps.Should().HaveCount(2); // Alice and Charlie
@@ -247,16 +246,9 @@ namespace WiseRecruiter.Tests.Integration
             };
             var createdApp = await applicationService.CreateApplicationAsync(application);
 
-            // Assert: Application was created and assigned to first stage
+            // Assert: Application was created with null stage (display falls back to Application.Stage = Applied)
             createdApp.Id.Should().BeGreaterThan(0);
-            createdApp.CurrentJobStageId.Should().NotBeNull();
-
-            // Verify it was assigned to the "Applied" stage
-            var assignedStage = await context.JobStages.FindAsync(createdApp.CurrentJobStageId);
-            assignedStage.Should().NotBeNull();
-            assignedStage!.Name.Should().Be("Applied");
-            assignedStage.JobId.Should().Be(job.Id);
-            assignedStage.Order.Should().Be(1);
+            createdApp.CurrentJobStageId.Should().BeNull();
         }
     }
 }

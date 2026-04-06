@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using JobPortal.Data;
 using JobPortal.Models;
+using JobPortal.Models.ViewModels;
 using JobPortal.Services.Implementations;
 using JobPortal.Services.Interfaces;
 using Microsoft.AspNetCore.Hosting;
@@ -38,10 +39,10 @@ namespace WiseRecruiter.Tests.Integration
             IScorecardTemplateService templateService = new ScorecardTemplateService(context);
             var controller = CreateAdminController(context, templateService);
 
-            var job = new Job { Title = "Engineer", ScorecardTemplateId = 999 };
+            var vm = new CreateJobViewModel { Title = "Engineer", ScorecardTemplateId = 999 };
 
             // Act
-            var result = await controller.Create(job);
+            var result = await controller.Create(vm);
 
             // Assert
             result.Should().BeOfType<ViewResult>();
@@ -59,10 +60,10 @@ namespace WiseRecruiter.Tests.Integration
             var template = await templateService.CreateTemplate("Engineering Scorecard");
             var controller = CreateAdminController(context, templateService);
 
-            var job = new Job { Title = "Engineer", ScorecardTemplateId = template.Id };
+            var vm = new CreateJobViewModel { Title = "Engineer", ScorecardTemplateId = template.Id };
 
             // Act
-            var result = await controller.Create(job);
+            var result = await controller.Create(vm);
 
             // Assert
             result.Should().BeOfType<RedirectToActionResult>();
@@ -77,10 +78,10 @@ namespace WiseRecruiter.Tests.Integration
             IScorecardTemplateService templateService = new ScorecardTemplateService(context);
             var controller = CreateAdminController(context, templateService);
 
-            var job = new Job { Title = "Engineer", ScorecardTemplateId = null };
+            var vm = new CreateJobViewModel { Title = "Engineer", ScorecardTemplateId = null };
 
             // Act
-            var result = await controller.Create(job);
+            var result = await controller.Create(vm);
 
             // Assert
             result.Should().BeOfType<RedirectToActionResult>();

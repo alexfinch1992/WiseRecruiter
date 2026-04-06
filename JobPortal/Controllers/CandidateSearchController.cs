@@ -28,12 +28,12 @@ namespace JobPortal.Controllers
         }
 
         [HttpGet("JobDetailSearch")]
-        public async Task<IActionResult> JobDetailSearch(int? id, string? searchQuery, string? sort = "stage")
+        public async Task<IActionResult> JobDetailSearch(int? id, string? searchQuery, string? sort = "stage", string? dir = "desc")
         {
             if (id == null)
                 return NotFound();
 
-            var job = await _candidateQueryService.GetJobDetailSearchAsync(id.Value, searchQuery, sort);
+            var job = await _candidateQueryService.GetJobDetailSearchAsync(id.Value, searchQuery, sort, dir);
             if (job == null)
                 return NotFound();
 
