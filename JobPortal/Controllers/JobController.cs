@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using JobPortal.Models.ViewModels;
 using JobPortal.Services.Interfaces;
 
@@ -7,11 +8,13 @@ public class JobController : Controller
 {
     private readonly IJobQueryService _jobQueryService;
     private readonly IJobCommandService _jobCommandService;
+    private readonly ILogger<JobController> _logger;
 
-    public JobController(IJobQueryService jobQueryService, IJobCommandService jobCommandService)
+    public JobController(IJobQueryService jobQueryService, IJobCommandService jobCommandService, ILogger<JobController> logger)
     {
         _jobQueryService = jobQueryService;
         _jobCommandService = jobCommandService;
+        _logger = logger;
     }
 
     public async Task<IActionResult> Index()
@@ -49,6 +52,7 @@ public class JobController : Controller
     public async Task<IActionResult> DeleteConfirmed(int id, string? returnUrl)
     {
         await _jobCommandService.DeleteJobAsync(id);
+        _logger.LogInformation("Job deleted. JobId: {JobId}", id);
 
         if (!string.IsNullOrEmpty(returnUrl))
             return Redirect(returnUrl);

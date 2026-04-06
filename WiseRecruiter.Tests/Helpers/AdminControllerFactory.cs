@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace WiseRecruiter.Tests.Helpers
@@ -89,7 +90,8 @@ namespace WiseRecruiter.Tests.Helpers
                 resumeReview,
                 new ScorecardCommandService(context, scorecardSvc),
                 new CandidateQueryService(context),
-                interviewSvc)
+                interviewSvc,
+                Mock.Of<ILogger<AdminController>>())
             {
                 ControllerContext = new ControllerContext
                 {

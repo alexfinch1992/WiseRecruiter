@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using JobPortal.Services.Interfaces;
 using JobPortal.Services.Models;
 
@@ -8,10 +9,12 @@ using JobPortal.Services.Models;
 public class InterviewController : Controller
 {
     private readonly IInterviewCommandService _interviewCommandService;
+    private readonly ILogger<InterviewController> _logger;
 
-    public InterviewController(IInterviewCommandService interviewCommandService)
+    public InterviewController(IInterviewCommandService interviewCommandService, ILogger<InterviewController> logger)
     {
         _interviewCommandService = interviewCommandService ?? throw new ArgumentNullException(nameof(interviewCommandService));
+        _logger = logger;
     }
 
     // ===== Interviews =====
@@ -26,13 +29,17 @@ public class InterviewController : Controller
             SelectedInterviewerIds, proceedWithoutApproval, bypassReason, userId);
 
         if (!result.Success)
+        {
+            _logger.LogWarning("Interview creation failed. CandidateId: {CandidateId}, Error: {Error}", candidateId, result.Error);
             return result.Error switch
             {
                 InterviewCreateError.InvalidApplication => BadRequest("Invalid application for this candidate."),
                 InterviewCreateError.InvalidInterviewer => BadRequest("One or more selected interviewers are invalid."),
                 _                                       => BadRequest()
             };
+        }
 
+        _logger.LogInformation("Interview created. CandidateId: {CandidateId}, ApplicationId: {AppId}, Stage: {Stage}", candidateId, result.ApplicationId, selectedStage);
         return RedirectToAction(nameof(AdminController.CandidateDetails), "Admin", new { id = result.ApplicationId });
     }
 
