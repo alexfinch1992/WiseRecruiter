@@ -23,6 +23,97 @@ namespace JobPortal.Services.Implementations
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
+        public async Task<CandidateSearchResultViewModel> SearchAsync(CandidateSearchParams p)
+        {
+            IQueryable<Application> query = _context.Applications
+                .Include(a => a.Job)
+                .Include(a => a.Candidate)
+                .Include(a => a.CurrentStage)
+                .Where(a => a.Candidate == null || !a.Candidate.IsArchived);
+
+            // Apply search (name/email)
+            if (!string.IsNullOrWhiteSpace(p.SearchQuery))
+            {
+                var search = p.SearchQuery.Trim();
+                query = query.Where(a =>
+                    (a.Name != null && a.Name.Contains(search)) ||
+                    (a.Email != null && a.Email.Contains(search)) ||
+                    (a.Candidate != null && a.Candidate.FirstName != null && a.Candidate.FirstName.Contains(search)) ||
+                    (a.Candidate != null && a.Candidate.LastName != null && a.Candidate.LastName.Contains(search)));
+            }
+
+            // Apply filters (jobIds, locations)
+            if (p.JobIds != null && p.JobIds.Any())
+            {
+                query = query.Where(a => p.JobIds.Contains(a.JobId));
+            }
+
+            if (p.Locations != null && p.Locations.Any())
+            {
+                query = query.Where(a =>
+                    p.Locations.Contains(a.City ?? "Not specified"));
+            }
+
+            // Compute totalCount
+            var totalCount = await query.CountAsync();
+
+            // Compute facets (GROUP BY location/job) — pre-pagination
+            var locationFacets = await query
+                .GroupBy(a => a.City ?? "Not specified")
+                .Select(g => new FacetItem
+                {
+                    Value = g.Key,
+                    Count = g.Count()
+                })
+                .OrderByDescending(x => x.Count)
+                .ToListAsync();
+
+            var jobFacets = await query
+                .GroupBy(a => new { a.JobId, Title = a.Job != null ? a.Job.Title : "Unknown" })
+                .Select(g => new FacetItem
+                {
+                    Value = g.Key.JobId.ToString(),
+                    Label = g.Key.Title,
+                    Count = g.Count()
+                })
+                .OrderByDescending(x => x.Count)
+                .ToListAsync();
+
+            // Apply sort
+            var ascending = string.Equals(p.Dir, "asc", StringComparison.OrdinalIgnoreCase);
+            query = p.Sort?.ToLowerInvariant() switch
+            {
+                "name" => ascending
+                    ? query.OrderBy(a => a.Name)
+                    : query.OrderByDescending(a => a.Name),
+                "stage" => ascending
+                    ? query.OrderBy(a => a.Stage)
+                    : query.OrderByDescending(a => a.Stage),
+                _ => ascending
+                    ? query.OrderBy(a => a.AppliedDate)
+                    : query.OrderByDescending(a => a.AppliedDate),
+            };
+
+            // Apply pagination (Skip/Take)
+            var pageSize = Math.Clamp(p.PageSize, 1, 100);
+            var page = Math.Max(1, p.Page);
+            var applications = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new CandidateSearchResultViewModel
+            {
+                Applications = applications,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize,
+                LocationFacets = locationFacets,
+                JobFacets = jobFacets,
+                Params = p
+            };
+        }
+
         public async Task<List<Job>> GetApplicationsForJobsAsync()
         {
             return await _context.Jobs

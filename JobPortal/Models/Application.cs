@@ -28,7 +28,6 @@ namespace JobPortal.Models
 
         public string? Email { get; set; }
 
-        [Required]
         public string? City { get; set; }
 
         public string? ResumePath { get; set; }

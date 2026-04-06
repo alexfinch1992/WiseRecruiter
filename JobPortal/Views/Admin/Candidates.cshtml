@@ -1,18 +1,186 @@
-﻿@{
+﻿@model JobPortal.Models.ViewModels.CandidateSearchResultViewModel
+
+@{
     ViewData["Title"] = "Candidates";
+    var totalPages = (int)Math.Ceiling(Model.TotalCount / (double)Model.PageSize);
 }
 
-@* React mount point. CandidateDashboard renders here after candidate-dashboard.js loads. *@
-@* A spinner is shown as the initial content so there is no blank flash before JS boots.  *@
-<div id="candidate-dashboard-root">
-    <div class="text-center py-5">
-        <div class="spinner-border" style="color: #7B3FF2;" role="status">
-            <span class="visually-hidden">Loading...</span>
+<div class="container-fluid py-5">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="fw-bold"><i class="fas fa-users me-3"></i>Candidates</h1>
+            <p class="text-muted">@Model.TotalCount candidate@(Model.TotalCount != 1 ? "s" : "") found</p>
         </div>
-        <p class="text-muted mt-3 small">Loading candidates...</p>
+    </div>
+
+    <div class="row">
+        <!-- React filter sidebar -->
+        <div class="col-md-3">
+            <div id="candidate-filter-root"></div>
+        </div>
+
+        <!-- Candidate list -->
+        <div class="col-md-9">
+            @if (!string.IsNullOrEmpty(Model.Params.SearchQuery) ||
+                 (Model.Params.Locations != null && Model.Params.Locations.Any()) ||
+                 (Model.Params.JobIds != null && Model.Params.JobIds.Any()))
+            {
+                <div class="alert alert-info d-flex align-items-center mb-3" role="alert">
+                    <i class="fas fa-filter me-2"></i>
+                    <span>Filters active &mdash; showing @Model.TotalCount result@(Model.TotalCount != 1 ? "s" : "")</span>
+                    <a href="@Url.Action("Candidates", "Admin")" class="btn btn-sm btn-outline-secondary ms-auto">
+                        <i class="fas fa-times me-1"></i>Clear All
+                    </a>
+                </div>
+            }
+
+            @{
+                var currentSort = Model.Params.Sort ?? "date";
+                var currentDir = Model.Params.Dir ?? "desc";
+
+                string BuildSortHref(string field)
+                {
+                    var newDir = (currentSort == field && currentDir == "asc") ? "desc" : "asc";
+                    var parts = new List<string>
+                    {
+                        $"Sort={Uri.EscapeDataString(field)}",
+                        $"Dir={Uri.EscapeDataString(newDir)}",
+                        "Page=1"
+                    };
+                    if (!string.IsNullOrEmpty(Model.Params.SearchQuery))
+                        parts.Add($"SearchQuery={Uri.EscapeDataString(Model.Params.SearchQuery)}");
+                    if (Model.Params.Locations != null)
+                        foreach (var l in Model.Params.Locations)
+                            parts.Add($"Locations={Uri.EscapeDataString(l)}");
+                    if (Model.Params.JobIds != null)
+                        foreach (var j in Model.Params.JobIds)
+                            parts.Add($"JobIds={j}");
+                    return $"/Admin/Candidates?{string.Join("&", parts)}";
+                }
+
+                string SortIcon(string field)
+                {
+                    if (currentSort != field) return "fa-sort";
+                    return currentDir == "asc" ? "fa-sort-up" : "fa-sort-down";
+                }
+            }
+
+            <div class="btn-group mb-3" role="group">
+                <a href="@BuildSortHref("name")" class="btn btn-sm @(currentSort == "name" ? "btn-secondary" : "btn-outline-secondary")">
+                    <i class="fas @SortIcon("name") me-1"></i>Name
+                </a>
+                <a href="@BuildSortHref("stage")" class="btn btn-sm @(currentSort == "stage" ? "btn-secondary" : "btn-outline-secondary")">
+                    <i class="fas @SortIcon("stage") me-1"></i>Stage
+                </a>
+                <a href="@BuildSortHref("date")" class="btn btn-sm @(currentSort == "date" ? "btn-secondary" : "btn-outline-secondary")">
+                    <i class="fas @SortIcon("date") me-1"></i>Date
+                </a>
+            </div>
+
+            @if (Model.Applications.Any())
+            {
+                <div class="card shadow-sm border-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th><i class="fas fa-user me-2"></i>Name</th>
+                                    <th><i class="fas fa-envelope me-2"></i>Email</th>
+                                    <th><i class="fas fa-briefcase me-2"></i>Job</th>
+                                    <th><i class="fas fa-map-marker-alt me-2"></i>City</th>
+                                    <th><i class="fas fa-calendar me-2"></i>Applied</th>
+                                    <th class="text-center"><i class="fas fa-tasks me-2"></i>Stage</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var app in Model.Applications)
+                                {
+                                    <tr>
+                                        <td>
+                                            <a href="@Url.Action("CandidateDetails", "Admin", new { id = app.Id })" style="color: #1E1765; text-decoration: none;">
+                                                <strong>@app.Name</strong>
+                                            </a>
+                                        </td>
+                                        <td><a href="mailto:@app.Email">@app.Email</a></td>
+                                        <td>@(app.Job?.Title ?? "N/A")</td>
+                                        <td><span class="badge badge-primary">@(app.City ?? "Not specified")</span></td>
+                                        <td><small class="text-muted">@app.AppliedDate.ToString("MMM dd, yyyy")</small></td>
+                                        <td class="text-center">
+                                            @{
+                                                var stageBadge = app.Stage switch
+                                                {
+                                                    ApplicationStage.Hired => "badge bg-success",
+                                                    ApplicationStage.Rejected => "badge bg-danger",
+                                                    ApplicationStage.Offer => "badge bg-warning text-dark",
+                                                    _ => "badge"
+                                                };
+                                                var stageStyle = app.Stage switch
+                                                {
+                                                    ApplicationStage.Hired or ApplicationStage.Rejected or ApplicationStage.Offer => "",
+                                                    _ => "background-color: #7B3FF2;"
+                                                };
+                                                var stageLabel = app.CurrentStage?.Name ?? app.Stage.ToString();
+                                            }
+                                            <span class="@stageBadge" style="@stageStyle">@stageLabel</span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                @if (totalPages > 1)
+                {
+                    <nav aria-label="Pagination">
+                        <ul class="pagination justify-content-center mt-3">
+                            @for (int i = 1; i <= totalPages; i++)
+                            {
+                                var isActive = i == Model.Page;
+                                var pageParts = new List<string>
+                                {
+                                    $"Sort={Uri.EscapeDataString(currentSort)}",
+                                    $"Dir={Uri.EscapeDataString(currentDir)}",
+                                    $"Page={i}"
+                                };
+                                if (!string.IsNullOrEmpty(Model.Params.SearchQuery))
+                                    pageParts.Add($"SearchQuery={Uri.EscapeDataString(Model.Params.SearchQuery)}");
+                                if (Model.Params.Locations != null)
+                                    foreach (var l in Model.Params.Locations)
+                                        pageParts.Add($"Locations={Uri.EscapeDataString(l)}");
+                                if (Model.Params.JobIds != null)
+                                    foreach (var j in Model.Params.JobIds)
+                                        pageParts.Add($"JobIds={j}");
+                                var pageHref = $"/Admin/Candidates?{string.Join("&", pageParts)}";
+                                <li class="page-item @(isActive ? "active" : "")">
+                                    <a class="page-link" href="@pageHref">@i</a>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                }
+            }
+            else
+            {
+                <div class="alert alert-info text-center py-5 rounded">
+                    <i class="fas fa-inbox fa-3x mb-3" style="color: #7B3FF2;"></i>
+                    <h5 class="fw-bold mt-3">No Candidates Found</h5>
+                    <p class="text-muted">Try adjusting your filters or search query.</p>
+                </div>
+            }
+        </div>
     </div>
 </div>
 
+<script>
+    window.__candidateFilters = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(new
+    {
+        @params = Model.Params,
+        locationFacets = Model.LocationFacets,
+        jobFacets = Model.JobFacets
+    }, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }));
+</script>
+
 @section Scripts {
-    <script type="module" src="~/js/dist/candidate-dashboard.js"></script>
+    <script type="module" src="~/js/dist/candidate-filters.js" asp-append-version="true"></script>
 }

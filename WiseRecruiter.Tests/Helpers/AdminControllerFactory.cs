@@ -88,7 +88,8 @@ namespace WiseRecruiter.Tests.Helpers
                 candidateDetails,
                 new MoveApplicationStageService(context, appStageSvc, auditSvc),
                 resumeReview,
-                new ScorecardCommandService(context, scorecardSvc))
+                new ScorecardCommandService(context, scorecardSvc),
+                new CandidateQueryService(context))
             {
                 ControllerContext = new ControllerContext
                 {
