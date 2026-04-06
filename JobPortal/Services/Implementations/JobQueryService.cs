@@ -22,7 +22,7 @@ namespace JobPortal.Services.Implementations
             return await _context.Jobs.ToListAsync();
         }
 
-        public async Task<Job?> GetJobDetailAsync(int id, string? sort, string? dir = "asc")
+        public async Task<Job?> GetJobDetailAsync(int id, string? sort, string? dir = "asc", string? searchQuery = null)
         {
             var job = await _context.Jobs
                 .Include(j => j.Applications!)
@@ -41,6 +41,15 @@ namespace JobPortal.Services.Implementations
 
             if (job.Applications != null)
                 job.Applications = job.Applications.Where(a => !(a.Candidate?.IsArchived ?? false)).ToList();
+
+            if (job.Applications != null && !string.IsNullOrWhiteSpace(searchQuery))
+            {
+                var q = searchQuery.ToLowerInvariant();
+                job.Applications = job.Applications
+                    .Where(a => (a.Name?.ToLowerInvariant().Contains(q) ?? false) ||
+                               (a.Email?.ToLowerInvariant().Contains(q) ?? false))
+                    .ToList();
+            }
 
             if (job.Applications != null)
             {

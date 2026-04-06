@@ -150,11 +150,14 @@
                     <h5 class="fw-bold mb-0 text-white"><i class="fas fa-users me-2"></i>Candidates</h5>
                 </div>
                 <div class="card-body">
+                    @{
+                        var displayCount = (int?)ViewBag.TotalCount ?? Model.Applications?.Count ?? 0;
+                    }
                     <h2 class="display-4 fw-bold text-center" style="color: #1E1765;">
-                        @(Model.Applications?.Count ?? 0)
+                        @displayCount
                     </h2>
                     <p class="text-center text-muted mt-3">
-                        @(Model.Applications?.Count == 1 ? "candidate has" : "candidates have") applied
+                        @(displayCount == 1 ? "Candidate" : "Candidates") in job
                     </p>
                     
                     @if (Model.Applications?.Any() == true)
@@ -282,7 +285,7 @@
     @if (Model.Applications?.Any() == true)
     {
         <div class="mb-4">
-            <form action="/Admin/JobDetailSearch" method="get" class="d-flex gap-2 mb-3" id="jobSearchForm">
+            <form asp-controller="Admin" asp-action="JobDetail" method="get" class="d-flex gap-2 mb-3" id="jobSearchForm">
                 <input type="hidden" name="id" value="@Model.Id" />
                 <div class="flex-grow-1 position-relative">
                     <input type="text" name="searchQuery" class="form-control" 
@@ -329,13 +332,13 @@
                 string DateIcon() => (currentSort == "date" && currentDir == "asc") ? "fa-sort-numeric-up" : "fa-sort-numeric-down";
             }
             <div class="btn-group" role="group">
-                <a href="/Admin/JobDetailSearch?id=@Model.Id&searchQuery=@sq&sort=name&dir=@(NameDir())" class="btn btn-sm @(currentSort == "name" ? "btn-secondary" : "btn-outline-secondary")">
+                <a href="@Url.Action("JobDetail", "Admin", new { id = Model.Id, searchQuery = ViewData["SearchQuery"], sort = "name", dir = NameDir() })" class="btn btn-sm @(currentSort == "name" ? "btn-secondary" : "btn-outline-secondary")">
                     <i class="fas @(NameIcon()) me-1"></i>Sort by Name
                 </a>
-                <a href="/Admin/JobDetailSearch?id=@Model.Id&searchQuery=@sq&sort=stage&dir=@(StageDir())" class="btn btn-sm @(currentSort == "stage" ? "btn-secondary" : "btn-outline-secondary")">
+                <a href="@Url.Action("JobDetail", "Admin", new { id = Model.Id, searchQuery = ViewData["SearchQuery"], sort = "stage", dir = StageDir() })" class="btn btn-sm @(currentSort == "stage" ? "btn-secondary" : "btn-outline-secondary")">
                     <i class="fas @(StageIcon()) me-1"></i>Sort by Stage
                 </a>
-                <a href="/Admin/JobDetailSearch?id=@Model.Id&searchQuery=@sq&sort=date&dir=@(DateDir())" class="btn btn-sm @(currentSort == "date" ? "btn-secondary" : "btn-outline-secondary")">
+                <a href="@Url.Action("JobDetail", "Admin", new { id = Model.Id, searchQuery = ViewData["SearchQuery"], sort = "date", dir = DateDir() })" class="btn btn-sm @(currentSort == "date" ? "btn-secondary" : "btn-outline-secondary")">
                     <i class="fas @(DateIcon()) me-1"></i>Sort by Date
                 </a>
             </div>
@@ -461,14 +464,19 @@
                 </table>
             </div>
         </div>
-    @if (ViewBag.TotalPages > 1)
+    @if (ViewBag.TotalPages != null && (int)ViewBag.TotalPages > 1)
     {
-        <div>
-            @for (int i = 1; i <= ViewBag.TotalPages; i++)
-            {
-                <a href="?page=@i">@i</a>
-            }
-        </div>
+        <nav aria-label="Pagination">
+            <ul class="pagination justify-content-center mt-3">
+                @for (int i = 1; i <= (int)ViewBag.TotalPages; i++)
+                {
+                    var isActive = i == (int)(ViewBag.CurrentPage ?? 1);
+                    <li class="page-item @(isActive ? "active" : "")">
+                        <a class="page-link" href="@Url.Action("JobDetail", "Admin", new { id = Model.Id, page = i, sort = Context.Request.Query["sort"].ToString(), dir = Context.Request.Query["dir"].ToString(), searchQuery = ViewData["SearchQuery"] })">@i</a>
+                    </li>
+                }
+            </ul>
+        </nav>
     }
     }
     else
