@@ -34,14 +34,6 @@ namespace JobPortal.Controllers
             return RedirectToAction("JobDetail", "Admin", new { id, searchQuery, sort, dir });
         }
 
-        [HttpGet("Candidates")]
-        public async Task<IActionResult> Candidates(string? search)
-        {
-            var results = await _candidateQueryService.GetCandidatesAsync(search);
-            ViewData["Search"] = search;
-            return View("~/Views/Admin/Candidates.cshtml", results);
-        }
-
         [HttpGet("SearchCandidates")]
         public async Task<IActionResult> SearchCandidates(string? searchQuery, int? pageNumber = null)
         {

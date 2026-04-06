@@ -6,6 +6,11 @@ namespace JobPortal.Services.Interfaces
 {
     public interface ICandidateQueryService
     {
+        /// <summary>
+        /// Server-side faceted search with filtering, sorting, and pagination.
+        /// </summary>
+        Task<CandidateSearchResultViewModel> SearchAsync(CandidateSearchParams p);
+
         /// <summary>Returns all jobs with their applications, ordered newest-first.</summary>
         Task<List<Job>> GetApplicationsForJobsAsync();
 
