@@ -5,7 +5,7 @@ namespace JobPortal.Services.Interfaces
     public interface IJobQueryService
     {
         Task<List<Job>> GetJobsAsync(IEnumerable<int>? assignedIds = null);
-        Task<Job?> GetJobDetailAsync(int id, string? sort);
+        Task<Job?> GetJobDetailAsync(int id, string? sort, string? dir = "asc");
         Task<Job?> GetJobForEditAsync(int id);
         Task<Job?> GetJobForDeleteAsync(int id);
         Task<Job?> GetJobWithTemplateAsync(int id);

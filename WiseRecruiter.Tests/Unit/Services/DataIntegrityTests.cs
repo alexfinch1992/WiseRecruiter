@@ -24,7 +24,7 @@ namespace WiseRecruiter.Tests.Unit.Services
         }
 
         [Fact]
-        public async Task CreateApplicationAsync_WithoutAvailableStage_ThrowsControlledException()
+        public async Task CreateApplicationAsync_WithoutAvailableStage_CreatesApplicationWithNullStage()
         {
             using var context = CreateInMemoryContext();
             context.Jobs.Add(new Job { Title = "Backend Engineer" });
@@ -40,10 +40,10 @@ namespace WiseRecruiter.Tests.Unit.Services
                 CurrentJobStageId = null
             };
 
-            Func<Task> act = async () => await service.CreateApplicationAsync(application);
-
-            await act.Should().ThrowAsync<InvalidOperationException>()
-                .WithMessage("*valid stage*");
+            // New applications start with null stage; no throw expected
+            var result = await service.CreateApplicationAsync(application);
+            result.CurrentJobStageId.Should().BeNull();
+            result.Id.Should().BeGreaterThan(0);
         }
 
         [Fact]

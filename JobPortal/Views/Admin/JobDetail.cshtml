@@ -180,7 +180,14 @@
     </div>
 
     @{
-        var stages = Model.Stages?.OrderBy(s => s.Order).ToList() ?? new List<JobStage>();
+        var systemStageNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "Applied", "Screen", "Offer", "Hired"
+        };
+        var stages = Model.Stages?
+            .Where(s => !systemStageNames.Contains(s.Name))
+            .OrderBy(s => s.Order)
+            .ToList() ?? new List<JobStage>();
     }
     
     <!-- Interview Stages Management Section -->
@@ -308,15 +315,28 @@
                 </div>
             }
 
+            @{
+                var currentSort = Context.Request.Query["sort"].ToString();
+                var currentDir = Context.Request.Query["dir"].ToString();
+                var sq = Uri.EscapeDataString(ViewData["SearchQuery"]?.ToString() ?? "");
+
+                string NameDir() => (currentSort == "name" && currentDir == "asc") ? "desc" : "asc";
+                string StageDir() => (currentSort == "stage" && currentDir == "asc") ? "desc" : "asc";
+                string DateDir() => (currentSort == "date" && currentDir == "asc") ? "desc" : "asc";
+
+                string NameIcon() => (currentSort == "name" && currentDir == "asc") ? "fa-sort-alpha-up" : "fa-sort-alpha-down";
+                string StageIcon() => (currentSort == "stage" && currentDir == "asc") ? "fa-sort-amount-up" : "fa-sort-amount-down";
+                string DateIcon() => (currentSort == "date" && currentDir == "asc") ? "fa-sort-numeric-up" : "fa-sort-numeric-down";
+            }
             <div class="btn-group" role="group">
-                <a href="/Admin/JobDetailSearch?id=@Model.Id&searchQuery=@(Uri.EscapeDataString(ViewData["SearchQuery"]?.ToString() ?? ""))&sort=name" class="btn btn-sm btn-outline-secondary">
-                    <i class="fas fa-sort-alpha-down me-1"></i>Sort by Name
+                <a href="/Admin/JobDetailSearch?id=@Model.Id&searchQuery=@sq&sort=name&dir=@(NameDir())" class="btn btn-sm @(currentSort == "name" ? "btn-secondary" : "btn-outline-secondary")">
+                    <i class="fas @(NameIcon()) me-1"></i>Sort by Name
                 </a>
-                <a href="/Admin/JobDetailSearch?id=@Model.Id&searchQuery=@(Uri.EscapeDataString(ViewData["SearchQuery"]?.ToString() ?? ""))&sort=stage" class="btn btn-sm btn-outline-secondary">
-                    <i class="fas fa-filter me-1"></i>Sort by Stage
+                <a href="/Admin/JobDetailSearch?id=@Model.Id&searchQuery=@sq&sort=stage&dir=@(StageDir())" class="btn btn-sm @(currentSort == "stage" ? "btn-secondary" : "btn-outline-secondary")">
+                    <i class="fas @(StageIcon()) me-1"></i>Sort by Stage
                 </a>
-                <a href="/Admin/JobDetailSearch?id=@Model.Id&searchQuery=@(Uri.EscapeDataString(ViewData["SearchQuery"]?.ToString() ?? ""))&sort=date" class="btn btn-sm btn-outline-secondary">
-                    <i class="fas fa-calendar me-1"></i>Sort by Date
+                <a href="/Admin/JobDetailSearch?id=@Model.Id&searchQuery=@sq&sort=date&dir=@(DateDir())" class="btn btn-sm @(currentSort == "date" ? "btn-secondary" : "btn-outline-secondary")">
+                    <i class="fas @(DateIcon()) me-1"></i>Sort by Date
                 </a>
             </div>
         </div>
@@ -341,7 +361,6 @@
                     <tbody>
                         @{
                             var appList = (Model.Applications ?? Enumerable.Empty<Application>())
-                                .OrderBy(a => a.AppliedDate)
                                 .ToList();
                             var appIds = string.Join(",", appList.Select(a => a.Id));
                         }

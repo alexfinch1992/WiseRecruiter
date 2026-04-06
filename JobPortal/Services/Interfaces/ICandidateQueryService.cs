@@ -21,7 +21,7 @@ namespace JobPortal.Services.Interfaces
         /// Returns the job with its applications filtered by searchQuery and sorted by <paramref name="sort"/>.
         /// Returns null when the job is not found.
         /// </summary>
-        Task<Job?> GetJobDetailSearchAsync(int id, string? searchQuery, string? sort);
+        Task<Job?> GetJobDetailSearchAsync(int id, string? searchQuery, string? sort, string? dir = "asc");
 
         /// <summary>
         /// Returns top-10 application items for a job, filtered by searchQuery.
