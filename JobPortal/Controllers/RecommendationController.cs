@@ -7,7 +7,7 @@ using JobPortal.Services.Alerts;
 using JobPortal.Services.Interfaces;
 using JobPortal.Services.Models;
 
-[Authorize]
+[Authorize(Roles = "Admin,Recruiter,HiringManager")]
 public class RecommendationController : Controller
 {
     private readonly IRecommendationService _recommendationService;

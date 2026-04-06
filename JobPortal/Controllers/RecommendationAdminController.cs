@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-[Authorize]
+[Authorize(Roles = "Admin,Recruiter,HiringManager")]
 [Route("Admin/Recommendations")]
 public class RecommendationAdminController : Controller
 {

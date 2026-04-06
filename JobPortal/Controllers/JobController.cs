@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using JobPortal.Models.ViewModels;
 using JobPortal.Services.Interfaces;
 
 public class JobController : Controller
@@ -37,9 +38,9 @@ public class JobController : Controller
         if (job == null)
             return NotFound();
 
-        ViewBag.ReturnUrl = returnUrl;
+        var vm = new JobDeleteViewModel { Job = job, ReturnUrl = returnUrl };
 
-        return View(job);
+        return View(vm);
     }
 
     [HttpPost, ActionName("Delete")]

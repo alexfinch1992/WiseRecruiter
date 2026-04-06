@@ -92,5 +92,18 @@ namespace JobPortal.Services.Implementations
         {
             return await _context.Jobs.AnyAsync(e => e.Id == id);
         }
+
+        public async Task<Job?> GetJobByIdAsync(int id)
+        {
+            return await _context.Jobs.FindAsync(id);
+        }
+
+        public async Task<List<JobStage>> GetStagesForJobAsync(int jobId)
+        {
+            return await _context.JobStages
+                .Where(s => s.JobId == jobId)
+                .OrderBy(s => s.Order)
+                .ToListAsync();
+        }
     }
 }

@@ -3,13 +3,13 @@
 
 @{
     ViewData["Title"] = $"{Model.Name} - Candidate Profile";
-    var navIds = ViewBag.NavIds as string;
-    var navIdx = ViewBag.NavIdx as int?;
-    var navTotal = ViewBag.NavTotal as int?;
-    var navPrevId = ViewBag.NavPrevId as int?;
-    var navPrevIdx = ViewBag.NavPrevIdx as int?;
-    var navNextId = ViewBag.NavNextId as int?;
-    var navNextIdx = ViewBag.NavNextIdx as int?;
+    var navIds = Model.NavIds;
+    var navIdx = Model.NavIdx;
+    var navTotal = Model.NavTotal;
+    var navPrevId = Model.NavPrevId;
+    var navPrevIdx = Model.NavPrevIdx;
+    var navNextId = Model.NavNextId;
+    var navNextIdx = Model.NavNextIdx;
     var hasNav = navIds != null && navIdx.HasValue;
 }
 

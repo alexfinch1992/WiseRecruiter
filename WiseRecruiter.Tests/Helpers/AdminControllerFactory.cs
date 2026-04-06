@@ -70,7 +70,6 @@ namespace WiseRecruiter.Tests.Helpers
             var appStageSvc        = new ApplicationStageService(context, recSvc);
 
             var controller = new AdminController(
-                context,
                 new Mock<IWebHostEnvironment>().Object,
                 new ApplicationService(context),
                 new AnalyticsService(context),
@@ -89,7 +88,8 @@ namespace WiseRecruiter.Tests.Helpers
                 new MoveApplicationStageService(context, appStageSvc, auditSvc),
                 resumeReview,
                 new ScorecardCommandService(context, scorecardSvc),
-                new CandidateQueryService(context))
+                new CandidateQueryService(context),
+                interviewSvc)
             {
                 ControllerContext = new ControllerContext
                 {

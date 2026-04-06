@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace JobPortal.Models.ViewModels
 {
@@ -16,5 +17,10 @@ namespace JobPortal.Models.ViewModels
         public string? OwnerUserId { get; set; }
 
         public List<string> ReviewerUserIds { get; set; } = new();
+
+        // Form options (populated by controller)
+        public List<SelectListItem> ScorecardTemplates { get; set; } = [];
+        public List<SelectListItem> OwnerOptions { get; set; } = [];
+        public List<ApplicationUser> ReviewerEligibleUsers { get; set; } = [];
     }
 }

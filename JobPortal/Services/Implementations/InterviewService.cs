@@ -83,5 +83,30 @@ namespace JobPortal.Services.Implementations
 
             return new InterviewSchedulingData(candidateApplications, adminUsers);
         }
+
+        public async Task<List<UpcomingInterviewDto>> GetUpcomingInterviewsAsync()
+        {
+            var interviews = await _context.Interviews
+                .Include(i => i.Candidate)
+                .Include(i => i.Application).ThenInclude(a => a.Job)
+                .Include(i => i.JobStage)
+                .Include(i => i.InterviewInterviewers).ThenInclude(ii => ii.AdminUser)
+                .Where(i => !i.IsCancelled && i.CompletedAt == null && i.ScheduledAt >= DateTime.UtcNow)
+                .OrderBy(i => i.ScheduledAt)
+                .ToListAsync();
+
+            return interviews.Select(i => new UpcomingInterviewDto
+            {
+                InterviewId = i.Id,
+                CandidateName = i.Candidate != null ? i.Candidate.FirstName + " " + i.Candidate.LastName : "Unknown",
+                JobTitle = i.Application?.Job?.Title ?? "Unknown",
+                StageName = i.JobStage?.Name ?? i.Application?.Stage.ToString() ?? string.Empty,
+                ScheduledAt = i.ScheduledAt,
+                InterviewerNames = i.InterviewInterviewers
+                    .Where(ii => ii.AdminUser != null)
+                    .Select(ii => ii.AdminUser!.Username ?? string.Empty)
+                    .ToList()
+            }).ToList();
+        }
     }
 }

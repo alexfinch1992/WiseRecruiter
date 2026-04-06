@@ -1,4 +1,4 @@
-@model List<JobPortal.Models.Application>
+@model JobPortal.Models.ViewModels.SearchCandidatesViewModel
 
 @{
     ViewData["Title"] = "Candidate Search Results";
@@ -16,7 +16,7 @@
 
     <div class="row">
         <div class="col-md-12">
-            @if (Model == null || Model.Count == 0)
+            @if (Model.Applications == null || Model.Applications.Count == 0)
             {
                 <div class="alert alert-info" role="alert">
                     <i class="fas fa-info-circle me-2"></i>
@@ -29,7 +29,7 @@
                     <div class="card-header">
                         <h5 class="fw-bold mb-0">
                             <i class="fas fa-users me-2"></i>
-                            @Model.Count Candidate@(Model.Count != 1 ? "s" : "") Found
+                            @Model.Applications.Count Candidate@(Model.Applications.Count != 1 ? "s" : "") Found
                         </h5>
                     </div>
                     <div class="table-responsive">
@@ -46,7 +46,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var app in Model)
+                                @foreach (var app in Model.Applications)
                                 {
                                     <tr>
                                         <td>
@@ -89,10 +89,10 @@
                         </table>
                     </div>
                 </div>
-            @if (ViewBag.TotalPages > 1)
+            @if (Model.TotalPages > 1)
             {
                 <div>
-                    @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                    @for (int i = 1; i <= Model.TotalPages; i++)
                     {
                         <a href="?page=@i">@i</a>
                     }

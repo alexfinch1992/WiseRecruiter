@@ -23,5 +23,7 @@ namespace JobPortal.Services.Interfaces
         /// render the interview-scheduling form on the candidate details page.
         /// </summary>
         Task<InterviewSchedulingData> GetInterviewSchedulingDataAsync(int candidateId);
+
+        Task<List<UpcomingInterviewDto>> GetUpcomingInterviewsAsync();
     }
 }

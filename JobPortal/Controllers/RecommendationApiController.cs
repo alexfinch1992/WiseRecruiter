@@ -7,7 +7,7 @@ using JobPortal.Services.Models;
 /// JSON API surface for inline recommendation editing on the CandidateDetails panel.
 /// Preserves all existing /Admin/* routes from AdminController.
 /// </summary>
-[Authorize]
+[Authorize(Roles = "Admin,Recruiter,HiringManager")]
 [Route("Admin")]
 public class RecommendationApiController : Controller
 {

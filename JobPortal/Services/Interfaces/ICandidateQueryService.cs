@@ -39,5 +39,9 @@ namespace JobPortal.Services.Interfaces
         /// filtered by search.
         /// </summary>
         Task<IEnumerable<UnifiedCandidateDto>> GetCandidatesJsonAsync(string? search);
+
+        Task<Application?> GetApplicationByIdAsync(int id);
+        Task<Application?> GetApplicationWithCandidateAsync(int id);
+        Task RejectApplicationAsync(int applicationId, string reason, string notes, bool globalArchive, string userId);
     }
 }

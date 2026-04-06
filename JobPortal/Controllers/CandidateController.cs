@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using JobPortal.Models.ViewModels;
 using JobPortal.Services.Interfaces;
 
 /// <summary>
@@ -7,7 +8,7 @@ using JobPortal.Services.Interfaces;
 /// CandidateDetails is duplicated from AdminController (kept there for test compatibility).
 /// WriteRecommendation and WriteStage2Recommendation are fully moved here.
 /// </summary>
-[Authorize]
+[Authorize(Roles = "Admin,Recruiter,HiringManager")]
 public class CandidateController : Controller
 {
     private readonly ICandidateDetailsService  _candidateDetailsService;
@@ -32,7 +33,7 @@ public class CandidateController : Controller
         {
             var viewModel = await _candidateDetailsService.GetCandidateDetailsAsync(id.Value, User, stageApprovalWarnAppId);
             if (viewModel == null) return NotFound();
-            SetCandidateNavigation(ids, idx);
+            SetCandidateNavigation(viewModel, ids, idx);
             return View("~/Views/Admin/CandidateDetails.cshtml", viewModel);
         }
         catch (CandidateAccessForbiddenException)
@@ -41,7 +42,7 @@ public class CandidateController : Controller
         }
     }
 
-    private void SetCandidateNavigation(string? ids, int? idx)
+    private static void SetCandidateNavigation(CandidateAdminViewModel vm, string? ids, int? idx)
     {
         if (string.IsNullOrEmpty(ids) || !idx.HasValue) return;
 
@@ -52,13 +53,13 @@ public class CandidateController : Controller
         var i = idx.Value;
         if (i < 0 || i >= idList.Count) return;
 
-        ViewBag.NavIds = ids;
-        ViewBag.NavIdx = i;
-        ViewBag.NavTotal = idList.Count;
-        ViewBag.NavPrevId = i > 0 ? idList[i - 1] : (int?)null;
-        ViewBag.NavPrevIdx = i > 0 ? i - 1 : (int?)null;
-        ViewBag.NavNextId = i < idList.Count - 1 ? idList[i + 1] : (int?)null;
-        ViewBag.NavNextIdx = i < idList.Count - 1 ? i + 1 : (int?)null;
+        vm.NavIds = ids;
+        vm.NavIdx = i;
+        vm.NavTotal = idList.Count;
+        vm.NavPrevId = i > 0 ? idList[i - 1] : (int?)null;
+        vm.NavPrevIdx = i > 0 ? i - 1 : (int?)null;
+        vm.NavNextId = i < idList.Count - 1 ? idList[i + 1] : (int?)null;
+        vm.NavNextIdx = i < idList.Count - 1 ? i + 1 : (int?)null;
     }
 
     // Preserve existing route /Admin/WriteRecommendation

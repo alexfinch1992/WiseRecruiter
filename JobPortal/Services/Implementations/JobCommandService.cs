@@ -189,5 +189,101 @@ namespace JobPortal.Services.Implementations
                     "A job must have at least one active recruiter assigned.");
             }
         }
+
+        public async Task ToggleReviewerAsync(int jobId, string userId)
+        {
+            var existing = await _context.JobUsers
+                .FirstOrDefaultAsync(x =>
+                    x.JobId == jobId &&
+                    x.UserId == userId &&
+                    x.Role == "Reviewer");
+
+            if (existing != null)
+            {
+                _context.JobUsers.Remove(existing);
+            }
+            else
+            {
+                _context.JobUsers.Add(new JobUser
+                {
+                    JobId = jobId,
+                    UserId = userId,
+                    Role = "Reviewer",
+                    IsActive = true
+                });
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        private static readonly string[] SeedFirstNames = { "James", "Mary", "Robert", "Patricia", "John", "Jennifer", "Michael", "Linda", "David", "Elizabeth", "William", "Barbara", "Richard", "Susan", "Joseph", "Jessica", "Thomas", "Sarah", "Christopher", "Karen" };
+        private static readonly string[] SeedLastNames = { "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez", "Hernandez", "Lopez", "Gonzalez", "Wilson", "Anderson", "Thomas", "Taylor", "Moore", "Jackson", "Martin" };
+
+        public async Task SeedCandidatesAsync(int jobId, int count = 150)
+        {
+            var job = await _context.Jobs.FindAsync(jobId);
+            if (job == null)
+                throw new InvalidOperationException($"Job {jobId} not found.");
+
+            var pipelineStages = await _context.JobStages
+                .Where(s => s.JobId == jobId)
+                .ToListAsync();
+
+            var random = new Random();
+            var cities = new[] { "Chicago", "New York", "San Francisco", "Austin", "Seattle", "Boston" };
+
+            for (int i = 0; i < count; i++)
+            {
+                var firstName = SeedFirstNames[random.Next(SeedFirstNames.Length)];
+                var lastName = SeedLastNames[random.Next(SeedLastNames.Length)];
+
+                var candidate = new Candidate
+                {
+                    FirstName = firstName,
+                    LastName = lastName,
+                    Email = $"loadtest_{Guid.NewGuid()}@example.com",
+                    CreatedAt = DateTime.UtcNow
+                };
+                _context.Candidates.Add(candidate);
+                await _context.SaveChangesAsync();
+
+                var stage = GetWeightedStage(random);
+                var appliedDate = DateTime.UtcNow.AddDays(-random.Next(0, 60));
+                string? city = random.NextDouble() < 0.15 ? null : cities[random.Next(cities.Length)];
+
+                var application = new Application
+                {
+                    Name = $"{firstName} {lastName}",
+                    Email = candidate.Email,
+                    City = city,
+                    JobId = jobId,
+                    CandidateId = candidate.Id,
+                    Stage = stage,
+                    AppliedDate = appliedDate
+                };
+
+                if (stage == ApplicationStage.Interview && pipelineStages.Any() && random.NextDouble() > 0.3)
+                {
+                    application.CurrentJobStageId = pipelineStages[random.Next(pipelineStages.Count)].Id;
+                }
+
+                _context.Applications.Add(application);
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        private static ApplicationStage GetWeightedStage(Random random)
+        {
+            var roll = random.NextDouble();
+            return roll switch
+            {
+                < 0.35 => ApplicationStage.Applied,
+                < 0.70 => ApplicationStage.Interview,
+                < 0.80 => ApplicationStage.Offer,
+                < 0.85 => ApplicationStage.Hired,
+                _      => ApplicationStage.Rejected
+            };
+        }
     }
 }

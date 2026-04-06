@@ -2,10 +2,8 @@
 
 @{
     ViewData["Title"] = "Post New Job";
-    var ownerOptions = ViewBag.OwnerOptions as List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>
-                       ?? new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
-    var reviewerUsers = ViewBag.ReviewerEligibleUsersForCreate as List<JobPortal.Models.ApplicationUser>
-                        ?? new List<JobPortal.Models.ApplicationUser>();
+    var ownerOptions = Model.OwnerOptions;
+    var reviewerUsers = Model.ReviewerEligibleUsers;
 }
 
 <div class="container py-5">
@@ -38,7 +36,7 @@
 
                         <div class="mb-3">
                             <label asp-for="ScorecardTemplateId" class="form-label fw-bold">Scorecard Template</label>
-                            <select asp-for="ScorecardTemplateId" asp-items="ViewBag.ScorecardTemplates" class="form-select"></select>
+                            <select asp-for="ScorecardTemplateId" asp-items="Model.ScorecardTemplates" class="form-select"></select>
                             <span asp-validation-for="ScorecardTemplateId" class="text-danger small"></span>
                         </div>
 

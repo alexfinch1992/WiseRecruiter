@@ -4,6 +4,7 @@ using FluentAssertions;
 using JobPortal.Data;
 using JobPortal.Models;
 using JobPortal.Services.Implementations;
+using JobPortal.Models.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
@@ -38,8 +39,9 @@ namespace WiseRecruiter.Tests.Integration
             // Assert
             result.Should().BeOfType<ViewResult>();
             var viewResult = (ViewResult)result;
-            viewResult.Model.Should().Be(job);
-            ((string?)controller.ViewBag.ReturnUrl).Should().Be("/Admin/Index");
+            var vm = viewResult.Model.Should().BeOfType<JobDeleteViewModel>().Subject;
+            vm.Job.Should().Be(job);
+            vm.ReturnUrl.Should().Be("/Admin/Index");
         }
 
         [Fact]

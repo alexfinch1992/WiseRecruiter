@@ -319,5 +319,37 @@ namespace JobPortal.Services.Implementations
                 .OrderBy(u => u.Name)
                 .ToList();
         }
+
+        public async Task<Application?> GetApplicationByIdAsync(int id)
+        {
+            return await _context.Applications.FindAsync(id);
+        }
+
+        public async Task<Application?> GetApplicationWithCandidateAsync(int id)
+        {
+            return await _context.Applications
+                .Include(a => a.Candidate)
+                .FirstOrDefaultAsync(a => a.Id == id);
+        }
+
+        public async Task RejectApplicationAsync(int applicationId, string reason, string notes, bool globalArchive, string userId)
+        {
+            var application = await _context.Applications
+                .Include(a => a.Candidate)
+                .FirstOrDefaultAsync(a => a.Id == applicationId);
+
+            if (application == null)
+                throw new InvalidOperationException($"Application {applicationId} not found.");
+
+            application.Status = ApplicationStatus.Rejected;
+            application.RejectionReason = reason;
+            application.RejectionNotes = notes;
+            application.Stage = ApplicationStage.Rejected;
+
+            if (globalArchive && application.Candidate != null)
+                application.Candidate.IsArchived = true;
+
+            await _context.SaveChangesAsync();
+        }
     }
 }
