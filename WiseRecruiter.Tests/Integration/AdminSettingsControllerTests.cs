@@ -63,10 +63,10 @@ namespace WiseRecruiter.Tests.Integration
             var result = await controller.Index();
 
             var viewResult = result.Should().BeOfType<ViewResult>().Subject;
-            var model = viewResult.Model.Should().BeAssignableTo<IEnumerable<Facet>>().Subject;
-            model.Should().HaveCount(2);
+            var vm = viewResult.Model.Should().BeOfType<JobPortal.Models.ViewModels.FacetIndexViewModel>().Subject;
+            vm.Facets.Should().HaveCount(2);
 
-            var mapping = controller.ViewBag.TemplateNamesByFacetId as Dictionary<int, List<string>>;
+            var mapping = vm.TemplateNamesByFacetId;
             mapping.Should().NotBeNull();
             mapping![communication.Id].Should().ContainSingle().Which.Should().Be("Default Scorecard");
             mapping[quality.Id].Should().BeEquivalentTo(new[] { "Default Scorecard", "Technical" });

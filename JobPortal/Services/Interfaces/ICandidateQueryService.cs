@@ -11,9 +11,6 @@ namespace JobPortal.Services.Interfaces
         /// </summary>
         Task<CandidateSearchResultViewModel> SearchAsync(CandidateSearchParams p);
 
-        /// <summary>Returns all jobs with their applications, ordered newest-first.</summary>
-        Task<List<Job>> GetApplicationsForJobsAsync();
-
         /// <summary>
         /// Returns applications (non-archived candidates) filtered by name and limited to 100 rows.
         /// </summary>
@@ -42,5 +39,9 @@ namespace JobPortal.Services.Interfaces
         /// filtered by search.
         /// </summary>
         Task<IEnumerable<UnifiedCandidateDto>> GetCandidatesJsonAsync(string? search);
+
+        Task<Application?> GetApplicationByIdAsync(int id);
+        Task<Application?> GetApplicationWithCandidateAsync(int id);
+        Task RejectApplicationAsync(int applicationId, string reason, string notes, bool globalArchive, string userId);
     }
 }

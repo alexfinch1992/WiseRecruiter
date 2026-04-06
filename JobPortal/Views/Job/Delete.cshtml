@@ -1,4 +1,4 @@
-@model JobPortal.Models.Job
+@model JobPortal.Models.ViewModels.JobDeleteViewModel
 
 @{
     ViewData["Title"] = "Delete";
@@ -9,17 +9,17 @@
 <h3>Are you sure you want to delete this job?</h3>
 <div>
     <div class="mb-3">
-        <strong>Title:</strong> @Model.Title
+        <strong>Title:</strong> @Model.Job.Title
     </div>
 
     <div class="mb-3">
-        <strong>Description:</strong> @Model.Description
+        <strong>Description:</strong> @Model.Job.Description
     </div>
 
-    <form asp-action="Delete" asp-route-id="@Model.Id" method="post">
+    <form asp-action="Delete" asp-route-id="@Model.Job.Id" method="post">
         @Html.AntiForgeryToken()
-        <input type="hidden" asp-for="Id" />
-        <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+        <input type="hidden" name="id" value="@Model.Job.Id" />
+        <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
         <input type="submit" value="Delete" class="btn btn-danger" /> |
         <a asp-action="Index">Back to List</a>
     </form>

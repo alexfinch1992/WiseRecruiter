@@ -13,5 +13,7 @@ namespace JobPortal.Services.Interfaces
         Task<JobStageCommandResult> MoveStageAsync(int stageId, int jobId, string direction);
         Task AssignRecruiterAsync(int jobId, string userId, string role = "Recruiter");
         Task DeactivateRecruiterAsync(int jobUserId);
+        Task ToggleReviewerAsync(int jobId, string userId);
+        Task SeedCandidatesAsync(int jobId, int count = 150);
     }
 }

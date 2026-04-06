@@ -1,0 +1,135 @@
+@model JobPortal.Models.ViewModels.CandidateSearchResultViewModel
+@{
+    var totalPages = (int)Math.Ceiling(Model.TotalCount / (double)Model.PageSize);
+    var currentSort = Model.Params.Sort ?? "date";
+    var currentDir = Model.Params.Dir ?? "desc";
+
+    string BuildSortHref(string field)
+    {
+        var newDir = (currentSort == field && currentDir == "asc") ? "desc" : "asc";
+        var parts = new List<string>
+        {
+            $"Sort={Uri.EscapeDataString(field)}",
+            $"Dir={Uri.EscapeDataString(newDir)}",
+            "Page=1"
+        };
+        if (!string.IsNullOrEmpty(Model.Params.SearchQuery))
+            parts.Add($"SearchQuery={Uri.EscapeDataString(Model.Params.SearchQuery)}");
+        if (Model.Params.Locations != null)
+            foreach (var l in Model.Params.Locations)
+                parts.Add($"Locations={Uri.EscapeDataString(l)}");
+        if (Model.Params.JobIds != null)
+            foreach (var j in Model.Params.JobIds)
+                parts.Add($"JobIds={j}");
+        return $"/Admin/Candidates?{string.Join("&", parts)}";
+    }
+
+    string SortIcon(string field)
+    {
+        if (currentSort != field) return "fa-sort";
+        return currentDir == "asc" ? "fa-sort-up" : "fa-sort-down";
+    }
+}
+
+<div class="btn-group mb-3" role="group">
+    <a href="@BuildSortHref("name")" class="btn btn-sm sort-link @(currentSort == "name" ? "btn-secondary" : "btn-outline-secondary")">
+        <i class="fas @SortIcon("name") me-1"></i>Name
+    </a>
+    <a href="@BuildSortHref("stage")" class="btn btn-sm sort-link @(currentSort == "stage" ? "btn-secondary" : "btn-outline-secondary")">
+        <i class="fas @SortIcon("stage") me-1"></i>Stage
+    </a>
+    <a href="@BuildSortHref("date")" class="btn btn-sm sort-link @(currentSort == "date" ? "btn-secondary" : "btn-outline-secondary")">
+        <i class="fas @SortIcon("date") me-1"></i>Date
+    </a>
+</div>
+
+@if (Model.Applications.Any())
+{
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-user me-2"></i>Name</th>
+                        <th><i class="fas fa-envelope me-2"></i>Email</th>
+                        <th><i class="fas fa-briefcase me-2"></i>Job</th>
+                        <th><i class="fas fa-map-marker-alt me-2"></i>City</th>
+                        <th><i class="fas fa-calendar me-2"></i>Applied</th>
+                        <th class="text-center"><i class="fas fa-tasks me-2"></i>Stage</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var app in Model.Applications)
+                    {
+                        <tr>
+                            <td>
+                                <a href="@Url.Action("CandidateDetails", "Admin", new { id = app.ApplicationId })" style="color: #1E1765; text-decoration: none;">
+                                    <strong>@app.Name</strong>
+                                </a>
+                            </td>
+                            <td><a href="mailto:@app.Email">@app.Email</a></td>
+                            <td>@app.JobTitle</td>
+                            <td><span class="badge badge-primary">@(app.City ?? "Not specified")</span></td>
+                            <td><small class="text-muted">@app.AppliedDate.ToString("MMM dd, yyyy")</small></td>
+                            <td class="text-center">
+                                @{
+                                    var stageBadge = app.Stage switch
+                                    {
+                                        "Hired" => "badge bg-success",
+                                        "Rejected" => "badge bg-danger",
+                                        "Offer" => "badge bg-warning text-dark",
+                                        _ => "badge"
+                                    };
+                                    var stageStyle = app.Stage switch
+                                    {
+                                        "Hired" or "Rejected" or "Offer" => "",
+                                        _ => "background-color: #7B3FF2;"
+                                    };
+                                }
+                                <span class="@stageBadge" style="@stageStyle">@app.Stage</span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    @if (totalPages > 1)
+    {
+        <nav aria-label="Pagination">
+            <ul class="pagination justify-content-center mt-3">
+                @for (int i = 1; i <= totalPages; i++)
+                {
+                    var isActive = i == Model.Page;
+                    var pageParts = new List<string>
+                    {
+                        $"Sort={Uri.EscapeDataString(currentSort)}",
+                        $"Dir={Uri.EscapeDataString(currentDir)}",
+                        $"Page={i}"
+                    };
+                    if (!string.IsNullOrEmpty(Model.Params.SearchQuery))
+                        pageParts.Add($"SearchQuery={Uri.EscapeDataString(Model.Params.SearchQuery)}");
+                    if (Model.Params.Locations != null)
+                        foreach (var l in Model.Params.Locations)
+                            pageParts.Add($"Locations={Uri.EscapeDataString(l)}");
+                    if (Model.Params.JobIds != null)
+                        foreach (var j in Model.Params.JobIds)
+                            pageParts.Add($"JobIds={j}");
+                    var pageHref = $"/Admin/Candidates?{string.Join("&", pageParts)}";
+                    <li class="page-item @(isActive ? "active" : "")">
+                        <a class="page-link sort-link" href="@pageHref">@i</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+}
+else
+{
+    <div class="alert alert-info text-center py-5 rounded">
+        <i class="fas fa-inbox fa-3x mb-3" style="color: #7B3FF2;"></i>
+        <h5 class="fw-bold mt-3">No Candidates Found</h5>
+        <p class="text-muted">Try adjusting your filters or search query.</p>
+    </div>
+}

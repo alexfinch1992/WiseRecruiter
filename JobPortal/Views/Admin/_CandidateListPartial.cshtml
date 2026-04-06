@@ -1,0 +1,170 @@
+@model JobPortal.Models.ViewModels.JobDetailViewModel
+@{
+    var Job = Model.Job;
+    var currentSort = Context.Request.Query["sort"].ToString();
+    var currentDir = Context.Request.Query["dir"].ToString();
+
+    string NameDir() => (currentSort == "name" && currentDir == "asc") ? "desc" : "asc";
+    string StageDir() => (currentSort == "stage" && currentDir == "asc") ? "desc" : "asc";
+    string DateDir() => (currentSort == "date" && currentDir == "asc") ? "desc" : "asc";
+
+    string NameIcon() => (currentSort == "name" && currentDir == "asc") ? "fa-sort-alpha-up" : "fa-sort-alpha-down";
+    string StageIcon() => (currentSort == "stage" && currentDir == "asc") ? "fa-sort-amount-up" : "fa-sort-amount-down";
+    string DateIcon() => (currentSort == "date" && currentDir == "asc") ? "fa-sort-numeric-up" : "fa-sort-numeric-down";
+}
+
+@if (!string.IsNullOrEmpty(ViewData["SearchQuery"]?.ToString()))
+{
+    <div class="alert alert-info" role="alert">
+        <i class="fas fa-search me-2"></i>
+        Showing results for "<strong>@ViewData["SearchQuery"]</strong>"
+        (@(Job.Applications?.Count ?? 0) candidate@((Job.Applications?.Count ?? 0) != 1 ? "s" : ""))
+    </div>
+}
+
+<div class="btn-group mb-3" role="group">
+    <a href="@Url.Action("JobDetail", "Admin", new { id = Job.Id, searchQuery = ViewData["SearchQuery"], sort = "name", dir = NameDir() })" class="btn btn-sm sort-link @(currentSort == "name" ? "btn-secondary" : "btn-outline-secondary")">
+        <i class="fas @(NameIcon()) me-1"></i>Sort by Name
+    </a>
+    <a href="@Url.Action("JobDetail", "Admin", new { id = Job.Id, searchQuery = ViewData["SearchQuery"], sort = "stage", dir = StageDir() })" class="btn btn-sm sort-link @(currentSort == "stage" ? "btn-secondary" : "btn-outline-secondary")">
+        <i class="fas @(StageIcon()) me-1"></i>Sort by Stage
+    </a>
+    <a href="@Url.Action("JobDetail", "Admin", new { id = Job.Id, searchQuery = ViewData["SearchQuery"], sort = "date", dir = DateDir() })" class="btn btn-sm sort-link @(currentSort == "date" ? "btn-secondary" : "btn-outline-secondary")">
+        <i class="fas @(DateIcon()) me-1"></i>Sort by Date
+    </a>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-header">
+        <h5 class="fw-bold mb-0"><i class="fas fa-list me-2"></i>Applicants</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th><i class="fas fa-user me-2"></i>Name</th>
+                    <th><i class="fas fa-envelope me-2"></i>Email</th>
+                    <th><i class="fas fa-map-marker-alt me-2"></i>City</th>
+                    <th><i class="fas fa-calendar me-2"></i>Applied</th>
+                    <th class="text-center"><i class="fas fa-tasks me-2"></i>Stage</th>
+                    <th class="text-center"><i class="fas fa-file me-2"></i>Resume</th>
+                    <th class="text-center"><i class="fas fa-cog me-2"></i>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    var appList = (Job.Applications ?? Enumerable.Empty<Application>())
+                        .ToList();
+                    var appIds = string.Join(",", appList.Select(a => a.Id));
+                }
+                @for (var appIdx = 0; appIdx < appList.Count; appIdx++)
+                {
+                    var app = appList[appIdx];
+                    <tr>
+                        <td>
+                            <a href="@Url.Action("CandidateDetails", "Admin", new { id = app.Id, ids = appIds, idx = appIdx })" style="color: #1E1765; text-decoration: none;">
+                                <strong>@app.Name</strong>
+                            </a>
+                        </td>
+                        <td>
+                            <a href="mailto:@app.Email">@app.Email</a>
+                        </td>
+                        <td>
+                            <span class="badge badge-primary">@app.City</span>
+                        </td>
+                        <td>
+                            <small class="text-muted">@app.AppliedDate.ToString("MMM dd, yyyy hh:mm tt")</small>
+                        </td>
+                        <td class="text-center">
+                            @{
+                                string? _stageBadgeClass = null;
+                                string? _stageBadgeStyle = null;
+                                string _stageLabel;
+
+                                if (app.Stage == ApplicationStage.Hired)
+                                {
+                                    _stageBadgeClass = "badge bg-success";
+                                    _stageLabel = "Hired";
+                                }
+                                else if (app.Stage == ApplicationStage.Rejected)
+                                {
+                                    _stageBadgeClass = "badge bg-danger";
+                                    _stageLabel = "Rejected";
+                                }
+                                else if (app.Stage == ApplicationStage.Offer)
+                                {
+                                    _stageBadgeClass = "badge bg-warning text-dark";
+                                    _stageLabel = "Offer";
+                                }
+                                else
+                                {
+                                    var _customName = app.CurrentJobStageId != null
+                                        ? Job.Stages?.FirstOrDefault(s => s.Id == app.CurrentJobStageId)?.Name
+                                        : null;
+                                    if (_customName != null)
+                                    {
+                                        _stageBadgeClass = "badge bg-primary";
+                                        _stageLabel = _customName;
+                                    }
+                                    else
+                                    {
+                                        _stageBadgeStyle = "background-color: #7B3FF2;";
+                                        _stageLabel = app.Stage.ToString();
+                                    }
+                                }
+                            }
+                            <span class="@(_stageBadgeClass ?? "badge")" style="@(_stageBadgeStyle ?? "")">@_stageLabel</span>
+                        </td>
+                        <td class="text-center">
+                            @{
+                                var hasResume = !string.IsNullOrEmpty(app.ResumePath) || (app.Documents != null && app.Documents.Any(d => d.Type == DocumentType.Resume));
+                                var resumePath = !string.IsNullOrEmpty(app.ResumePath) ? app.ResumePath : app.Documents?.FirstOrDefault(d => d.Type == DocumentType.Resume)?.FilePath;
+                            }
+                            @if (hasResume && !string.IsNullOrEmpty(resumePath))
+                            {
+                                <a href="@resumePath" target="_blank" class="btn btn-sm btn-outline-secondary" title="View Resume">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                            }
+                            else
+                            {
+                                <span class="text-muted small">N/A</span>
+                            }
+                        </td>
+                        <td class="text-center">
+                            <div class="btn-group" role="group">
+                                @if (!string.IsNullOrEmpty(app.ResumePath))
+                                {
+                                    <a asp-action="DownloadResume" asp-route-id="@app.Id" class="btn btn-sm btn-outline-success" title="Download Resume">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                }
+                                else if (app.Documents != null && app.Documents.Any(d => d.Type == DocumentType.Resume))
+                                {
+                                    var resumeDoc = app.Documents.FirstOrDefault(d => d.Type == DocumentType.Resume);
+                                    <a href="@resumeDoc?.FilePath" download class="btn btn-sm btn-outline-success" title="Download Resume">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+@if (Model.TotalPages > 1)
+{
+    <nav aria-label="Pagination">
+        <ul class="pagination justify-content-center mt-3">
+            @for (int i = 1; i <= Model.TotalPages; i++)
+            {
+                var isActive = i == Model.CurrentPage;
+                <li class="page-item @(isActive ? "active" : "")">
+                    <a class="page-link sort-link" href="@Url.Action("JobDetail", "Admin", new { id = Job.Id, page = i, sort = Context.Request.Query["sort"].ToString(), dir = Context.Request.Query["dir"].ToString(), searchQuery = ViewData["SearchQuery"] })">@i</a>
+                </li>
+            }
+        </ul>
+    </nav>
+}

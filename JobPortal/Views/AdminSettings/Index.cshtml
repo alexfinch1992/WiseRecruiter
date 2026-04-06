@@ -1,8 +1,8 @@
-@model IEnumerable<JobPortal.Models.Facet>
+@model JobPortal.Models.ViewModels.FacetIndexViewModel
 
 @{
     ViewData["Title"] = "Settings - Scorecard Facets";
-    var templateNamesByFacetId = ViewBag.TemplateNamesByFacetId as Dictionary<int, List<string>> ?? new Dictionary<int, List<string>>();
+    var templateNamesByFacetId = Model.TemplateNamesByFacetId;
 }
 
 <div class="container py-4">
@@ -31,9 +31,9 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @if (Model.Any())
+                    @if (Model.Facets.Any())
                     {
-                        @foreach (var facet in Model)
+                        @foreach (var facet in Model.Facets)
                         {
                             <tr>
                                 <td>@facet.Name</td>

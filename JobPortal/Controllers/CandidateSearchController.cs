@@ -1,11 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using JobPortal.Models;
+using JobPortal.Models.ViewModels;
 using JobPortal.Services.Interfaces;
 
 namespace JobPortal.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Admin,Recruiter,HiringManager")]
     [Route("Admin")]
     public class CandidateSearchController : Controller
     {
@@ -18,13 +19,6 @@ namespace JobPortal.Controllers
         {
             _candidateQueryService = candidateQueryService ?? throw new ArgumentNullException(nameof(candidateQueryService));
             _jobService = jobService ?? throw new ArgumentNullException(nameof(jobService));
-        }
-
-        [HttpGet("Applications")]
-        public async Task<IActionResult> Applications()
-        {
-            var jobs = await _candidateQueryService.GetApplicationsForJobsAsync();
-            return View("~/Views/Admin/Applications.cshtml", jobs);
         }
 
         [HttpGet("JobDetailSearch")]
@@ -46,9 +40,13 @@ namespace JobPortal.Controllers
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToList();
-            ViewBag.CurrentPage = page;
-            ViewBag.TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
-            return View("~/Views/Admin/SearchCandidates.cshtml", paged);
+            var vm = new SearchCandidatesViewModel
+            {
+                Applications = paged,
+                CurrentPage = page,
+                TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+            };
+            return View("~/Views/Admin/SearchCandidates.cshtml", vm);
         }
 
         [HttpGet("JobDetailSearchApi")]

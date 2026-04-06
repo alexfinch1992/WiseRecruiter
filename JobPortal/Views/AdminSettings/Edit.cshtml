@@ -1,7 +1,8 @@
-@model JobPortal.Models.Facet
+@model JobPortal.Models.ViewModels.FacetFormViewModel
 
 @{
     ViewData["Title"] = "Edit Facet";
+    var facet = Model.Facet!;
 }
 
 <div class="container py-4">
@@ -12,35 +13,35 @@
                     <h4 class="mb-0">Edit Scorecard Facet</h4>
                 </div>
                 <div class="card-body">
-                    <form asp-action="Edit" asp-route-id="@Model.Id" method="post">
+                    <form asp-action="Edit" asp-route-id="@facet.Id" method="post">
                         @Html.AntiForgeryToken()
                         <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
-                        <input type="hidden" name="id" value="@Model.Id" />
+                        <input type="hidden" name="id" value="@facet.Id" />
 
                         <div class="mb-3">
                             <label for="name" class="form-label fw-bold">Name</label>
-                            <input id="name" name="name" class="form-control" value="@Model.Name" />
+                            <input id="name" name="name" class="form-control" value="@facet.Name" />
                             @Html.ValidationMessage("name", null, new { @class = "text-danger small" })
                         </div>
 
                         <div class="mb-3">
                             <label for="description" class="form-label fw-bold">Description</label>
-                            <textarea id="description" name="description" class="form-control" rows="3" maxlength="500">@Model.Description</textarea>
+                            <textarea id="description" name="description" class="form-control" rows="3" maxlength="500">@facet.Description</textarea>
                         </div>
 
                         <div class="mb-3">
                             <label for="notesPlaceholder" class="form-label fw-bold">Notes Placeholder</label>
-                            <input id="notesPlaceholder" name="notesPlaceholder" class="form-control" value="@Model.NotesPlaceholder" />
+                            <input id="notesPlaceholder" name="notesPlaceholder" class="form-control" value="@facet.NotesPlaceholder" />
                         </div>
 
                         <div class="mb-3">
                             <label for="categoryId" class="form-label fw-bold">Category</label>
                             <select id="categoryId" name="categoryId" class="form-select">
                                 <option value="">-- None --</option>
-                                @foreach (var cat in (IEnumerable<JobPortal.Models.Category>)ViewBag.Categories)
+                                @foreach (var cat in Model.Categories)
                                 {
-                                    if (Model.CategoryId == cat.Id)
+                                    if (facet.CategoryId == cat.Id)
                                     {
                                         <option value="@cat.Id" selected>@cat.Name</option>
                                     }

@@ -69,6 +69,15 @@ namespace JobPortal.Models.ViewModels
 
         // Candidate Dossier: recommendations across ALL related applications
         public List<CrossAppRecommendationDto> CrossApplicationRecommendations { get; set; } = new();
+
+        // Navigation (prev/next candidate in list)
+        public string? NavIds { get; set; }
+        public int? NavIdx { get; set; }
+        public int? NavTotal { get; set; }
+        public int? NavPrevId { get; set; }
+        public int? NavPrevIdx { get; set; }
+        public int? NavNextId { get; set; }
+        public int? NavNextIdx { get; set; }
     }
 
     public class InterviewSummaryDto

@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-[Authorize]
+[Authorize(Roles = "Admin,Recruiter,HiringManager")]
 public class AdminSettingsController : Controller
 {
     private const string AtLeastOneFacetMessage = "A scorecard template must have at least one facet.";
@@ -56,15 +56,22 @@ public class AdminSettingsController : Controller
         foreach (var names in templateNamesByFacetId.Values)
             names.Sort(StringComparer.OrdinalIgnoreCase);
 
-        ViewBag.TemplateNamesByFacetId = templateNamesByFacetId;
-        return View(facets);
+        var vm = new FacetIndexViewModel
+        {
+            Facets = facets,
+            TemplateNamesByFacetId = templateNamesByFacetId
+        };
+        return View(vm);
     }
 
     [HttpGet]
     public async Task<IActionResult> Create()
     {
-        ViewBag.Categories = await _context.Categories.OrderBy(c => c.Name).ToListAsync();
-        return View();
+        var vm = new FacetFormViewModel
+        {
+            Categories = await _context.Categories.OrderBy(c => c.Name).ToListAsync()
+        };
+        return View(vm);
     }
 
     [HttpPost]
@@ -76,8 +83,11 @@ public class AdminSettingsController : Controller
 
         if (!ModelState.IsValid)
         {
-            ViewBag.Categories = await _context.Categories.OrderBy(c => c.Name).ToListAsync();
-            return View();
+            var vm = new FacetFormViewModel
+            {
+                Categories = await _context.Categories.OrderBy(c => c.Name).ToListAsync()
+            };
+            return View(vm);
         }
 
         try
@@ -95,8 +105,11 @@ public class AdminSettingsController : Controller
             ModelState.AddModelError(nameof(name), exception.Message);
         }
 
-        ViewBag.Categories = await _context.Categories.OrderBy(c => c.Name).ToListAsync();
-        return View();
+        var vmFallback = new FacetFormViewModel
+        {
+            Categories = await _context.Categories.OrderBy(c => c.Name).ToListAsync()
+        };
+        return View(vmFallback);
     }
 
     [HttpGet]
@@ -106,8 +119,12 @@ public class AdminSettingsController : Controller
         if (facet == null)
             return NotFound();
 
-        ViewBag.Categories = await _context.Categories.OrderBy(c => c.Name).ToListAsync();
-        return View(facet);
+        var vm = new FacetFormViewModel
+        {
+            Facet = facet,
+            Categories = await _context.Categories.OrderBy(c => c.Name).ToListAsync()
+        };
+        return View(vm);
     }
 
     [HttpPost]
@@ -119,8 +136,12 @@ public class AdminSettingsController : Controller
 
         if (!ModelState.IsValid)
         {
-            ViewBag.Categories = await _context.Categories.OrderBy(c => c.Name).ToListAsync();
-            return View(new JobPortal.Models.Facet { Id = id, Name = name, Description = description, NotesPlaceholder = notesPlaceholder, CategoryId = categoryId });
+            var vm = new FacetFormViewModel
+            {
+                Facet = new JobPortal.Models.Facet { Id = id, Name = name, Description = description, NotesPlaceholder = notesPlaceholder, CategoryId = categoryId },
+                Categories = await _context.Categories.OrderBy(c => c.Name).ToListAsync()
+            };
+            return View(vm);
         }
 
         try
@@ -137,8 +158,12 @@ public class AdminSettingsController : Controller
             ModelState.AddModelError(nameof(name), exception.Message);
         }
 
-        ViewBag.Categories = await _context.Categories.OrderBy(c => c.Name).ToListAsync();
-        return View(new JobPortal.Models.Facet { Id = id, Name = name, Description = description, NotesPlaceholder = notesPlaceholder, CategoryId = categoryId });
+        var vmFallback = new FacetFormViewModel
+        {
+            Facet = new JobPortal.Models.Facet { Id = id, Name = name, Description = description, NotesPlaceholder = notesPlaceholder, CategoryId = categoryId },
+            Categories = await _context.Categories.OrderBy(c => c.Name).ToListAsync()
+        };
+        return View(vmFallback);
     }
 
     [HttpGet]

@@ -77,8 +77,8 @@ namespace WiseRecruiter.Tests.Integration
             var result = await controller.JobDetail(job.Id, page: 1);
 
             var viewResult = result.Should().BeOfType<ViewResult>().Subject;
-            var model = viewResult.Model.Should().BeOfType<Job>().Subject;
-            model.Applications!.Count.Should().Be(25);
+            var model = viewResult.Model.Should().BeOfType<JobPortal.Models.ViewModels.JobDetailViewModel>().Subject;
+            model.Job.Applications!.Count.Should().Be(25);
         }
 
         // ── 2. Page 2 returns different items than page 1 ──
@@ -91,13 +91,13 @@ namespace WiseRecruiter.Tests.Integration
 
             var ctrl1 = AdminControllerFactory.Create(ctx);
             var result1 = await ctrl1.JobDetail(job.Id, page: 1);
-            var page1Ids = ((result1 as ViewResult)!.Model as Job)!
-                .Applications!.Select(a => a.Id).ToList();
+            var page1Ids = ((result1 as ViewResult)!.Model as JobPortal.Models.ViewModels.JobDetailViewModel)!
+                .Job.Applications!.Select(a => a.Id).ToList();
 
             var ctrl2 = AdminControllerFactory.Create(ctx);
             var result2 = await ctrl2.JobDetail(job.Id, page: 2);
-            var page2Ids = ((result2 as ViewResult)!.Model as Job)!
-                .Applications!.Select(a => a.Id).ToList();
+            var page2Ids = ((result2 as ViewResult)!.Model as JobPortal.Models.ViewModels.JobDetailViewModel)!
+                .Job.Applications!.Select(a => a.Id).ToList();
 
             page1Ids.Should().NotIntersectWith(page2Ids);
         }
@@ -114,12 +114,12 @@ namespace WiseRecruiter.Tests.Integration
             var result = await controller.JobDetail(job.Id, sort: "name", dir: "asc", page: 2);
 
             var viewResult = result.Should().BeOfType<ViewResult>().Subject;
-            var model = viewResult.Model.Should().BeOfType<Job>().Subject;
+            var model = viewResult.Model.Should().BeOfType<JobPortal.Models.ViewModels.JobDetailViewModel>().Subject;
 
-            model.Applications!.Count.Should().Be(25);
+            model.Job.Applications!.Count.Should().Be(25);
 
             // Items should be sorted by name ascending
-            var names = model.Applications!.Select(a => a.Candidate?.LastName ?? "").ToList();
+            var names = model.Job.Applications!.Select(a => a.Candidate?.LastName ?? "").ToList();
             names.Should().BeInAscendingOrder();
         }
 
@@ -135,9 +135,9 @@ namespace WiseRecruiter.Tests.Integration
             var result = await controller.JobDetail(job.Id, searchQuery: "Alice");
 
             var viewResult = result.Should().BeOfType<ViewResult>().Subject;
-            var model = viewResult.Model.Should().BeOfType<Job>().Subject;
+            var model = viewResult.Model.Should().BeOfType<JobPortal.Models.ViewModels.JobDetailViewModel>().Subject;
 
-            model.Applications!.Should().AllSatisfy(a =>
+            model.Job.Applications!.Should().AllSatisfy(a =>
                 a.Name.Should().Contain("Alice"));
         }
 
@@ -153,8 +153,8 @@ namespace WiseRecruiter.Tests.Integration
             var result = await controller.JobDetail(job.Id, page: 1);
 
             var viewResult = result.Should().BeOfType<ViewResult>().Subject;
-            var totalCount = (int)controller.ViewBag.TotalCount;
-            totalCount.Should().Be(60);
+            var vm = viewResult.Model.Should().BeOfType<JobPortal.Models.ViewModels.JobDetailViewModel>().Subject;
+            vm.TotalCount.Should().Be(60);
         }
 
         // ── 6. Search reduces TotalCount ──
@@ -168,9 +168,10 @@ namespace WiseRecruiter.Tests.Integration
 
             var result = await controller.JobDetail(job.Id, searchQuery: "Alice");
 
-            var totalCount = (int)controller.ViewBag.TotalCount;
-            totalCount.Should().BeLessThan(60);
-            totalCount.Should().BeGreaterThan(0);
+            var viewResult = result.Should().BeOfType<ViewResult>().Subject;
+            var vm = viewResult.Model.Should().BeOfType<JobPortal.Models.ViewModels.JobDetailViewModel>().Subject;
+            vm.TotalCount.Should().BeLessThan(60);
+            vm.TotalCount.Should().BeGreaterThan(0);
         }
 
         // ── 7. Default sort with no page defaults to page 1 ──
@@ -184,8 +185,9 @@ namespace WiseRecruiter.Tests.Integration
 
             var result = await controller.JobDetail(job.Id);
 
-            var currentPage = (int)controller.ViewBag.CurrentPage;
-            currentPage.Should().Be(1);
+            var viewResult = result.Should().BeOfType<ViewResult>().Subject;
+            var vm = viewResult.Model.Should().BeOfType<JobPortal.Models.ViewModels.JobDetailViewModel>().Subject;
+            vm.CurrentPage.Should().Be(1);
         }
 
         // ── 8. ViewData includes searchQuery for Razor ──

@@ -1,4 +1,4 @@
-@model JobPortal.Models.Job
+@model JobPortal.Models.ViewModels.JobEditViewModel
 
 @{
     ViewData["Title"] = "Edit Job";
@@ -15,24 +15,24 @@
                     <form asp-controller="Admin" asp-action="Edit" method="post">
                         <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
-                        <input type="hidden" asp-for="Id" />
+                        <input type="hidden" asp-for="Job.Id" />
 
                         <div class="mb-3">
-                            <label asp-for="Title" class="form-label fw-bold">Job Title *</label>
-                            <input asp-for="Title" class="form-control form-control-lg" />
-                            <span asp-validation-for="Title" class="text-danger small"></span>
+                            <label asp-for="Job.Title" class="form-label fw-bold">Job Title *</label>
+                            <input asp-for="Job.Title" class="form-control form-control-lg" />
+                            <span asp-validation-for="Job.Title" class="text-danger small"></span>
                         </div>
 
                         <div class="mb-3">
-                            <label asp-for="Description" class="form-label fw-bold">Job Description *</label>
-                            <textarea asp-for="Description" class="form-control" rows="6"></textarea>
-                            <span asp-validation-for="Description" class="text-danger small"></span>
+                            <label asp-for="Job.Description" class="form-label fw-bold">Job Description *</label>
+                            <textarea asp-for="Job.Description" class="form-control" rows="6"></textarea>
+                            <span asp-validation-for="Job.Description" class="text-danger small"></span>
                         </div>
 
                         <div class="mb-3">
-                            <label asp-for="ScorecardTemplateId" class="form-label fw-bold">Scorecard Template</label>
-                            <select asp-for="ScorecardTemplateId" asp-items="ViewBag.ScorecardTemplates" class="form-select"></select>
-                            <span asp-validation-for="ScorecardTemplateId" class="text-danger small"></span>
+                            <label asp-for="Job.ScorecardTemplateId" class="form-label fw-bold">Scorecard Template</label>
+                            <select asp-for="Job.ScorecardTemplateId" asp-items="Model.ScorecardTemplates" class="form-select"></select>
+                            <span asp-validation-for="Job.ScorecardTemplateId" class="text-danger small"></span>
                         </div>
 
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">

@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using JobPortal.Services.Interfaces;
 using JobPortal.Services.Models;
 
-[Authorize]
+[Authorize(Roles = "Admin,Recruiter,HiringManager")]
 [Route("Admin")]
 public class InterviewController : Controller
 {

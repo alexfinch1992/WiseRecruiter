@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using JobPortal.Models;
 using JobPortal.Services.Interfaces;
 
-[Authorize]
+[Authorize(Roles = "Admin,Recruiter,HiringManager")]
 [Route("Admin")]
 public class EmailController : Controller
 {

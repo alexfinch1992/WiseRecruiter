@@ -2,7 +2,7 @@ namespace JobPortal.Models.ViewModels
 {
     public class CandidateSearchResultViewModel
     {
-        public List<Application> Applications { get; set; } = new();
+        public List<CandidateListItemDto> Applications { get; set; } = new();
         public int TotalCount { get; set; }
 
         public int Page { get; set; }

@@ -71,6 +71,21 @@ namespace JobPortal.Data
                 .IsRequired()
                 .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<Application>()
+                .HasIndex(a => a.City);
+
+            modelBuilder.Entity<Application>()
+                .HasIndex(a => a.JobId);
+
+            modelBuilder.Entity<Application>()
+                .HasIndex(a => a.Stage);
+
+            modelBuilder.Entity<Application>()
+                .HasIndex(a => a.AppliedDate);
+
+            modelBuilder.Entity<Application>()
+                .HasIndex(a => new { a.JobId, a.Stage });
+
             // ScorecardFacetId is kept as a plain column (no FK managed by EF)
             modelBuilder.Entity<ScorecardTemplateFacet>()
                 .Property(tf => tf.ScorecardFacetId)

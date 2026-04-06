@@ -1,7 +1,8 @@
-@model JobPortal.Models.Job
+@model JobPortal.Models.ViewModels.JobDetailViewModel
 
 @{
     ViewData["Title"] = "Job Details";
+    var Job = Model.Job;
 }
 
 <style>
@@ -49,13 +50,13 @@
 <div class="container-fluid py-5">
     <div class="row mb-5">
         <div class="col-md-8">
-            <h1 class="fw-bold mb-2"><i class="fas fa-briefcase me-3"></i>@Model.Title</h1>
-            <p class="text-muted lead">Job ID: @Model.Id</p>
+            <h1 class="fw-bold mb-2"><i class="fas fa-briefcase me-3"></i>@Job.Title</h1>
+            <p class="text-muted lead">Job ID: @Job.Id</p>
             <div class="d-flex align-items-center gap-2 mt-2">
                 <span class="text-muted fw-semibold"><i class="fas fa-user-tie me-1"></i>Primary Recruiter:</span>
-                @if (Model.OwnerUser != null)
+                @if (Job.OwnerUser != null)
                 {
-                    <span class="badge bg-primary">@Model.OwnerUser.FullName</span>
+                    <span class="badge bg-primary">@Job.OwnerUser.FullName</span>
                 }
                 else
                 {
@@ -63,9 +64,9 @@
                 }
             </div>
             @{
-                var eligibleUsers = ViewBag.ReviewerEligibleUsers as List<JobPortal.Models.ApplicationUser>
+                var eligibleUsers = Model.ReviewerEligibleUsers as List<JobPortal.Models.ApplicationUser>
                                     ?? new List<JobPortal.Models.ApplicationUser>();
-                var reviewerUserIds = (Model.JobUsers ?? new List<JobPortal.Models.JobUser>())
+                var reviewerUserIds = (Job.JobUsers ?? new List<JobPortal.Models.JobUser>())
                     .Where(x => x.Role == "Reviewer")
                     .Select(x => x.UserId)
                     .ToHashSet();
@@ -93,7 +94,7 @@
             }
             else
             {
-                var reviewerNames = (Model.JobUsers ?? new List<JobPortal.Models.JobUser>())
+                var reviewerNames = (Job.JobUsers ?? new List<JobPortal.Models.JobUser>())
                     .Where(x => x.Role == "Reviewer" && x.IsActive && x.User != null)
                     .Select(x => x.User.FullName)
                     .ToList();
@@ -104,7 +105,7 @@
             }
             <div class="mt-3 d-flex align-items-center gap-2">
                 <span class="text-muted fw-semibold"><i class="fas fa-bell me-1"></i>Alerts (Notifications):</span>
-                <div id="job-alert-toggle-root" data-job-id="@Model.Id"></div>
+                <div id="job-alert-toggle-root" data-job-id="@Job.Id"></div>
             </div>
         </div>
         <div class="col-md-4 text-end">
@@ -119,22 +120,22 @@
                     <h5 class="fw-bold mb-0"><i class="fas fa-file-alt me-2"></i>Job Description</h5>
                 </div>
                 <div class="card-body">
-                    <p class="card-text lead">@Model.Description</p>
+                    <p class="card-text lead">@Job.Description</p>
                 </div>
                 <div class="card-footer bg-white border-top">
                     <div class="btn-group" role="group">
-                        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-sm btn-outline-warning"><i class="fas fa-edit me-1"></i>Edit</a>
-                        <a asp-controller="Job" asp-action="Delete" asp-route-id="@Model.Id" asp-route-returnUrl="@Url.Action("Index", "Admin")" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash me-1"></i>Delete</a>
-                        <a asp-controller="Admin" asp-action="AddCandidate" asp-route-jobId="@Model.Id" class="btn btn-sm btn-outline-primary"><i class="fas fa-user-plus me-1"></i>Add Candidate</a>
-                        @if (ViewBag.HasApplicantsToReview == true)
+                        <a asp-action="Edit" asp-route-id="@Job.Id" class="btn btn-sm btn-outline-warning"><i class="fas fa-edit me-1"></i>Edit</a>
+                        <a asp-controller="Job" asp-action="Delete" asp-route-id="@Job.Id" asp-route-returnUrl="@Url.Action("Index", "Admin")" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash me-1"></i>Delete</a>
+                        <a asp-controller="Admin" asp-action="AddCandidate" asp-route-jobId="@Job.Id" class="btn btn-sm btn-outline-primary"><i class="fas fa-user-plus me-1"></i>Add Candidate</a>
+                        @if (Model.HasApplicantsToReview)
                         {
-                            <a asp-action="ResumeReview" asp-route-jobId="@Model.Id" class="btn btn-outline-primary">
+                            <a asp-action="ResumeReview" asp-route-jobId="@Job.Id" class="btn btn-outline-primary">
                                 Review Applicants
                             </a>
                         }
                         @* TEMP: seed button — remove before production *@
                         <form asp-action="SeedResumeReviewData" method="post" style="display:inline;">
-                            <input type="hidden" name="jobId" value="@Model.Id" />
+                            <input type="hidden" name="jobId" value="@Job.Id" />
                             <button type="submit" class="btn btn-sm btn-outline-secondary">
                                 Seed Test Applicants
                             </button>
@@ -151,7 +152,7 @@
                 </div>
                 <div class="card-body">
                     @{
-                        var displayCount = (int?)ViewBag.TotalCount ?? Model.Applications?.Count ?? 0;
+                        var displayCount = Model.TotalCount;
                     }
                     <h2 class="display-4 fw-bold text-center" style="color: #1E1765;">
                         @displayCount
@@ -160,12 +161,12 @@
                         @(displayCount == 1 ? "Candidate" : "Candidates") in job
                     </p>
                     
-                    @if (Model.Applications?.Any() == true)
+                    @if (Job.Applications?.Any() == true)
                     {
                         <hr class="my-3" />
                         <div class="small">
                             @{
-                                var stageSummary = ViewBag.StageSummary as IReadOnlyList<JobPortal.Models.ViewModels.CandidateStageSummaryItem>
+                                var stageSummary = Model.StageSummary as IReadOnlyList<JobPortal.Models.ViewModels.CandidateStageSummaryItem>
                                                    ?? new List<JobPortal.Models.ViewModels.CandidateStageSummaryItem>();
                             }
                             @foreach (var item in stageSummary)
@@ -187,7 +188,7 @@
         {
             "Applied", "Screen", "Offer", "Hired"
         };
-        var stages = Model.Stages?
+        var stages = Job.Stages?
             .Where(s => !systemStageNames.Contains(s.Name))
             .OrderBy(s => s.Order)
             .ToList() ?? new List<JobStage>();
@@ -230,17 +231,17 @@
                                 <div class="btn-group btn-group-sm ms-2" role="group">
                                     @if (i > 0)
                                     {
-                                        <button type="button" class="btn btn-outline-secondary" title="Move Up" onclick="moveStage(@stage.Id, @Model.Id, 'up', this)">
+                                        <button type="button" class="btn btn-outline-secondary" title="Move Up" onclick="moveStage(@stage.Id, @Job.Id, 'up', this)">
                                             <i class="fas fa-chevron-up"></i>
                                         </button>
                                     }
                                     @if (i < stages.Count - 1)
                                     {
-                                        <button type="button" class="btn btn-outline-secondary" title="Move Down" onclick="moveStage(@stage.Id, @Model.Id, 'down', this)">
+                                        <button type="button" class="btn btn-outline-secondary" title="Move Down" onclick="moveStage(@stage.Id, @Job.Id, 'down', this)">
                                             <i class="fas fa-chevron-down"></i>
                                         </button>
                                     }
-                                    <button type="button" class="btn btn-outline-danger" title="Remove Stage" onclick="removeStage(@stage.Id, @Model.Id, this)">
+                                    <button type="button" class="btn btn-outline-danger" title="Remove Stage" onclick="removeStage(@stage.Id, @Job.Id, this)">
                                         <i class="fas fa-times"></i>
                                     </button>
                                 </div>
@@ -262,7 +263,7 @@
 
                 <!-- Add New Stage Form -->
                 <form method="post" asp-action="AddStage" class="d-flex gap-2 align-items-center">
-                    <input type="hidden" name="jobId" value="@Model.Id" />
+                    <input type="hidden" name="jobId" value="@Job.Id" />
                     <input type="text" name="stageName" class="form-control form-control-sm" placeholder="Enter stage name (e.g., HR Review, Coding Test)" required />
                     <button type="submit" class="btn btn-sm btn-outline-success"><i class="fas fa-plus me-1"></i>Add Stage</button>
                     <span id="stageSaveStatus" style="display:none;" class="text-success small ms-1"><i class="fas fa-check me-1"></i>Saved</span>
@@ -282,11 +283,11 @@
             </div>
         </div>
 
-    @if (Model.Applications?.Any() == true)
+    @if (Job.Applications?.Any() == true)
     {
         <div class="mb-4">
             <form asp-controller="Admin" asp-action="JobDetail" method="get" class="d-flex gap-2 mb-3" id="jobSearchForm">
-                <input type="hidden" name="id" value="@Model.Id" />
+                <input type="hidden" name="id" value="@Job.Id" />
                 <div class="flex-grow-1 position-relative">
                     <input type="text" name="searchQuery" class="form-control" 
                            id="jobSearchInput"
@@ -303,181 +304,17 @@
                 </button>
                 @if (!string.IsNullOrEmpty(ViewData["SearchQuery"]?.ToString()))
                 {
-                    <a asp-action="JobDetail" asp-route-id="@Model.Id" class="btn btn-outline-secondary">
+                    <a asp-action="JobDetail" asp-route-id="@Job.Id" class="btn btn-outline-secondary">
                         <i class="fas fa-times me-2"></i>Clear
                     </a>
                 }
             </form>
 
-            @if (!string.IsNullOrEmpty(ViewData["SearchQuery"]?.ToString()))
-            {
-                <div class="alert alert-info" role="alert">
-                    <i class="fas fa-search me-2"></i>
-                    Showing results for "<strong>@ViewData["SearchQuery"]</strong>" 
-                    (@(Model.Applications?.Count ?? 0) candidate@((Model.Applications?.Count ?? 0) != 1 ? "s" : ""))
-                </div>
-            }
-
-            @{
-                var currentSort = Context.Request.Query["sort"].ToString();
-                var currentDir = Context.Request.Query["dir"].ToString();
-                var sq = Uri.EscapeDataString(ViewData["SearchQuery"]?.ToString() ?? "");
-
-                string NameDir() => (currentSort == "name" && currentDir == "asc") ? "desc" : "asc";
-                string StageDir() => (currentSort == "stage" && currentDir == "asc") ? "desc" : "asc";
-                string DateDir() => (currentSort == "date" && currentDir == "asc") ? "desc" : "asc";
-
-                string NameIcon() => (currentSort == "name" && currentDir == "asc") ? "fa-sort-alpha-up" : "fa-sort-alpha-down";
-                string StageIcon() => (currentSort == "stage" && currentDir == "asc") ? "fa-sort-amount-up" : "fa-sort-amount-down";
-                string DateIcon() => (currentSort == "date" && currentDir == "asc") ? "fa-sort-numeric-up" : "fa-sort-numeric-down";
-            }
-            <div class="btn-group" role="group">
-                <a href="@Url.Action("JobDetail", "Admin", new { id = Model.Id, searchQuery = ViewData["SearchQuery"], sort = "name", dir = NameDir() })" class="btn btn-sm @(currentSort == "name" ? "btn-secondary" : "btn-outline-secondary")">
-                    <i class="fas @(NameIcon()) me-1"></i>Sort by Name
-                </a>
-                <a href="@Url.Action("JobDetail", "Admin", new { id = Model.Id, searchQuery = ViewData["SearchQuery"], sort = "stage", dir = StageDir() })" class="btn btn-sm @(currentSort == "stage" ? "btn-secondary" : "btn-outline-secondary")">
-                    <i class="fas @(StageIcon()) me-1"></i>Sort by Stage
-                </a>
-                <a href="@Url.Action("JobDetail", "Admin", new { id = Model.Id, searchQuery = ViewData["SearchQuery"], sort = "date", dir = DateDir() })" class="btn btn-sm @(currentSort == "date" ? "btn-secondary" : "btn-outline-secondary")">
-                    <i class="fas @(DateIcon()) me-1"></i>Sort by Date
-                </a>
-            </div>
         </div>
 
-        <div class="card shadow-sm border-0">
-            <div class="card-header">
-                <h5 class="fw-bold mb-0"><i class="fas fa-list me-2"></i>Applicants</h5>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead>
-                        <tr>
-                            <th><i class="fas fa-user me-2"></i>Name</th>
-                            <th><i class="fas fa-envelope me-2"></i>Email</th>
-                            <th><i class="fas fa-map-marker-alt me-2"></i>City</th>
-                            <th><i class="fas fa-calendar me-2"></i>Applied</th>
-                            <th class="text-center"><i class="fas fa-tasks me-2"></i>Stage</th>
-                            <th class="text-center"><i class="fas fa-file me-2"></i>Resume</th>
-                            <th class="text-center"><i class="fas fa-cog me-2"></i>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @{
-                            var appList = (Model.Applications ?? Enumerable.Empty<Application>())
-                                .ToList();
-                            var appIds = string.Join(",", appList.Select(a => a.Id));
-                        }
-                        @for (var appIdx = 0; appIdx < appList.Count; appIdx++)
-                        {
-                            var app = appList[appIdx];
-                            <tr>
-                                <td>
-                                    <a href="@Url.Action("CandidateDetails", "Admin", new { id = app.Id, ids = appIds, idx = appIdx })" style="color: #1E1765; text-decoration: none;">
-                                        <strong>@app.Name</strong>
-                                    </a>
-                                </td>
-                                <td>
-                                    <a href="mailto:@app.Email">@app.Email</a>
-                                </td>
-                                <td>
-                                    <span class="badge badge-primary">@app.City</span>
-                                </td>
-                                <td>
-                                    <small class="text-muted">@app.AppliedDate.ToString("MMM dd, yyyy hh:mm tt")</small>
-                                </td>
-                                <td class="text-center">
-                                    @{
-                                        string? _stageBadgeClass = null;
-                                        string? _stageBadgeStyle = null;
-                                        string _stageLabel;
-
-                                        if (app.Stage == ApplicationStage.Hired)
-                                        {
-                                            _stageBadgeClass = "badge bg-success";
-                                            _stageLabel = "Hired";
-                                        }
-                                        else if (app.Stage == ApplicationStage.Rejected)
-                                        {
-                                            _stageBadgeClass = "badge bg-danger";
-                                            _stageLabel = "Rejected";
-                                        }
-                                        else if (app.Stage == ApplicationStage.Offer)
-                                        {
-                                            _stageBadgeClass = "badge bg-warning text-dark";
-                                            _stageLabel = "Offer";
-                                        }
-                                        else
-                                        {
-                                            var _customName = app.CurrentJobStageId != null
-                                                ? Model.Stages?.FirstOrDefault(s => s.Id == app.CurrentJobStageId)?.Name
-                                                : null;
-                                            if (_customName != null)
-                                            {
-                                                _stageBadgeClass = "badge bg-primary";
-                                                _stageLabel = _customName;
-                                            }
-                                            else
-                                            {
-                                                _stageBadgeStyle = "background-color: #7B3FF2;";
-                                                _stageLabel = app.Stage.ToString();
-                                            }
-                                        }
-                                    }
-                                    <span class="@(_stageBadgeClass ?? "badge")" style="@(_stageBadgeStyle ?? "")">@_stageLabel</span>
-                                </td>
-                                <td class="text-center">
-                                    @{
-                                        var hasResume = !string.IsNullOrEmpty(app.ResumePath) || (app.Documents != null && app.Documents.Any(d => d.Type == DocumentType.Resume));
-                                        var resumePath = !string.IsNullOrEmpty(app.ResumePath) ? app.ResumePath : app.Documents?.FirstOrDefault(d => d.Type == DocumentType.Resume)?.FilePath;
-                                    }
-                                    @if (hasResume && !string.IsNullOrEmpty(resumePath))
-                                    {
-                                        <a href="@resumePath" target="_blank" class="btn btn-sm btn-outline-secondary" title="View Resume">
-                                            <i class="fas fa-eye"></i> View
-                                        </a>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted small">N/A</span>
-                                    }
-                                </td>
-                                <td class="text-center">
-                                    <div class="btn-group" role="group">
-                                        @if (!string.IsNullOrEmpty(app.ResumePath))
-                                        {
-                                            <a asp-action="DownloadResume" asp-route-id="@app.Id" class="btn btn-sm btn-outline-success" title="Download Resume">
-                                                <i class="fas fa-download"></i>
-                                            </a>
-                                        }
-                                        else if (app.Documents != null && app.Documents.Any(d => d.Type == DocumentType.Resume))
-                                        {
-                                            var resumeDoc = app.Documents.FirstOrDefault(d => d.Type == DocumentType.Resume);
-                                            <a href="@resumeDoc?.FilePath" download class="btn btn-sm btn-outline-success" title="Download Resume">
-                                                <i class="fas fa-download"></i>
-                                            </a>
-                                        }
-                                    </div>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
+        <div id="candidate-list">
+            @await Html.PartialAsync("_CandidateListPartial", Model)
         </div>
-    @if (ViewBag.TotalPages != null && (int)ViewBag.TotalPages > 1)
-    {
-        <nav aria-label="Pagination">
-            <ul class="pagination justify-content-center mt-3">
-                @for (int i = 1; i <= (int)ViewBag.TotalPages; i++)
-                {
-                    var isActive = i == (int)(ViewBag.CurrentPage ?? 1);
-                    <li class="page-item @(isActive ? "active" : "")">
-                        <a class="page-link" href="@Url.Action("JobDetail", "Admin", new { id = Model.Id, page = i, sort = Context.Request.Query["sort"].ToString(), dir = Context.Request.Query["dir"].ToString(), searchQuery = ViewData["SearchQuery"] })">@i</a>
-                    </li>
-                }
-            </ul>
-        </nav>
-    }
     }
     else
     {
@@ -490,6 +327,58 @@
 </div>
 
 <script>
+// Async sort/pagination handler
+document.addEventListener("click", async function (e) {
+    const link = e.target.closest(".sort-link");
+    if (!link) return;
+
+    e.preventDefault();
+
+    const container = document.getElementById("candidate-list");
+    container.style.opacity = "0.5";
+
+    try {
+        const response = await fetch(link.href, {
+            headers: { "X-Requested-With": "XMLHttpRequest" }
+        });
+
+        if (!response.ok) {
+            window.location.href = link.href;
+            return;
+        }
+
+        const html = await response.text();
+        container.innerHTML = html;
+        container.style.opacity = "1";
+
+        // Update browser URL for back/forward navigation
+        history.pushState(null, "", link.href);
+    } catch {
+        window.location.href = link.href;
+    }
+});
+
+// Handle browser back/forward
+window.addEventListener("popstate", async function () {
+    const container = document.getElementById("candidate-list");
+    if (!container) return;
+
+    container.style.opacity = "0.5";
+    try {
+        const response = await fetch(location.href, {
+            headers: { "X-Requested-With": "XMLHttpRequest" }
+        });
+        if (response.ok) {
+            container.innerHTML = await response.text();
+            container.style.opacity = "1";
+        } else {
+            location.reload();
+        }
+    } catch {
+        location.reload();
+    }
+});
+
 function showSavedIndicator() {
     const el = document.getElementById('stageSaveStatus');
     if (!el) return;
@@ -616,7 +505,7 @@ function renderStageButtons() {
     items.forEach((item, index) => {
         const btnGroup = item.querySelector('.btn-group');
         const stageId = item.getAttribute('data-stage-id');
-        const jobId = '@Model.Id';
+        const jobId = '@Job.Id';
         
         // Clear existing buttons
         btnGroup.innerHTML = '';
@@ -687,7 +576,7 @@ document.getElementById('jobSearchInput')?.addEventListener('input', async funct
     }
     
     try {
-        const response = await fetch(`/Admin/JobDetailSearchApi?id=@Model.Id&searchQuery=${encodeURIComponent(searchQuery)}`);
+        const response = await fetch(`/Admin/JobDetailSearchApi?id=@Job.Id&searchQuery=${encodeURIComponent(searchQuery)}`);
         const results = await response.json();
         
         if (results.length === 0) {
@@ -741,7 +630,7 @@ document.addEventListener('mouseout', function(e) {
 
 async function toggleReviewer(userId, checkbox) {
     try {
-        const response = await fetch(`/api/jobs/@Model.Id/reviewers/${userId}`, {
+        const response = await fetch(`/api/jobs/@Job.Id/reviewers/${userId}`, {
             method: 'POST'
         });
         if (!response.ok) {
