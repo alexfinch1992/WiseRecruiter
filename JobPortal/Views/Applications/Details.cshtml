@@ -98,10 +98,10 @@
                     </div>
                     <div class="card-body">
                         <div class="d-flex gap-2">
-                            <a href="@Model.ResumePath" target="_blank" class="btn btn-outline-primary">
+                            <a asp-action="DownloadResume" asp-route-id="@Model.Id" target="_blank" class="btn btn-outline-primary">
                                 <i class="fas fa-eye me-2"></i>View Resume
                             </a>
-                            <a href="@Model.ResumePath" download class="btn btn-outline-success">
+                            <a asp-action="DownloadResume" asp-route-id="@Model.Id" class="btn btn-outline-success">
                                 <i class="fas fa-download me-2"></i>Download Resume
                             </a>
                         </div>
@@ -131,7 +131,7 @@
                                         </small>
                                     </div>
                                     <div class="ms-3">
-                                        <a href="@doc.FilePath" target="_blank" class="btn btn-sm btn-outline-primary" title="Download">
+                                        <a asp-action="DownloadDocument" asp-route-id="@doc.Id" target="_blank" class="btn btn-sm btn-outline-primary" title="Download">
                                             <i class="fas fa-download"></i>
                                         </a>
                                     </div>

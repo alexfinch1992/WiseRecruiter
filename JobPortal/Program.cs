@@ -143,5 +143,10 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
+// Ensure resume storage directory exists
+var storagePath = app.Configuration["FileStorage:BasePath"]
+    ?? Path.Combine(app.Environment.ContentRootPath, "App_Data");
+Directory.CreateDirectory(Path.Combine(storagePath, "Resumes"));
+Directory.CreateDirectory(Path.Combine(storagePath, "Documents"));
 
 app.Run();

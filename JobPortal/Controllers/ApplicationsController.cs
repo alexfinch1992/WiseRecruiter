@@ -12,14 +12,14 @@ public class ApplicationsController : Controller
 {
 
     private readonly AppDbContext _context;
-    private readonly IWebHostEnvironment _webHostEnvironment;
+    private readonly IFileUploadService _fileUploadService;
     private readonly IApplicationService _applicationService;
     private readonly IScorecardService _scorecardService;
 
-    public ApplicationsController(AppDbContext context, IWebHostEnvironment webHostEnvironment, IApplicationService applicationService, IScorecardService scorecardService)
+    public ApplicationsController(AppDbContext context, IFileUploadService fileUploadService, IApplicationService applicationService, IScorecardService scorecardService)
     {
         _context = context;
-        _webHostEnvironment = webHostEnvironment;
+        _fileUploadService = fileUploadService;
         _applicationService = applicationService;
         _scorecardService = scorecardService;
     }
@@ -106,21 +106,24 @@ public class ApplicationsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create([Bind("Name,Email,City,JobId")] Application application, IFormFile resume)
     {
-        var (isValid, errorMessage) = FileUploadHelper.ValidateResume(resume);
+        var (isValid, errorMessage) = _fileUploadService.ValidateResume(resume);
         if (!isValid)
             ModelState.AddModelError("resume", errorMessage);
 
         if (ModelState.IsValid && resume != null)
         {
-            var (success, filePath, uploadError) = await FileUploadHelper.SaveResumeAsync(resume, _webHostEnvironment.WebRootPath);
+            var result = await _fileUploadService.UploadResumeAsync(resume);
             
-            if (!success)
+            if (!result.Success)
             {
-                ModelState.AddModelError("", uploadError);
+                ModelState.AddModelError("", result.ErrorMessage);
                 return View(application);
             }
 
-            application.ResumePath = filePath;
+            application.ResumePath = result.StoredFileName;
+            application.OriginalFileName = result.OriginalFileName;
+            application.ResumeContentType = result.ContentType;
+            application.ResumeUploadDate = result.UploadedAt;
 
             try
             {
@@ -207,7 +210,7 @@ public class ApplicationsController : Controller
         if (application.Email != User.Identity.Name)
             return Forbid();
 
-        FileUploadHelper.DeleteResume(application.ResumePath, _webHostEnvironment.WebRootPath);
+        await _fileUploadService.DeleteResumeAsync(application.ResumePath);
         _context.Applications.Remove(application);
 
         await _context.SaveChangesAsync();
@@ -223,19 +226,19 @@ public class ApplicationsController : Controller
         if (application.Email != User.Identity.Name)
             return Forbid();
 
-        var (isValid, errorMessage) = FileUploadHelper.ValidateDocument(document);
+        var (isValid, errorMessage) = _fileUploadService.ValidateDocument(document);
         if (!isValid)
             return Json(new { success = false, message = errorMessage });
 
-        var (success, filePath, uploadError) = await FileUploadHelper.SaveDocumentAsync(document, _webHostEnvironment.WebRootPath);
-        if (!success)
-            return Json(new { success = false, message = uploadError });
+        var result = await _fileUploadService.UploadDocumentAsync(document);
+        if (!result.Success)
+            return Json(new { success = false, message = result.ErrorMessage });
 
         var newDocument = new Document
         {
             ApplicationId = applicationId,
-            FileName = document.FileName,
-            FilePath = filePath,
+            FileName = result.OriginalFileName,
+            FilePath = result.StoredFileName,
             Type = (DocumentType)documentType,
             FileSize = document.Length
         };
@@ -245,7 +248,10 @@ public class ApplicationsController : Controller
         // If uploading a Resume document, also sync it to ResumePath for backward compatibility
         if (documentType == (int)DocumentType.Resume)
         {
-            application.ResumePath = filePath;
+            application.ResumePath = result.StoredFileName;
+            application.OriginalFileName = result.OriginalFileName;
+            application.ResumeContentType = result.ContentType;
+            application.ResumeUploadDate = result.UploadedAt;
             _context.Update(application);
         }
 
@@ -265,11 +271,51 @@ public class ApplicationsController : Controller
         if (application == null || application.Email != User.Identity.Name)
             return Forbid();
 
-        FileUploadHelper.DeleteDocument(document.FilePath, _webHostEnvironment.WebRootPath);
+        await _fileUploadService.DeleteDocumentAsync(document.FilePath);
         _context.Documents.Remove(document);
         await _context.SaveChangesAsync();
 
         return Json(new { success = true, message = "Document deleted successfully" });
+    }
+
+    public async Task<IActionResult> DownloadResume(int? id)
+    {
+        if (id == null)
+            return NotFound();
+
+        var application = await _context.Applications.FindAsync(id);
+        if (application == null || string.IsNullOrEmpty(application.ResumePath))
+            return NotFound();
+
+        if (application.Email != User.Identity?.Name)
+            return Forbid();
+
+        var filePath = _fileUploadService.GetResumePhysicalPath(application.ResumePath);
+        if (filePath == null)
+            return NotFound();
+
+        var downloadName = application.OriginalFileName ?? Path.GetFileName(filePath);
+        return PhysicalFile(filePath, application.ResumeContentType ?? "application/octet-stream", downloadName);
+    }
+
+    public async Task<IActionResult> DownloadDocument(int? id)
+    {
+        if (id == null)
+            return NotFound();
+
+        var document = await _context.Documents.FindAsync(id);
+        if (document == null)
+            return NotFound();
+
+        var application = await _context.Applications.FindAsync(document.ApplicationId);
+        if (application == null || application.Email != User.Identity?.Name)
+            return Forbid();
+
+        var filePath = _fileUploadService.GetDocumentPhysicalPath(document.FilePath);
+        if (filePath == null)
+            return NotFound();
+
+        return PhysicalFile(filePath, "application/octet-stream", document.FileName);
     }
 
     private bool ApplicationExists(int? id) => _context.Applications.Any(e => e.Id == id);
