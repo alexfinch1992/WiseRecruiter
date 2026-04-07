@@ -91,21 +91,14 @@ namespace JobPortal.Services.Implementations
             return true;
         }
 
-        public async Task<string?> GetResumeInlinePathAsync(int applicationId, string webRootPath)
+        public async Task<string?> GetResumeInlinePathAsync(int applicationId, IFileUploadService fileUploadService)
         {
             var application = await _context.Applications.FindAsync(applicationId);
 
             if (application == null || string.IsNullOrEmpty(application.ResumePath))
                 return null;
 
-            var filePath = Path.Combine(
-                webRootPath,
-                application.ResumePath.TrimStart('/'));
-
-            if (!File.Exists(filePath))
-                return null;
-
-            return filePath;
+            return fileUploadService.GetResumePhysicalPath(application.ResumePath);
         }
 
         public async Task<List<Application>> GetDebugResumePathApplicationsAsync()

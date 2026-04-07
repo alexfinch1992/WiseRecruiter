@@ -4,6 +4,7 @@ using JobPortal.Services.Implementations;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace WiseRecruiter.Tests.Helpers
@@ -26,7 +27,7 @@ namespace WiseRecruiter.Tests.Helpers
             var interviewSvc = new InterviewService(context);
             var cmdSvc       = new InterviewCommandService(context, interviewSvc, recSvc);
 
-            return new InterviewController(cmdSvc)
+            return new InterviewController(cmdSvc, Mock.Of<ILogger<InterviewController>>())
             {
                 ControllerContext = new ControllerContext
                 {

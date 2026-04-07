@@ -8,6 +8,7 @@ using JobPortal.Services.Implementations;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using Xunit;
@@ -45,7 +46,7 @@ namespace WiseRecruiter.Tests.Integration
         {
             var auditSvc  = new AuditService(context);
             var emailSvc  = new EmailService(context, auditSvc);
-            var controller = new EmailController(emailSvc)
+            var controller = new EmailController(emailSvc, Mock.Of<ILogger<EmailController>>())
             {
                 ControllerContext = new ControllerContext
                 {

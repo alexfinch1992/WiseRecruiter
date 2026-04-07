@@ -1,4 +1,5 @@
 using JobPortal.Models;
+using JobPortal.Services.Interfaces;
 
 namespace JobPortal.Services.Interfaces
 {
@@ -7,7 +8,7 @@ namespace JobPortal.Services.Interfaces
         Task<(Job? Job, List<Application> Applications)> GetResumeReviewDataAsync(int jobId);
         Task<(bool ApplicationFound, bool WrongJob, bool WrongStage)> AdvanceToScreenAsync(int applicationId, int jobId);
         Task<bool> SeedResumeReviewDataAsync(int jobId);
-        Task<string?> GetResumeInlinePathAsync(int applicationId, string webRootPath);
+        Task<string?> GetResumeInlinePathAsync(int applicationId, IFileUploadService fileUploadService);
         Task<List<Application>> GetDebugResumePathApplicationsAsync();
     }
 }
