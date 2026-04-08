@@ -7,14 +7,6 @@
 }
 
 <div class="container py-4">
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-warning alert-dismissible fade show" role="alert">
-            @TempData["ErrorMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
-
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="fw-bold mb-0">Hiring Requests</h4>
         <a asp-action="Create" class="btn btn-primary"
@@ -41,8 +33,9 @@
                         <tr>
                             <th>Role</th>
                             <th>Department</th>
-                            <th>Level / Band</th>
                             <th>Headcount</th>
+                            <th>Priority</th>
+                            <th>Stage</th>
                             <th>Status</th>
                             <th>Created</th>
                             <th></th>
@@ -52,19 +45,32 @@
                         @foreach (var r in Model)
                         {
                             <tr>
-                                <td class="fw-semibold">@r.RoleTitle</td>
+                                <td class="fw-semibold">@r.JobTitle</td>
                                 <td>@r.Department</td>
-                                <td>@r.LevelBand</td>
                                 <td>@r.Headcount</td>
+                                <td>
+                                    @{
+                                        var priorityClass = r.Priority switch
+                                        {
+                                            HiringPriority.High   => "danger",
+                                            HiringPriority.Medium => "warning",
+                                            _                     => "secondary"
+                                        };
+                                    }
+                                    <span class="badge bg-@priorityClass">@r.Priority</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">@r.Stage</span>
+                                </td>
                                 <td>
                                     @{
                                         var statusClass = r.Status switch
                                         {
-                                            HiringRequestStatus.ExecutiveApproved  => "success",
-                                            HiringRequestStatus.TalentLeadApproved => "info",
-                                            HiringRequestStatus.Rejected           => "danger",
-                                            HiringRequestStatus.Submitted          => "primary",
-                                            _                                      => "secondary"
+                                            HiringRequestStatus.Approved      => "success",
+                                            HiringRequestStatus.Rejected      => "danger",
+                                            HiringRequestStatus.Submitted     => "primary",
+                                            HiringRequestStatus.NeedsRevision => "warning",
+                                            _                                 => "secondary"
                                         };
                                     }
                                     <span class="badge bg-@statusClass">@r.Status</span>

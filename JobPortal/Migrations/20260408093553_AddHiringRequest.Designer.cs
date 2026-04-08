@@ -3,6 +3,7 @@ using System;
 using JobPortal.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace JobPortal.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260408093553_AddHiringRequest")]
+    partial class AddHiringRequest
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.13");
@@ -128,22 +131,13 @@ namespace JobPortal.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("OriginalFileName")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("RejectionNotes")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("RejectionReason")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("ResumeContentType")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("ResumePath")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("ResumeUploadDate")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Stage")

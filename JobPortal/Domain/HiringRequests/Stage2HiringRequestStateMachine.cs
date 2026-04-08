@@ -5,15 +5,19 @@ namespace JobPortal.Domain.HiringRequests
 {
     /// <summary>
     /// Governs Stage 2 transitions, reviewed by the Senior Executive.
-    /// The entity enters Stage 2 after TalentLeadApproved.
+    /// The entity enters Stage 2 at Draft after the Stage 1 Approved transition;
+    /// the service layer is responsible for advancing Stage and resetting Status.
     /// </summary>
     public class Stage2HiringRequestStateMachine : IHiringRequestStateMachine<Stage2HiringRequestTransitionContext>
     {
         public bool CanTransition(HiringRequestStatus from, HiringRequestStatus to) =>
             (from, to) switch
             {
-                (HiringRequestStatus.TalentLeadApproved, HiringRequestStatus.ExecutiveApproved) => true,
-                (HiringRequestStatus.TalentLeadApproved, HiringRequestStatus.Rejected)         => true,
+                (HiringRequestStatus.Draft,         HiringRequestStatus.Submitted)     => true,
+                (HiringRequestStatus.Submitted,     HiringRequestStatus.Approved)      => true,
+                (HiringRequestStatus.Submitted,     HiringRequestStatus.Rejected)      => true,
+                (HiringRequestStatus.Submitted,     HiringRequestStatus.NeedsRevision) => true,
+                (HiringRequestStatus.NeedsRevision, HiringRequestStatus.Submitted)     => true,
                 _ => false
             };
 
@@ -23,27 +27,40 @@ namespace JobPortal.Domain.HiringRequests
             if (!CanTransition(entity.Status, to))
                 return TransitionResult.InvalidState;
 
-            if (ctx.UserId is null)
+            if (!ctx.UserId.HasValue)
                 throw new InvalidOperationException("UserId is required for all Stage 2 transitions.");
 
             var now = DateTime.UtcNow;
 
             switch (to)
             {
-                case HiringRequestStatus.ExecutiveApproved:
-                    entity.Status = HiringRequestStatus.ExecutiveApproved;
-                    entity.ExecutiveApprovedByUserId = ctx.UserId;
-                    entity.ExecutiveApprovedUtc = now;
-                    entity.ExecutiveNotes = ctx.Notes;
-                    entity.UpdatedUtc = now;
+                case HiringRequestStatus.Submitted:
+                    entity.Status = HiringRequestStatus.Submitted;
+                    entity.LastUpdatedUtc = now;
+                    break;
+
+                case HiringRequestStatus.Approved:
+                    entity.Status = HiringRequestStatus.Approved;
+                    entity.Stage2ReviewedByUserId = ctx.UserId.Value;
+                    entity.Stage2ReviewedUtc = now;
+                    entity.Stage2Feedback = ctx.Feedback;
+                    entity.LastUpdatedUtc = now;
                     break;
 
                 case HiringRequestStatus.Rejected:
                     entity.Status = HiringRequestStatus.Rejected;
-                    entity.RejectedByUserId = ctx.UserId;
-                    entity.RejectedUtc = now;
+                    entity.Stage2ReviewedByUserId = ctx.UserId.Value;
+                    entity.Stage2ReviewedUtc = now;
                     entity.RejectionReason = ctx.RejectionReason;
-                    entity.UpdatedUtc = now;
+                    entity.LastUpdatedUtc = now;
+                    break;
+
+                case HiringRequestStatus.NeedsRevision:
+                    entity.Status = HiringRequestStatus.NeedsRevision;
+                    entity.Stage2ReviewedByUserId = ctx.UserId.Value;
+                    entity.Stage2ReviewedUtc = now;
+                    entity.Stage2Feedback = ctx.Feedback;
+                    entity.LastUpdatedUtc = now;
                     break;
             }
 

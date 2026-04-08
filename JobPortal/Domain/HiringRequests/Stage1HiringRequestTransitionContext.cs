@@ -1,54 +1,60 @@
+using JobPortal.Models;
+
 namespace JobPortal.Domain.HiringRequests
 {
     /// <summary>Carries the data needed for a Stage 1 (Senior Talent Lead) transition.</summary>
     public sealed class Stage1HiringRequestTransitionContext
     {
         // Content fields — populated only for draft saves
-        public string? RoleTitle { get; }
+        public string? JobTitle { get; }
         public string? Department { get; }
-        public string? LevelBand { get; }
-        public string? Location { get; }
-        public bool? IsReplacement { get; }
-        public string? ReplacementReason { get; }
         public int? Headcount { get; }
         public string? Justification { get; }
+        public string? SalaryBand { get; }
+        public DateTime? TargetStartDate { get; }
+        public EmploymentType? EmploymentType { get; }
+        public HiringPriority? Priority { get; }
 
         // Actor and decision fields
-        public string? UserId { get; }
-        public string? Notes { get; }
+        public int? UserId { get; }
+        public string? Feedback { get; }
         public string? RejectionReason { get; }
 
         private Stage1HiringRequestTransitionContext(
-            string? roleTitle, string? department, string? levelBand, string? location,
-            bool? isReplacement, string? replacementReason, int? headcount, string? justification,
-            string? userId, string? notes, string? rejectionReason)
+            string? jobTitle, string? department, int? headcount, string? justification,
+            string? salaryBand, DateTime? targetStartDate, EmploymentType? employmentType,
+            HiringPriority? priority, int? userId, string? feedback, string? rejectionReason)
         {
-            RoleTitle = roleTitle;
+            JobTitle = jobTitle;
             Department = department;
-            LevelBand = levelBand;
-            Location = location;
-            IsReplacement = isReplacement;
-            ReplacementReason = replacementReason;
             Headcount = headcount;
             Justification = justification;
+            SalaryBand = salaryBand;
+            TargetStartDate = targetStartDate;
+            EmploymentType = employmentType;
+            Priority = priority;
             UserId = userId;
-            Notes = notes;
+            Feedback = feedback;
             RejectionReason = rejectionReason;
         }
 
         public static Stage1HiringRequestTransitionContext ForDraftSave(
-            string? roleTitle, string? department, string? levelBand, string? location,
-            bool? isReplacement, string? replacementReason, int? headcount, string? justification)
-            => new(roleTitle, department, levelBand, location, isReplacement, replacementReason,
-                   headcount, justification, userId: null, notes: null, rejectionReason: null);
+            string? jobTitle, string? department, int? headcount, string? justification,
+            string? salaryBand, DateTime? targetStartDate, EmploymentType? employmentType,
+            HiringPriority? priority)
+            => new(jobTitle, department, headcount, justification, salaryBand, targetStartDate,
+                   employmentType, priority, userId: null, feedback: null, rejectionReason: null);
 
-        public static Stage1HiringRequestTransitionContext ForSubmit(string userId)
-            => new(null, null, null, null, null, null, null, null, userId, notes: null, rejectionReason: null);
+        public static Stage1HiringRequestTransitionContext ForSubmit(int userId)
+            => new(null, null, null, null, null, null, null, null, userId, feedback: null, rejectionReason: null);
 
-        public static Stage1HiringRequestTransitionContext ForApproval(string userId, string? notes = null)
-            => new(null, null, null, null, null, null, null, null, userId, notes, rejectionReason: null);
+        public static Stage1HiringRequestTransitionContext ForApproval(int userId, string? feedback = null)
+            => new(null, null, null, null, null, null, null, null, userId, feedback, rejectionReason: null);
 
-        public static Stage1HiringRequestTransitionContext ForRejection(string userId, string? reason = null)
-            => new(null, null, null, null, null, null, null, null, userId, notes: null, rejectionReason: reason);
+        public static Stage1HiringRequestTransitionContext ForRejection(int userId, string? reason = null)
+            => new(null, null, null, null, null, null, null, null, userId, feedback: null, rejectionReason: reason);
+
+        public static Stage1HiringRequestTransitionContext ForNeedsRevision(int userId, string? feedback = null)
+            => new(null, null, null, null, null, null, null, null, userId, feedback, rejectionReason: null);
     }
 }

@@ -1,9 +1,15 @@
 @model JobPortal.Models.ViewModels.HiringRequestViewModel
+@using JobPortal.Models
+
+<div class="mb-3">
+    <label class="form-label fw-semibold" for="JobTitle">Job Title</label>
+    <input id="JobTitle" name="JobTitle" type="text" class="form-control" value="@Model.JobTitle" required />
+</div>
 
 <div class="row mb-3">
     <div class="col-md-8">
-        <label class="form-label fw-semibold" for="RoleTitle">Role Title</label>
-        <input id="RoleTitle" name="RoleTitle" type="text" class="form-control" value="@Model.RoleTitle" required />
+        <label class="form-label fw-semibold" for="Department">Department</label>
+        <input id="Department" name="Department" type="text" class="form-control" value="@Model.Department" required />
     </div>
     <div class="col-md-4">
         <label class="form-label fw-semibold" for="Headcount">Headcount</label>
@@ -11,47 +17,42 @@
     </div>
 </div>
 
-<div class="row mb-3">
-    <div class="col-md-6">
-        <label class="form-label fw-semibold" for="Department">Department</label>
-        <input id="Department" name="Department" type="text" class="form-control" value="@Model.Department" required />
-    </div>
-    <div class="col-md-6">
-        <label class="form-label fw-semibold" for="LevelBand">Level / Band</label>
-        <input id="LevelBand" name="LevelBand" type="text" class="form-control"
-               placeholder="e.g. L4, Senior, IC5" value="@Model.LevelBand" required />
-    </div>
-</div>
-
-<div class="mb-3">
-    <label class="form-label fw-semibold" for="Location">Location</label>
-    <input id="Location" name="Location" type="text" class="form-control"
-           placeholder="e.g. Sydney, Remote" value="@Model.Location" required />
-</div>
-
-<div class="mb-3">
-    <div class="form-check">
-        <input id="IsReplacement" name="IsReplacement" type="checkbox" class="form-check-input"
-               value="true" @(Model.IsReplacement ? "checked" : "") />
-        <input name="IsReplacement" type="hidden" value="false" />
-        <label class="form-check-label fw-semibold" for="IsReplacement">Replacement hire</label>
-    </div>
-</div>
-
-<div class="mb-3" id="replacementReasonBlock" style="@(Model.IsReplacement ? "" : "display:none")">
-    <label class="form-label fw-semibold" for="ReplacementReason">Replacement Reason</label>
-    <input id="ReplacementReason" name="ReplacementReason" type="text" class="form-control"
-           value="@Model.ReplacementReason" />
-</div>
-
 <div class="mb-3">
     <label class="form-label fw-semibold" for="Justification">Justification</label>
-    <textarea id="Justification" name="Justification" rows="4" class="form-control" required>@Model.Justification</textarea>
+    <textarea id="Justification" name="Justification" rows="4" class="form-control">@Model.Justification</textarea>
     <div class="form-text text-muted">Why is this hire needed?</div>
 </div>
 
-<script>
-    document.getElementById('IsReplacement').addEventListener('change', function () {
-        document.getElementById('replacementReasonBlock').style.display = this.checked ? '' : 'none';
-    });
-</script>
+<div class="row mb-3">
+    <div class="col-md-6">
+        <label class="form-label fw-semibold" for="EmploymentType">Employment Type</label>
+        <select id="EmploymentType" name="EmploymentType" class="form-select">
+            @foreach (var val in Enum.GetValues<EmploymentType>())
+            {
+                <option value="@val" selected="@(Model.EmploymentType == val)">@val</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-6">
+        <label class="form-label fw-semibold" for="Priority">Priority</label>
+        <select id="Priority" name="Priority" class="form-select">
+            @foreach (var val in Enum.GetValues<HiringPriority>())
+            {
+                <option value="@val" selected="@(Model.Priority == val)">@val</option>
+            }
+        </select>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-6">
+        <label class="form-label fw-semibold" for="SalaryBand">Salary Band</label>
+        <input id="SalaryBand" name="SalaryBand" type="text" class="form-control"
+               placeholder="e.g. $90k–$110k" value="@Model.SalaryBand" />
+    </div>
+    <div class="col-md-6">
+        <label class="form-label fw-semibold" for="TargetStartDate">Target Start Date</label>
+        <input id="TargetStartDate" name="TargetStartDate" type="date" class="form-control"
+               value="@Model.TargetStartDate?.ToString("yyyy-MM-dd")" />
+    </div>
+</div>
