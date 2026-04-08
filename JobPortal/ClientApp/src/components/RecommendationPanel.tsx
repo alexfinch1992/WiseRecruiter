@@ -9,6 +9,8 @@ interface RecommendationPanelProps {
   onStage1StatusChanged: (status: string) => void;
   /** 1 = Stage 1 editor (default), 2 = Stage 2 editor */
   stage?: 1 | 2;
+  /** Antiforgery token for POST requests that require it */
+  csrfToken?: string;
 }
 
 const STATUS_BADGE: Record<string, string> = {
@@ -133,6 +135,7 @@ export function RecommendationPanel({
   stage1Status,
   onStage1StatusChanged,
   stage = 1,
+  csrfToken = '',
 }: RecommendationPanelProps) {
   // In stage-2 editor mode, skip S1 entirely and show S2 directly
   const showS1 = stage === 1 && (currentStage === 'Screen' || (stage1Status !== null && stage1Status !== 'None'));
@@ -207,12 +210,11 @@ export function RecommendationPanel({
     setS1Saving(true);
     setS1Error(null);
     try {
-      const token = (window as any).__CSRF_TOKEN__ ?? '';
       const resp = await fetch('/Recommendation/SubmitStage1', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'RequestVerificationToken': token,
+          'RequestVerificationToken': csrfToken,
         },
         body: new URLSearchParams({ applicationId: String(applicationId) }),
       });

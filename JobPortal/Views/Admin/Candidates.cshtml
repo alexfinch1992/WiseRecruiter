@@ -16,7 +16,7 @@
     <div class="row">
         <!-- React filter sidebar -->
         <div class="col-md-3">
-            <div id="candidate-filter-root"></div>
+            <div id="candidate-filter-root" data-initial="@Html.Raw(System.Web.HttpUtility.HtmlAttributeEncode(System.Text.Json.JsonSerializer.Serialize(new { @params = Model.Params, locationFacets = Model.LocationFacets, jobFacets = Model.JobFacets }, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase })))"></div>
         </div>
 
         <!-- Candidate list -->
@@ -42,13 +42,6 @@
 </div>
 
 <script>
-    window.__candidateFilters = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(new
-    {
-        @params = Model.Params,
-        locationFacets = Model.LocationFacets,
-        jobFacets = Model.JobFacets
-    }, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }));
-
     // Async sort/pagination handler
     document.getElementById("candidates-list")?.addEventListener("click", async function (e) {
         const link = e.target.closest(".sort-link, .page-link");
