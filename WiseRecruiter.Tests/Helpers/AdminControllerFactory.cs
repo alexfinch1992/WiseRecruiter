@@ -5,6 +5,7 @@ using JobPortal.Services.Interfaces;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -88,6 +89,7 @@ namespace WiseRecruiter.Tests.Helpers
                 candidateDetails,
                 new MoveApplicationStageService(context, appStageSvc, auditSvc),
                 resumeReview,
+                Mock.Of<IFileUploadService>(),
                 new ScorecardCommandService(context, scorecardSvc),
                 new CandidateQueryService(context),
                 interviewSvc,
@@ -99,6 +101,11 @@ namespace WiseRecruiter.Tests.Helpers
                 },
                 TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>())
             };
+
+            var urlHelper = new Mock<IUrlHelper>();
+            urlHelper.Setup(u => u.Action(It.IsAny<UrlActionContext>()))
+                     .Returns<UrlActionContext>(ctx => $"/{ctx.Controller}/{ctx.Action}");
+            controller.Url = urlHelper.Object;
 
             return controller;
         }

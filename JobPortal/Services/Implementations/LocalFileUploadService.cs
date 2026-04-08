@@ -21,8 +21,12 @@ namespace JobPortal.Services.Implementations
 
         public LocalFileUploadService(IConfiguration configuration, IWebHostEnvironment environment)
         {
-            _storagePath = configuration["FileStorage:BasePath"]
+            var basePath = configuration["FileStorage:BasePath"]
                 ?? Path.Combine(environment.ContentRootPath, "App_Data");
+
+            _storagePath = Path.IsPathRooted(basePath)
+                ? basePath
+                : Path.Combine(environment.ContentRootPath, basePath);
         }
 
         public (bool isValid, string? errorMessage) ValidateResume(IFormFile? file)
