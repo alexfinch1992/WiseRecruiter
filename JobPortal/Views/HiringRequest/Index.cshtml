@@ -1,0 +1,90 @@
+@model List<JobPortal.Models.HiringRequest>
+@using JobPortal.Models
+
+@{
+    ViewData["Title"] = "Hiring Requests";
+    Layout = "_Layout";
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold mb-0">Hiring Requests</h4>
+        <a asp-action="Create" class="btn btn-primary"
+           style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%); border: none;">
+            <i class="fas fa-plus me-1"></i>New Request
+        </a>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center py-5 text-muted">
+                <i class="fas fa-inbox fa-2x mb-3"></i>
+                <p class="mb-0">No hiring requests yet.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card border-0 shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Role</th>
+                            <th>Department</th>
+                            <th>Headcount</th>
+                            <th>Priority</th>
+                            <th>Stage</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in Model)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@r.JobTitle</td>
+                                <td>@r.Department</td>
+                                <td>@r.Headcount</td>
+                                <td>
+                                    @{
+                                        var priorityClass = r.Priority switch
+                                        {
+                                            HiringPriority.High   => "danger",
+                                            HiringPriority.Medium => "warning",
+                                            _                     => "secondary"
+                                        };
+                                    }
+                                    <span class="badge bg-@priorityClass">@r.Priority</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">@r.Stage</span>
+                                </td>
+                                <td>
+                                    @{
+                                        var statusClass = r.Status switch
+                                        {
+                                            HiringRequestStatus.Approved      => "success",
+                                            HiringRequestStatus.Rejected      => "danger",
+                                            HiringRequestStatus.Submitted     => "primary",
+                                            HiringRequestStatus.NeedsRevision => "warning",
+                                            _                                 => "secondary"
+                                        };
+                                    }
+                                    <span class="badge bg-@statusClass">@r.Status</span>
+                                </td>
+                                <td class="text-muted small">@r.CreatedUtc.ToString("d MMM yyyy")</td>
+                                <td>
+                                    <a asp-action="Details" asp-route-id="@r.Id"
+                                       class="btn btn-outline-secondary btn-sm">View</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>

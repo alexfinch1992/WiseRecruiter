@@ -1,0 +1,203 @@
+@model JobPortal.Models.HiringRequest
+@using JobPortal.Models
+
+@{
+    ViewData["Title"] = $"Hiring Request — {Model.JobTitle}";
+    Layout = "_Layout";
+
+    var canEdit = Model.Status is HiringRequestStatus.Draft or HiringRequestStatus.NeedsRevision
+               && Model.Stage == HiringRequestStage.Stage1;
+    var canSubmit = Model.Status == HiringRequestStatus.Draft && Model.Stage == HiringRequestStage.Stage1;
+    var isStage1Pending = Model.Stage == HiringRequestStage.Stage1 && Model.Status == HiringRequestStatus.Submitted;
+    var isStage2Draft = Model.Stage == HiringRequestStage.Stage2 && Model.Status == HiringRequestStatus.Draft;
+    var isStage2Pending = Model.Stage == HiringRequestStage.Stage2 && Model.Status == HiringRequestStatus.Submitted;
+    var isTerminal = Model.Status is HiringRequestStatus.Approved or HiringRequestStatus.Rejected;
+
+    var statusClass = Model.Status switch
+    {
+        HiringRequestStatus.Approved      => "success",
+        HiringRequestStatus.Rejected      => "danger",
+        HiringRequestStatus.Submitted     => "primary",
+        HiringRequestStatus.NeedsRevision => "warning",
+        _                                 => "secondary"
+    };
+    var priorityClass = Model.Priority switch
+    {
+        HiringPriority.High   => "danger",
+        HiringPriority.Medium => "warning",
+        _                     => "secondary"
+    };
+}
+
+<div class="container py-4" style="max-width: 800px;">
+    <div class="d-flex align-items-center mb-4 gap-3">
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left me-1"></i>All Requests
+        </a>
+        <div>
+            <h4 class="fw-bold mb-0">@Model.JobTitle</h4>
+            <small class="text-muted">@Model.Department</small>
+        </div>
+        <div class="ms-auto d-flex gap-2">
+            <span class="badge bg-light text-dark border">@Model.Stage</span>
+            <span class="badge bg-@statusClass">@Model.Status</span>
+            <span class="badge bg-@priorityClass">@Model.Priority</span>
+        </div>
+    </div>
+
+    @if (Model.Status == HiringRequestStatus.NeedsRevision)
+    {
+        var feedback = Model.Stage == HiringRequestStage.Stage1 ? Model.Stage1Feedback : Model.Stage2Feedback;
+        if (!string.IsNullOrEmpty(feedback))
+        {
+            <div class="alert alert-warning mb-4">
+                <strong>Revision requested:</strong> @feedback
+            </div>
+        }
+    }
+
+    @if (Model.Status == HiringRequestStatus.Rejected)
+    {
+        <div class="alert alert-danger mb-4">
+            <strong>Rejected:</strong> @(Model.RejectionReason ?? "No reason provided.")
+        </div>
+    }
+
+    <!-- Request details -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-light fw-semibold">Request Details</div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-4">Headcount</dt>
+                <dd class="col-sm-8">@Model.Headcount</dd>
+
+                <dt class="col-sm-4">Employment Type</dt>
+                <dd class="col-sm-8">@Model.EmploymentType</dd>
+
+                <dt class="col-sm-4">Salary Band</dt>
+                <dd class="col-sm-8">@(Model.SalaryBand ?? "—")</dd>
+
+                <dt class="col-sm-4">Target Start</dt>
+                <dd class="col-sm-8">@(Model.TargetStartDate?.ToString("d MMM yyyy") ?? "—")</dd>
+
+                @if (!string.IsNullOrEmpty(Model.Justification))
+                {
+                    <dt class="col-sm-4">Justification</dt>
+                    <dd class="col-sm-8" style="white-space: pre-line;">@Model.Justification</dd>
+                }
+            </dl>
+        </div>
+    </div>
+
+    <!-- Approval timeline -->
+    @if (Model.Stage1ReviewedUtc.HasValue || Model.Stage2ReviewedUtc.HasValue)
+    {
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-light fw-semibold">Approval History</div>
+            <div class="card-body pb-2">
+                @if (Model.Stage1ReviewedUtc.HasValue)
+                {
+                    <div class="mb-2">
+                        <span class="fw-semibold">Stage 1 (Senior Talent Lead)</span>
+                        <span class="text-muted ms-2 small">@Model.Stage1ReviewedUtc.Value.ToString("d MMM yyyy HH:mm") UTC</span>
+                        @if (!string.IsNullOrEmpty(Model.Stage1Feedback))
+                        {
+                            <div class="text-muted small mt-1">@Model.Stage1Feedback</div>
+                        }
+                    </div>
+                }
+                @if (Model.Stage2ReviewedUtc.HasValue)
+                {
+                    <div class="mb-2">
+                        <span class="fw-semibold">Stage 2 (Senior Executive)</span>
+                        <span class="text-muted ms-2 small">@Model.Stage2ReviewedUtc.Value.ToString("d MMM yyyy HH:mm") UTC</span>
+                        @if (!string.IsNullOrEmpty(Model.Stage2Feedback))
+                        {
+                            <div class="text-muted small mt-1">@Model.Stage2Feedback</div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Actions -->
+    @if (!isTerminal)
+    {
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-light fw-semibold">Actions</div>
+            <div class="card-body d-flex flex-wrap gap-2">
+
+                @if (canEdit)
+                {
+                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-secondary">
+                        <i class="fas fa-edit me-1"></i>Edit
+                    </a>
+                }
+
+                @if (canSubmit)
+                {
+                    <form asp-action="Submit" asp-route-id="@Model.Id" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <button class="btn btn-primary"
+                                style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%); border: none;">
+                            <i class="fas fa-paper-plane me-1"></i>Submit for Review
+                        </button>
+                    </form>
+                }
+
+                @* Stage 1 reviewer actions *@
+                @if (isStage1Pending)
+                {
+                    <form asp-action="ApproveStage1" asp-route-id="@Model.Id" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="feedback" value="" />
+                        <button class="btn btn-success"><i class="fas fa-check me-1"></i>Approve (Stage 1)</button>
+                    </form>
+                    <form asp-action="RequestRevisionStage1" asp-route-id="@Model.Id" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="feedback" value="" />
+                        <button class="btn btn-warning"><i class="fas fa-redo me-1"></i>Request Revision</button>
+                    </form>
+                    <form asp-action="RejectStage1" asp-route-id="@Model.Id" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="reason" value="" />
+                        <button class="btn btn-danger"><i class="fas fa-times me-1"></i>Reject</button>
+                    </form>
+                }
+
+                @* Stage 2 escalation *@
+                @if (isStage2Draft)
+                {
+                    <form asp-action="SubmitStage2" asp-route-id="@Model.Id" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <button class="btn btn-primary"
+                                style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%); border: none;">
+                            <i class="fas fa-paper-plane me-1"></i>Escalate to Senior Executive
+                        </button>
+                    </form>
+                }
+
+                @* Stage 2 reviewer actions *@
+                @if (isStage2Pending)
+                {
+                    <form asp-action="ApproveStage2" asp-route-id="@Model.Id" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="feedback" value="" />
+                        <button class="btn btn-success"><i class="fas fa-check me-1"></i>Approve (Final)</button>
+                    </form>
+                    <form asp-action="RequestRevisionStage2" asp-route-id="@Model.Id" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="feedback" value="" />
+                        <button class="btn btn-warning"><i class="fas fa-redo me-1"></i>Request Revision</button>
+                    </form>
+                    <form asp-action="RejectStage2" asp-route-id="@Model.Id" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="reason" value="" />
+                        <button class="btn btn-danger"><i class="fas fa-times me-1"></i>Reject</button>
+                    </form>
+                }
+            </div>
+        </div>
+    }
+</div>

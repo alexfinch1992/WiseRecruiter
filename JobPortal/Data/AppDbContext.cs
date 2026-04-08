@@ -46,6 +46,7 @@ namespace JobPortal.Data
         public DbSet<JobUser> JobUsers { get; set; } = null!;
         public DbSet<JobAlertSubscription> JobAlertSubscriptions { get; set; } = null!;
         public DbSet<Alert> Alerts { get; set; } = null!;
+        public DbSet<HiringRequest> HiringRequests { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

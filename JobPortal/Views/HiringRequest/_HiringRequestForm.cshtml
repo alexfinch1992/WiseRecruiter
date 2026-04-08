@@ -1,0 +1,58 @@
+@model JobPortal.Models.ViewModels.HiringRequestViewModel
+@using JobPortal.Models
+
+<div class="mb-3">
+    <label class="form-label fw-semibold" for="JobTitle">Job Title</label>
+    <input id="JobTitle" name="JobTitle" type="text" class="form-control" value="@Model.JobTitle" required />
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-8">
+        <label class="form-label fw-semibold" for="Department">Department</label>
+        <input id="Department" name="Department" type="text" class="form-control" value="@Model.Department" required />
+    </div>
+    <div class="col-md-4">
+        <label class="form-label fw-semibold" for="Headcount">Headcount</label>
+        <input id="Headcount" name="Headcount" type="number" min="1" class="form-control" value="@Model.Headcount" required />
+    </div>
+</div>
+
+<div class="mb-3">
+    <label class="form-label fw-semibold" for="Justification">Justification</label>
+    <textarea id="Justification" name="Justification" rows="4" class="form-control">@Model.Justification</textarea>
+    <div class="form-text text-muted">Why is this hire needed?</div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-6">
+        <label class="form-label fw-semibold" for="EmploymentType">Employment Type</label>
+        <select id="EmploymentType" name="EmploymentType" class="form-select">
+            @foreach (var val in Enum.GetValues<EmploymentType>())
+            {
+                <option value="@val" selected="@(Model.EmploymentType == val)">@val</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-6">
+        <label class="form-label fw-semibold" for="Priority">Priority</label>
+        <select id="Priority" name="Priority" class="form-select">
+            @foreach (var val in Enum.GetValues<HiringPriority>())
+            {
+                <option value="@val" selected="@(Model.Priority == val)">@val</option>
+            }
+        </select>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-6">
+        <label class="form-label fw-semibold" for="SalaryBand">Salary Band</label>
+        <input id="SalaryBand" name="SalaryBand" type="text" class="form-control"
+               placeholder="e.g. $90k–$110k" value="@Model.SalaryBand" />
+    </div>
+    <div class="col-md-6">
+        <label class="form-label fw-semibold" for="TargetStartDate">Target Start Date</label>
+        <input id="TargetStartDate" name="TargetStartDate" type="date" class="form-control"
+               value="@Model.TargetStartDate?.ToString("yyyy-MM-dd")" />
+    </div>
+</div>

@@ -1,0 +1,36 @@
+@model JobPortal.Models.ViewModels.HiringRequestViewModel
+@using JobPortal.Models
+
+@{
+    var requestId = (int)ViewData["RequestId"]!;
+    ViewData["Title"] = "Edit Hiring Request";
+    Layout = "_Layout";
+}
+
+<div class="container py-4" style="max-width: 760px;">
+    <div class="d-flex align-items-center mb-4 gap-3">
+        <a asp-action="Details" asp-route-id="@requestId" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left me-1"></i>Back
+        </a>
+        <h4 class="fw-bold mb-0">Edit Hiring Request</h4>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-header" style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%);">
+            <h5 class="fw-bold mb-0 text-white"><i class="fas fa-edit me-2"></i>Request Details</h5>
+        </div>
+        <div class="card-body">
+            <form asp-action="Edit" asp-route-id="@requestId" method="post">
+                @Html.AntiForgeryToken()
+                @await Html.PartialAsync("_HiringRequestForm", Model)
+                <div class="d-flex justify-content-between mt-4">
+                    <a asp-action="Details" asp-route-id="@requestId" class="btn btn-outline-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary"
+                            style="background: linear-gradient(135deg, #1E1765 0%, #7B3FF2 100%); border: none;">
+                        <i class="fas fa-save me-1"></i>Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
