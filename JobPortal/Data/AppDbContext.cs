@@ -258,6 +258,30 @@ namespace JobPortal.Data
                 })
                 .IsUnique()
                 .HasFilter(null);
+
+            modelBuilder.Entity<HiringRequest>()
+                .HasOne(h => h.RequestedByUser)
+                .WithMany()
+                .HasForeignKey(h => h.RequestedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<HiringRequest>()
+                .HasOne(h => h.TalentLeadReviewedByUser)
+                .WithMany()
+                .HasForeignKey(h => h.TalentLeadReviewedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<HiringRequest>()
+                .HasOne(h => h.ExecutiveApprovedByUser)
+                .WithMany()
+                .HasForeignKey(h => h.ExecutiveApprovedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<HiringRequest>()
+                .HasOne(h => h.RejectedByUser)
+                .WithMany()
+                .HasForeignKey(h => h.RejectedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 

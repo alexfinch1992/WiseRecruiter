@@ -1,16 +1,28 @@
-using JobPortal.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace JobPortal.Models.ViewModels
 {
     public class HiringRequestViewModel
     {
-        public string JobTitle { get; set; } = string.Empty;
+        [Required]
+        public string RoleTitle { get; set; } = string.Empty;
+
+        [Required]
         public string Department { get; set; } = string.Empty;
+
+        [Required]
+        public string LevelBand { get; set; } = string.Empty;
+
+        [Required]
+        public string Location { get; set; } = string.Empty;
+
+        public bool IsReplacement { get; set; }
+        public string? ReplacementReason { get; set; }
+
+        [Range(1, int.MaxValue)]
         public int Headcount { get; set; } = 1;
-        public string? Justification { get; set; }
-        public string? SalaryBand { get; set; }
-        public DateTime? TargetStartDate { get; set; }
-        public EmploymentType EmploymentType { get; set; } = EmploymentType.FullTime;
-        public HiringPriority Priority { get; set; } = HiringPriority.Medium;
+
+        [Required]
+        public string Justification { get; set; } = string.Empty;
     }
 }

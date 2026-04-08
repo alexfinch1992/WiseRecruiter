@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using JobPortal.Models.ViewModels;
 using JobPortal.Services.Interfaces;
 using JobPortal.Services.Models;
+using System.Security.Claims;
 
 [Authorize]
 public class HiringRequestController : Controller
@@ -35,7 +36,7 @@ public class HiringRequestController : Controller
         if (userId == null)
             return Forbid();
 
-        var request = await _service.CreateDraftAsync(userId.Value, model);
+        var request = await _service.CreateDraftAsync(userId, model);
         return RedirectToAction(nameof(Details), new { id = request.Id });
     }
 
@@ -48,14 +49,14 @@ public class HiringRequestController : Controller
 
         var vm = new HiringRequestViewModel
         {
-            JobTitle      = request.JobTitle,
-            Department    = request.Department,
-            Headcount     = request.Headcount,
-            Justification = request.Justification,
-            SalaryBand    = request.SalaryBand,
-            TargetStartDate = request.TargetStartDate,
-            EmploymentType  = request.EmploymentType,
-            Priority        = request.Priority
+            RoleTitle         = request.RoleTitle,
+            Department        = request.Department,
+            LevelBand         = request.LevelBand,
+            Location          = request.Location,
+            IsReplacement     = request.IsReplacement,
+            ReplacementReason = request.ReplacementReason,
+            Headcount         = request.Headcount,
+            Justification     = request.Justification
         };
         ViewData["RequestId"] = id;
         return View(vm);
@@ -98,7 +99,7 @@ public class HiringRequestController : Controller
         if (userId == null)
             return Forbid();
 
-        var result = await _service.SubmitAsync(id, userId.Value);
+        var result = await _service.SubmitAsync(id, userId);
         return result switch
         {
             TransitionResult.NotFound     => NotFound(),
@@ -111,14 +112,14 @@ public class HiringRequestController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Admin,HiringManager")]
-    public async Task<IActionResult> ApproveStage1(int id, string? feedback)
+    [Authorize(Roles = "Admin,TalentLead")]
+    public async Task<IActionResult> ApproveStage1(int id, string? notes)
     {
         var userId = GetCurrentUserId();
         if (userId == null)
             return Forbid();
 
-        var result = await _service.ApproveStage1Async(id, userId.Value, feedback);
+        var result = await _service.ApproveStage1Async(id, userId, notes);
         return result switch
         {
             TransitionResult.NotFound     => NotFound(),
@@ -129,32 +130,14 @@ public class HiringRequestController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Admin,HiringManager")]
+    [Authorize(Roles = "Admin,TalentLead")]
     public async Task<IActionResult> RejectStage1(int id, string? reason)
     {
         var userId = GetCurrentUserId();
         if (userId == null)
             return Forbid();
 
-        var result = await _service.RejectStage1Async(id, userId.Value, reason);
-        return result switch
-        {
-            TransitionResult.NotFound     => NotFound(),
-            TransitionResult.InvalidState => BadRequest(),
-            _                             => RedirectToAction(nameof(Details), new { id })
-        };
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Admin,HiringManager")]
-    public async Task<IActionResult> RequestRevisionStage1(int id, string? feedback)
-    {
-        var userId = GetCurrentUserId();
-        if (userId == null)
-            return Forbid();
-
-        var result = await _service.RequestRevisionStage1Async(id, userId.Value, feedback);
+        var result = await _service.RejectStage1Async(id, userId, reason);
         return result switch
         {
             TransitionResult.NotFound     => NotFound(),
@@ -167,14 +150,14 @@ public class HiringRequestController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Admin,HiringManager")]
-    public async Task<IActionResult> SubmitStage2(int id)
+    [Authorize(Roles = "Admin,ApprovingExecutive")]
+    public async Task<IActionResult> ApproveStage2(int id, string? notes)
     {
         var userId = GetCurrentUserId();
         if (userId == null)
             return Forbid();
 
-        var result = await _service.SubmitStage2Async(id, userId.Value);
+        var result = await _service.ApproveStage2Async(id, userId, notes);
         return result switch
         {
             TransitionResult.NotFound     => NotFound(),
@@ -185,32 +168,14 @@ public class HiringRequestController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> ApproveStage2(int id, string? feedback)
-    {
-        var userId = GetCurrentUserId();
-        if (userId == null)
-            return Forbid();
-
-        var result = await _service.ApproveStage2Async(id, userId.Value, feedback);
-        return result switch
-        {
-            TransitionResult.NotFound     => NotFound(),
-            TransitionResult.InvalidState => BadRequest(),
-            _                             => RedirectToAction(nameof(Details), new { id })
-        };
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,ApprovingExecutive")]
     public async Task<IActionResult> RejectStage2(int id, string? reason)
     {
         var userId = GetCurrentUserId();
         if (userId == null)
             return Forbid();
 
-        var result = await _service.RejectStage2Async(id, userId.Value, reason);
+        var result = await _service.RejectStage2Async(id, userId, reason);
         return result switch
         {
             TransitionResult.NotFound     => NotFound(),
@@ -219,27 +184,6 @@ public class HiringRequestController : Controller
         };
     }
 
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> RequestRevisionStage2(int id, string? feedback)
-    {
-        var userId = GetCurrentUserId();
-        if (userId == null)
-            return Forbid();
-
-        var result = await _service.RequestRevisionStage2Async(id, userId.Value, feedback);
-        return result switch
-        {
-            TransitionResult.NotFound     => NotFound(),
-            TransitionResult.InvalidState => BadRequest(),
-            _                             => RedirectToAction(nameof(Details), new { id })
-        };
-    }
-
-    private int? GetCurrentUserId()
-    {
-        var userIdStr = User?.FindFirst("AdminId")?.Value;
-        return int.TryParse(userIdStr, out var id) ? id : null;
-    }
+    private string? GetCurrentUserId() =>
+        User?.FindFirstValue(ClaimTypes.NameIdentifier);
 }

@@ -194,6 +194,9 @@ namespace JobPortal.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("IsApprovingExecutive")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("INTEGER");
 
@@ -548,9 +551,6 @@ namespace JobPortal.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("CreatedByUserId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<DateTime>("CreatedUtc")
                         .HasColumnType("TEXT");
 
@@ -558,65 +558,77 @@ namespace JobPortal.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("EmploymentType")
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("ExecutiveApprovedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ExecutiveApprovedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExecutiveNotes")
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("Headcount")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("JobTitle")
+                    b.Property<bool>("IsReplacement")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Justification")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Justification")
+                    b.Property<string>("LevelBand")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("LastUpdatedUtc")
+                    b.Property<string>("Location")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("Priority")
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("RejectedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("RejectedUtc")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("RejectionReason")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("SalaryBand")
+                    b.Property<string>("ReplacementReason")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("Stage")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Stage1Feedback")
+                    b.Property<string>("RequestedByUserId")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("Stage1ReviewedByUserId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime?>("Stage1ReviewedUtc")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Stage2Feedback")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int?>("Stage2ReviewedByUserId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime?>("Stage2ReviewedUtc")
+                    b.Property<string>("RoleTitle")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Status")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("SubmittedByUserId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime?>("SubmittedUtc")
+                    b.Property<string>("TalentLeadNotes")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime?>("TargetStartDate")
+                    b.Property<string>("TalentLeadReviewedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("TalentLeadReviewedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedUtc")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ExecutiveApprovedByUserId");
+
+                    b.HasIndex("RejectedByUserId");
+
+                    b.HasIndex("RequestedByUserId");
+
+                    b.HasIndex("TalentLeadReviewedByUserId");
 
                     b.ToTable("HiringRequests");
                 });
@@ -1116,6 +1128,38 @@ namespace JobPortal.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Category");
+                });
+
+            modelBuilder.Entity("JobPortal.Models.HiringRequest", b =>
+                {
+                    b.HasOne("JobPortal.Models.ApplicationUser", "ExecutiveApprovedByUser")
+                        .WithMany()
+                        .HasForeignKey("ExecutiveApprovedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("JobPortal.Models.ApplicationUser", "RejectedByUser")
+                        .WithMany()
+                        .HasForeignKey("RejectedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("JobPortal.Models.ApplicationUser", "RequestedByUser")
+                        .WithMany()
+                        .HasForeignKey("RequestedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("JobPortal.Models.ApplicationUser", "TalentLeadReviewedByUser")
+                        .WithMany()
+                        .HasForeignKey("TalentLeadReviewedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ExecutiveApprovedByUser");
+
+                    b.Navigation("RejectedByUser");
+
+                    b.Navigation("RequestedByUser");
+
+                    b.Navigation("TalentLeadReviewedByUser");
                 });
 
             modelBuilder.Entity("JobPortal.Models.Interview", b =>
