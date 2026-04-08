@@ -10,7 +10,6 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       input: {
-        'candidate-dashboard':    resolve(__dirname, 'src/main.tsx'),
         'candidate-detail':       resolve(__dirname, 'src/candidateDetail.tsx'),
         'candidate-filters':      resolve(__dirname, 'src/candidateFilters.tsx'),
         'recommendation-editor':  resolve(__dirname, 'src/recommendationEditor.tsx'),

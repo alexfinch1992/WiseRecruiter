@@ -10,12 +10,7 @@ interface CandidateActionPanelProps {
   onStage1StatusChanged: (status: string) => void;
 }
 
-interface MoveResult {
-  success: boolean;
-  requiresApproval: boolean;
-  message?: string;
-  newStage: string;
-}
+import type { MoveStageResult } from '../types/MoveStageResult';
 
 export function CandidateActionPanel({
   applicationId,
@@ -70,7 +65,7 @@ export function CandidateActionPanel({
         }),
       });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      const result = (await resp.json()) as MoveResult;
+      const result: MoveStageResult = await resp.json();
       onStageChanged(result.newStage);
       setHardConfirmed(false);
       setBypassConfirmed(false);

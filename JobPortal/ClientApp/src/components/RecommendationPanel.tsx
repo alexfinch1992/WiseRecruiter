@@ -1,12 +1,5 @@
 import React, { useEffect, useState } from 'react';
-
-interface RecData {
-  status: string; // 'None' | 'Draft' | 'Submitted' | 'Approved' | 'Rejected'
-  notes: string | null;
-  strengths: string | null;
-  concerns: string | null;
-  hireRecommendation: boolean | null;
-}
+import type { RecData, RecActionResult, SubmitResult } from '../types/Recommendation';
 
 interface RecommendationPanelProps {
   applicationId: number;
@@ -156,7 +149,11 @@ export function RecommendationPanel({
   useEffect(() => {
     if (!showS1) return;
     fetch(`/Admin/GetStage1RecJson?applicationId=${applicationId}`)
-      .then((r) => (r.ok ? (r.json() as Promise<RecData>) : null))
+      .then(async (r) => {
+        if (!r.ok) return null;
+        const data: RecData = await r.json();
+        return data;
+      })
       .then((data) => data && setS1(data))
       .catch(() => {});
   }, [applicationId, showS1]);
@@ -165,7 +162,11 @@ export function RecommendationPanel({
   useEffect(() => {
     if (!showS2) return;
     fetch(`/Admin/GetStage2RecJson?applicationId=${applicationId}`)
-      .then((r) => (r.ok ? (r.json() as Promise<RecData>) : null))
+      .then(async (r) => {
+        if (!r.ok) return null;
+        const data: RecData = await r.json();
+        return data;
+      })
       .then((data) => {
         if (data) setS2(data);
         else setS2({ status: 'None', notes: null, strengths: null, concerns: null, hireRecommendation: null });
@@ -191,7 +192,7 @@ export function RecommendationPanel({
         }),
       });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      const result = (await resp.json()) as { success: boolean; status: string };
+      const result: RecActionResult = await resp.json();
       setS1((prev) => (prev ? { ...prev, status: result.status } : prev));
       onStage1StatusChanged(result.status);
     } catch {
@@ -215,7 +216,7 @@ export function RecommendationPanel({
         },
         body: new URLSearchParams({ applicationId: String(applicationId) }),
       });
-      const data = await resp.json() as { success: boolean; error?: string };
+      const data: SubmitResult = await resp.json();
       console.log('SubmitStage1:', resp.status, data);
       if (resp.ok && data.success) {
         window.location.href = `/Admin/CandidateDetails/${applicationId}`;
@@ -247,7 +248,7 @@ export function RecommendationPanel({
         }),
       });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      const result = (await resp.json()) as { success: boolean; status: string };
+      const result: RecActionResult = await resp.json();
       setS2((prev) => (prev ? { ...prev, status: result.status } : prev));
     } catch {
       setS2Error('Save failed. Please try again.');
@@ -266,7 +267,7 @@ export function RecommendationPanel({
         body: new URLSearchParams({ applicationId: String(applicationId) }),
       });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      const result = (await resp.json()) as { success: boolean; status: string };
+      const result: RecActionResult = await resp.json();
       setS2((prev) => (prev ? { ...prev, status: result.status } : prev));
       if (result.status === 'Submitted' || result.status === 'Approved') {
         window.location.href = `/Admin/CandidateDetails/${applicationId}`;

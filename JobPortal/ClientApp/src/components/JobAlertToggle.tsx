@@ -5,7 +5,7 @@ export function JobAlertToggle({ jobId }: { jobId: number }) {
 
   useEffect(() => {
     fetch(`/api/alerts/job/${jobId}`)
-      .then(res => res.json())
+      .then(res => res.json() as Promise<boolean>)
       .then(setEnabled);
   }, [jobId]);
 
