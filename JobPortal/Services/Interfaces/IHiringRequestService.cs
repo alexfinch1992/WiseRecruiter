@@ -10,23 +10,20 @@ namespace JobPortal.Services.Interfaces
         Task<HiringRequest?> GetByIdAsync(int id);
 
         /// <summary>Creates a new HiringRequest in Draft and returns it.</summary>
-        Task<HiringRequest> CreateDraftAsync(int createdByUserId, HiringRequestViewModel vm);
+        Task<HiringRequest> CreateDraftAsync(string userId, HiringRequestViewModel vm);
 
-        /// <summary>Overwrites content fields on a Draft or NeedsRevision request.</summary>
+        /// <summary>Overwrites content fields on a Draft request.</summary>
         Task<TransitionResult> SaveDraftAsync(int id, HiringRequestViewModel vm);
 
         /// <summary>Submits a Draft request for Stage 1 (Senior Talent Lead) review.</summary>
-        Task<TransitionResult> SubmitAsync(int id, int userId);
+        Task<TransitionResult> SubmitAsync(int id, string userId);
 
         // Stage 1 — Senior Talent Lead actions
-        Task<TransitionResult> ApproveStage1Async(int id, int userId, string? feedback = null);
-        Task<TransitionResult> RejectStage1Async(int id, int userId, string? reason = null);
-        Task<TransitionResult> RequestRevisionStage1Async(int id, int userId, string? feedback = null);
+        Task<TransitionResult> ApproveStage1Async(int id, string userId, string? notes = null);
+        Task<TransitionResult> RejectStage1Async(int id, string userId, string? reason = null);
 
         // Stage 2 — Senior Executive actions
-        Task<TransitionResult> SubmitStage2Async(int id, int userId);
-        Task<TransitionResult> ApproveStage2Async(int id, int userId, string? feedback = null);
-        Task<TransitionResult> RejectStage2Async(int id, int userId, string? reason = null);
-        Task<TransitionResult> RequestRevisionStage2Async(int id, int userId, string? feedback = null);
+        Task<TransitionResult> ApproveStage2Async(int id, string userId, string? notes = null);
+        Task<TransitionResult> RejectStage2Async(int id, string userId, string? reason = null);
     }
 }

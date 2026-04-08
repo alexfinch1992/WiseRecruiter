@@ -5,21 +5,17 @@ namespace JobPortal.Domain.HiringRequests
 {
     /// <summary>
     /// Governs Stage 1 transitions, reviewed by the Senior Talent Lead.
-    /// When Approved here, the service layer advances the entity to Stage 2.
+    /// When TalentLeadApproved, the service layer advances the entity to Stage 2.
     /// </summary>
     public class Stage1HiringRequestStateMachine : IHiringRequestStateMachine<Stage1HiringRequestTransitionContext>
     {
         public bool CanTransition(HiringRequestStatus from, HiringRequestStatus to) =>
             (from, to) switch
             {
-                (HiringRequestStatus.Draft,         HiringRequestStatus.Draft)         => true,
-                (HiringRequestStatus.Draft,         HiringRequestStatus.Submitted)     => true,
-                (HiringRequestStatus.Submitted,     HiringRequestStatus.Draft)         => true,
-                (HiringRequestStatus.Submitted,     HiringRequestStatus.Approved)      => true,
-                (HiringRequestStatus.Submitted,     HiringRequestStatus.Rejected)      => true,
-                (HiringRequestStatus.Submitted,     HiringRequestStatus.NeedsRevision) => true,
-                (HiringRequestStatus.NeedsRevision, HiringRequestStatus.Draft)         => true,
-                (HiringRequestStatus.NeedsRevision, HiringRequestStatus.Submitted)     => true,
+                (HiringRequestStatus.Draft,     HiringRequestStatus.Draft)              => true,
+                (HiringRequestStatus.Draft,     HiringRequestStatus.Submitted)          => true,
+                (HiringRequestStatus.Submitted, HiringRequestStatus.TalentLeadApproved) => true,
+                (HiringRequestStatus.Submitted, HiringRequestStatus.Rejected)           => true,
                 _ => false
             };
 
@@ -35,54 +31,42 @@ namespace JobPortal.Domain.HiringRequests
             {
                 case HiringRequestStatus.Draft:
                     entity.Status = HiringRequestStatus.Draft;
-                    if (ctx.JobTitle is not null)     entity.JobTitle = ctx.JobTitle;
-                    if (ctx.Department is not null)   entity.Department = ctx.Department;
-                    if (ctx.Headcount.HasValue)       entity.Headcount = ctx.Headcount.Value;
-                    if (ctx.Justification is not null) entity.Justification = ctx.Justification;
-                    if (ctx.SalaryBand is not null)   entity.SalaryBand = ctx.SalaryBand;
-                    if (ctx.TargetStartDate.HasValue) entity.TargetStartDate = ctx.TargetStartDate;
-                    if (ctx.EmploymentType.HasValue)  entity.EmploymentType = ctx.EmploymentType.Value;
-                    if (ctx.Priority.HasValue)        entity.Priority = ctx.Priority.Value;
-                    entity.LastUpdatedUtc = now;
+                    if (ctx.RoleTitle is not null)         entity.RoleTitle = ctx.RoleTitle;
+                    if (ctx.Department is not null)        entity.Department = ctx.Department;
+                    if (ctx.LevelBand is not null)         entity.LevelBand = ctx.LevelBand;
+                    if (ctx.Location is not null)          entity.Location = ctx.Location;
+                    if (ctx.IsReplacement.HasValue)        entity.IsReplacement = ctx.IsReplacement.Value;
+                    if (ctx.ReplacementReason is not null) entity.ReplacementReason = ctx.ReplacementReason;
+                    if (ctx.Headcount.HasValue)            entity.Headcount = ctx.Headcount.Value;
+                    if (ctx.Justification is not null)     entity.Justification = ctx.Justification;
+                    entity.UpdatedUtc = now;
                     break;
 
                 case HiringRequestStatus.Submitted:
-                    if (!ctx.UserId.HasValue)
+                    if (ctx.UserId is null)
                         throw new InvalidOperationException("UserId is required for the Submitted transition.");
                     entity.Status = HiringRequestStatus.Submitted;
-                    entity.SubmittedByUserId = ctx.UserId.Value;
-                    entity.SubmittedUtc = now;
-                    entity.LastUpdatedUtc = now;
+                    entity.UpdatedUtc = now;
                     break;
 
-                case HiringRequestStatus.Approved:
-                    if (!ctx.UserId.HasValue)
-                        throw new InvalidOperationException("UserId is required for the Approved transition.");
-                    entity.Status = HiringRequestStatus.Approved;
-                    entity.Stage1ReviewedByUserId = ctx.UserId.Value;
-                    entity.Stage1ReviewedUtc = now;
-                    entity.Stage1Feedback = ctx.Feedback;
-                    entity.LastUpdatedUtc = now;
+                case HiringRequestStatus.TalentLeadApproved:
+                    if (ctx.UserId is null)
+                        throw new InvalidOperationException("UserId is required for the TalentLeadApproved transition.");
+                    entity.Status = HiringRequestStatus.TalentLeadApproved;
+                    entity.TalentLeadReviewedByUserId = ctx.UserId;
+                    entity.TalentLeadReviewedUtc = now;
+                    entity.TalentLeadNotes = ctx.Notes;
+                    entity.UpdatedUtc = now;
                     break;
 
                 case HiringRequestStatus.Rejected:
-                    if (!ctx.UserId.HasValue)
+                    if (ctx.UserId is null)
                         throw new InvalidOperationException("UserId is required for the Rejected transition.");
                     entity.Status = HiringRequestStatus.Rejected;
-                    entity.Stage1ReviewedByUserId = ctx.UserId.Value;
-                    entity.Stage1ReviewedUtc = now;
+                    entity.RejectedByUserId = ctx.UserId;
+                    entity.RejectedUtc = now;
                     entity.RejectionReason = ctx.RejectionReason;
-                    entity.LastUpdatedUtc = now;
-                    break;
-
-                case HiringRequestStatus.NeedsRevision:
-                    if (!ctx.UserId.HasValue)
-                        throw new InvalidOperationException("UserId is required for the NeedsRevision transition.");
-                    entity.Status = HiringRequestStatus.NeedsRevision;
-                    entity.Stage1ReviewedByUserId = ctx.UserId.Value;
-                    entity.Stage1ReviewedUtc = now;
-                    entity.Stage1Feedback = ctx.Feedback;
-                    entity.LastUpdatedUtc = now;
+                    entity.UpdatedUtc = now;
                     break;
             }
 

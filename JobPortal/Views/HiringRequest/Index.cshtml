@@ -33,9 +33,8 @@
                         <tr>
                             <th>Role</th>
                             <th>Department</th>
+                            <th>Level / Band</th>
                             <th>Headcount</th>
-                            <th>Priority</th>
-                            <th>Stage</th>
                             <th>Status</th>
                             <th>Created</th>
                             <th></th>
@@ -45,32 +44,19 @@
                         @foreach (var r in Model)
                         {
                             <tr>
-                                <td class="fw-semibold">@r.JobTitle</td>
+                                <td class="fw-semibold">@r.RoleTitle</td>
                                 <td>@r.Department</td>
+                                <td>@r.LevelBand</td>
                                 <td>@r.Headcount</td>
-                                <td>
-                                    @{
-                                        var priorityClass = r.Priority switch
-                                        {
-                                            HiringPriority.High   => "danger",
-                                            HiringPriority.Medium => "warning",
-                                            _                     => "secondary"
-                                        };
-                                    }
-                                    <span class="badge bg-@priorityClass">@r.Priority</span>
-                                </td>
-                                <td>
-                                    <span class="badge bg-light text-dark border">@r.Stage</span>
-                                </td>
                                 <td>
                                     @{
                                         var statusClass = r.Status switch
                                         {
-                                            HiringRequestStatus.Approved      => "success",
-                                            HiringRequestStatus.Rejected      => "danger",
-                                            HiringRequestStatus.Submitted     => "primary",
-                                            HiringRequestStatus.NeedsRevision => "warning",
-                                            _                                 => "secondary"
+                                            HiringRequestStatus.ExecutiveApproved  => "success",
+                                            HiringRequestStatus.TalentLeadApproved => "info",
+                                            HiringRequestStatus.Rejected           => "danger",
+                                            HiringRequestStatus.Submitted          => "primary",
+                                            _                                      => "secondary"
                                         };
                                     }
                                     <span class="badge bg-@statusClass">@r.Status</span>
