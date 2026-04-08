@@ -42,7 +42,7 @@ public class RecommendationApiController : Controller
     }
 
     [HttpPost("SaveRecDraftJson")]
-    [IgnoreAntiforgeryToken]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> SaveRecDraftJson(
         int applicationId, string? notes, string? strengths, string? concerns, bool? hireRecommendation)
     {
@@ -56,7 +56,7 @@ public class RecommendationApiController : Controller
     }
 
     [HttpPost("SubmitRecJson")]
-    [IgnoreAntiforgeryToken]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> SubmitRecJson(int applicationId)
     {
         var userIdStr = User?.FindFirst("AdminId")?.Value;
@@ -86,7 +86,7 @@ public class RecommendationApiController : Controller
     }
 
     [HttpPost("SaveStage2RecDraftJson")]
-    [IgnoreAntiforgeryToken]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> SaveStage2RecDraftJson(
         int applicationId, string? notes, string? strengths, string? concerns, bool? hireRecommendation)
     {
@@ -100,7 +100,7 @@ public class RecommendationApiController : Controller
     }
 
     [HttpPost("SubmitStage2RecJson")]
-    [IgnoreAntiforgeryToken]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> SubmitStage2RecJson(int applicationId)
     {
         var userIdStr = User?.FindFirst("AdminId")?.Value;

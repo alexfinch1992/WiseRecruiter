@@ -185,7 +185,10 @@ export function RecommendationPanel({
     try {
       const resp = await fetch('/Admin/SaveRecDraftJson', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'RequestVerificationToken': csrfToken,
+        },
         body: new URLSearchParams({
           applicationId: String(applicationId),
           notes: s1.notes ?? '',
@@ -240,7 +243,10 @@ export function RecommendationPanel({
     try {
       const resp = await fetch('/Admin/SaveStage2RecDraftJson', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'RequestVerificationToken': csrfToken,
+        },
         body: new URLSearchParams({
           applicationId: String(applicationId),
           notes: s2.notes ?? '',
@@ -265,7 +271,10 @@ export function RecommendationPanel({
     try {
       const resp = await fetch('/Admin/SubmitStage2RecJson', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'RequestVerificationToken': csrfToken,
+        },
         body: new URLSearchParams({ applicationId: String(applicationId) }),
       });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);

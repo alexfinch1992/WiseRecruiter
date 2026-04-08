@@ -8,6 +8,7 @@ interface CandidateActionPanelProps {
   stage1RecommendationStatus: string | null;
   onStageChanged: (newStage: string) => void;
   onStage1StatusChanged: (status: string) => void;
+  csrfToken?: string;
 }
 
 import type { MoveStageResult } from '../types/MoveStageResult';
@@ -19,6 +20,7 @@ export function CandidateActionPanel({
   stage1RecommendationStatus,
   onStageChanged,
   onStage1StatusChanged,
+  csrfToken = '',
 }: CandidateActionPanelProps) {
   const [stages, setStages] = useState<StageOption[]>([]);
   const [selectedId, setSelectedId] = useState('');
@@ -57,7 +59,10 @@ export function CandidateActionPanel({
     try {
       const resp = await fetch('/Admin/MoveApplicationStageJson', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'RequestVerificationToken': csrfToken,
+        },
         body: new URLSearchParams({
           applicationId: String(applicationId),
           selectedStage: selectedId,
