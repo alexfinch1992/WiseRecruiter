@@ -26,7 +26,13 @@ public class ApplicationsController : Controller
 
     public async Task<IActionResult> Index()    
     {
-        return View(await _context.Applications.ToListAsync());
+        var userEmail = User.Identity?.Name;
+
+        var applications = await _context.Applications
+            .Where(a => a.Email == userEmail)
+            .ToListAsync();
+
+        return View(applications);
     }
 
     /// <summary>
@@ -47,6 +53,9 @@ public class ApplicationsController : Controller
         
         if (application == null)
             return NotFound();
+
+        if (application.Email != User.Identity?.Name)
+            return Forbid();
 
         // Map to public ViewModel - only safe information
         var viewModel = new CandidatePublicViewModel
