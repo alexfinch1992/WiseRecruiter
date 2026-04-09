@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using JobPortal.Models;
 using JobPortal.Services.Interfaces;
 
@@ -9,12 +8,10 @@ using JobPortal.Services.Interfaces;
 public class EmailController : Controller
 {
     private readonly IEmailService _emailService;
-    private readonly ILogger<EmailController> _logger;
 
-    public EmailController(IEmailService emailService, ILogger<EmailController> logger)
+    public EmailController(IEmailService emailService)
     {
         _emailService = emailService;
-        _logger = logger;
     }
 
     [HttpGet("[action]")]
@@ -47,12 +44,8 @@ public class EmailController : Controller
         var success = await _emailService.SendMockEmailAsync(templateId, candidateId, userId);
 
         if (!success)
-        {
-            _logger.LogWarning("Email send failed. TemplateId: {TemplateId}, CandidateId: {CandidateId}", templateId, candidateId);
             return Json(new { success = false, error = "Template or candidate not found." });
-        }
 
-        _logger.LogInformation("Email sent. TemplateId: {TemplateId}, CandidateId: {CandidateId}", templateId, candidateId);
         return Json(new { success = true });
     }
 }

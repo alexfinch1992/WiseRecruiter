@@ -35,7 +35,7 @@
                     <ul class="navbar-nav flex-grow-1">
                         @{
                             var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
-                            var isAdminNavigation = currentController == "Admin" || currentController == "AdminSettings" || currentController == "RecommendationAdmin" || currentController == "CandidateSearch" || currentController == "Email";
+                            var isAdminNavigation = currentController == "Admin" || currentController == "AdminSettings" || currentController == "RecommendationAdmin" || currentController == "CandidateSearch" || currentController == "Email" || currentController == "HiringRequest";
                         }
                         @if (isAdminNavigation)
                         {
@@ -54,6 +54,14 @@
                                     <i class="fas fa-chart-bar me-1"></i>Analytics
                                 </a>
                             </li>
+                            @if (User.IsInRole("Admin") || User.IsInRole("HiringManager"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-area="" asp-controller="HiringRequest" asp-action="Index">
+                                        <i class="fas fa-file-alt me-1"></i>Hiring Requests
+                                    </a>
+                                </li>
+                            }
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" id="settingsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     <i class="fas fa-sliders-h me-1"></i>Settings

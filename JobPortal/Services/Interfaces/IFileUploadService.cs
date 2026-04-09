@@ -1,29 +1,40 @@
-using JobPortal.Helpers;
-
 namespace JobPortal.Services.Interfaces
 {
+    /// <summary>
+    /// Abstraction for file operations (upload, delete, validate).
+    /// Enables swapping filesystem operations for cloud storage (S3, Azure Blob, etc.)
+    /// </summary>
     public interface IFileUploadService
     {
+        /// <summary>
+        /// Validates a resume file before upload.
+        /// </summary>
         (bool isValid, string? errorMessage) ValidateResume(IFormFile? file);
 
+        /// <summary>
+        /// Validates a general document file.
+        /// </summary>
         (bool isValid, string? errorMessage) ValidateDocument(IFormFile? file);
 
-        Task<FileUploadResult> UploadResumeAsync(IFormFile file);
-
-        Task<FileUploadResult> UploadDocumentAsync(IFormFile file);
-
-        Task<bool> DeleteResumeAsync(string? storedFileName);
-
-        Task<bool> DeleteDocumentAsync(string? storedFileName);
+        /// <summary>
+        /// Uploads and stores a resume file.
+        /// Returns path identifier for later retrieval/deletion.
+        /// </summary>
+        Task<(bool success, string? fileIdentifier, string? errorMessage)> UploadResumeAsync(IFormFile file);
 
         /// <summary>
-        /// Resolves the physical path for a stored resume file, or null if not found.
+        /// Uploads and stores a document file.
         /// </summary>
-        string? GetResumePhysicalPath(string? storedFileName);
+        Task<(bool success, string? fileIdentifier, string? errorMessage)> UploadDocumentAsync(IFormFile file);
 
         /// <summary>
-        /// Resolves the physical path for a stored document file, or null if not found.
+        /// Deletes a resume by its stored identifier.
         /// </summary>
-        string? GetDocumentPhysicalPath(string? storedFileName);
+        Task<bool> DeleteResumeAsync(string? fileIdentifier);
+
+        /// <summary>
+        /// Deletes a document by its stored identifier.
+        /// </summary>
+        Task<bool> DeleteDocumentAsync(string? fileIdentifier);
     }
 }

@@ -7,8 +7,6 @@ using JobPortal.Services.Implementations;
 using JobPortal.Models.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Moq;
 using Xunit;
 
 namespace WiseRecruiter.Tests.Integration
@@ -33,7 +31,7 @@ namespace WiseRecruiter.Tests.Integration
             context.Jobs.Add(job);
             await context.SaveChangesAsync();
 
-            var controller = new JobController(new JobQueryService(context), new JobCommandService(context), Mock.Of<ILogger<JobController>>());
+            var controller = new JobController(new JobQueryService(context), new JobCommandService(context));
 
             // Act
             var result = await controller.Delete(job.Id, "/Admin/Index");
@@ -55,7 +53,7 @@ namespace WiseRecruiter.Tests.Integration
             context.Jobs.Add(job);
             await context.SaveChangesAsync();
 
-            var controller = new JobController(new JobQueryService(context), new JobCommandService(context), Mock.Of<ILogger<JobController>>());
+            var controller = new JobController(new JobQueryService(context), new JobCommandService(context));
 
             // Act
             var result = await controller.DeleteConfirmed(job.Id, "/Admin/Index");
@@ -80,7 +78,7 @@ namespace WiseRecruiter.Tests.Integration
             context.Jobs.Add(job);
             await context.SaveChangesAsync();
 
-            var controller = new JobController(new JobQueryService(context), new JobCommandService(context), Mock.Of<ILogger<JobController>>());
+            var controller = new JobController(new JobQueryService(context), new JobCommandService(context));
 
             // Act
             var result = await controller.Details(job.Id);
@@ -102,7 +100,7 @@ namespace WiseRecruiter.Tests.Integration
             context.Jobs.Add(job);
             await context.SaveChangesAsync();
 
-            var controller = new JobController(new JobQueryService(context), new JobCommandService(context), Mock.Of<ILogger<JobController>>());
+            var controller = new JobController(new JobQueryService(context), new JobCommandService(context));
 
             // Act
             var result = await controller.Details(job.Id);
@@ -123,7 +121,7 @@ namespace WiseRecruiter.Tests.Integration
             context.Jobs.Add(job);
             await context.SaveChangesAsync();
 
-            var controller = new JobController(new JobQueryService(context), new JobCommandService(context), Mock.Of<ILogger<JobController>>());
+            var controller = new JobController(new JobQueryService(context), new JobCommandService(context));
 
             // Act
             var result = await controller.DeleteConfirmed(job.Id, null);

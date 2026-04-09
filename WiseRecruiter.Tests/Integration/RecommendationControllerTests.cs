@@ -265,9 +265,10 @@ namespace WiseRecruiter.Tests.Integration
 
             var result = await controller.SubmitStage1(application.Id);
 
-            var redirect = result.Should().BeOfType<JsonResult>().Subject;
-            var value = redirect.Value;
-            value.Should().NotBeNull();
+            var redirect = result.Should().BeOfType<RedirectToActionResult>().Subject;
+            redirect.ActionName.Should().Be("CandidateDetails");
+            redirect.ControllerName.Should().Be("Admin");
+            redirect.RouteValues!["id"].Should().Be(application.Id);
 
             var rec = await context.CandidateRecommendations.FirstAsync(r => r.ApplicationId == application.Id);
             rec.Status.Should().Be(RecommendationStatus.Submitted);
@@ -285,7 +286,7 @@ namespace WiseRecruiter.Tests.Integration
 
             var result = await controller.SubmitStage1(application.Id);
 
-            result.Should().BeOfType<NotFoundObjectResult>();
+            result.Should().BeOfType<NotFoundResult>();
         }
 
         // POST SubmitStage1: already Submitted → 400
@@ -308,7 +309,7 @@ namespace WiseRecruiter.Tests.Integration
 
             var result = await controller.SubmitStage1(application.Id);
 
-            result.Should().BeOfType<BadRequestObjectResult>();
+            result.Should().BeOfType<BadRequestResult>();
         }
 
         // POST Stage1 Save on Approved rec → succeeds and stays Approved
