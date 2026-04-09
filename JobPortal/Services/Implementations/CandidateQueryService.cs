@@ -351,10 +351,5 @@ namespace JobPortal.Services.Implementations
 
             await _context.SaveChangesAsync();
         }
-
-        public async Task<Document?> GetDocumentByIdAsync(int id)
-        {
-            return await _context.Documents.FindAsync(id);
-        }
     }
 }

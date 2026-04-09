@@ -122,7 +122,7 @@
                             }
                             @if (hasResume && !string.IsNullOrEmpty(resumePath))
                             {
-                                <a asp-controller="Admin" asp-action="ViewResumeInline" asp-route-applicationId="@app.Id" target="_blank" class="btn btn-sm btn-outline-secondary" title="View Resume">
+                                <a href="@resumePath" target="_blank" class="btn btn-sm btn-outline-secondary" title="View Resume">
                                     <i class="fas fa-eye"></i> View
                                 </a>
                             }
@@ -142,7 +142,7 @@
                                 else if (app.Documents != null && app.Documents.Any(d => d.Type == DocumentType.Resume))
                                 {
                                     var resumeDoc = app.Documents.FirstOrDefault(d => d.Type == DocumentType.Resume);
-                                    <a asp-action="DownloadDocument" asp-route-id="@resumeDoc?.Id" class="btn btn-sm btn-outline-success" title="Download Resume">
+                                    <a href="@resumeDoc?.FilePath" download class="btn btn-sm btn-outline-success" title="Download Resume">
                                         <i class="fas fa-download"></i>
                                     </a>
                                 }

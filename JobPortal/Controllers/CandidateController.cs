@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using JobPortal.Models.ViewModels;
 using JobPortal.Services.Interfaces;
 
@@ -14,16 +13,13 @@ public class CandidateController : Controller
 {
     private readonly ICandidateDetailsService  _candidateDetailsService;
     private readonly IWriteRecommendationService _writeRecommendationService;
-    private readonly ILogger<CandidateController> _logger;
 
     public CandidateController(
         ICandidateDetailsService  candidateDetailsService,
-        IWriteRecommendationService writeRecommendationService,
-        ILogger<CandidateController> logger)
+        IWriteRecommendationService writeRecommendationService)
     {
         _candidateDetailsService    = candidateDetailsService    ?? throw new ArgumentNullException(nameof(candidateDetailsService));
         _writeRecommendationService = writeRecommendationService ?? throw new ArgumentNullException(nameof(writeRecommendationService));
-        _logger = logger;
     }
 
     // Route: /Candidate/CandidateDetails  (AdminController still owns /Admin/CandidateDetails)
@@ -38,12 +34,10 @@ public class CandidateController : Controller
             var viewModel = await _candidateDetailsService.GetCandidateDetailsAsync(id.Value, User, stageApprovalWarnAppId);
             if (viewModel == null) return NotFound();
             SetCandidateNavigation(viewModel, ids, idx);
-            _logger.LogInformation("CandidateDetails viewed. ApplicationId: {AppId}", id.Value);
             return View("~/Views/Admin/CandidateDetails.cshtml", viewModel);
         }
         catch (CandidateAccessForbiddenException)
         {
-            _logger.LogWarning("CandidateDetails access forbidden. ApplicationId: {AppId}", id.Value);
             return Forbid();
         }
     }

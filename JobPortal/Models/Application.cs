@@ -32,11 +32,6 @@ namespace JobPortal.Models
 
         public string? ResumePath { get; set; }
 
-        // Resume metadata
-        public string? OriginalFileName { get; set; }
-        public string? ResumeContentType { get; set; }
-        public DateTime? ResumeUploadDate { get; set; }
-
         public int? CurrentJobStageId { get; set; }
 
         public DateTime AppliedDate { get; set; } = DateTime.UtcNow;
