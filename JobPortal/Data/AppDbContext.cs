@@ -46,6 +46,7 @@ namespace JobPortal.Data
         public DbSet<JobUser> JobUsers { get; set; } = null!;
         public DbSet<JobAlertSubscription> JobAlertSubscriptions { get; set; } = null!;
         public DbSet<Alert> Alerts { get; set; } = null!;
+        public DbSet<HiringRequest> HiringRequests { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -257,6 +258,30 @@ namespace JobPortal.Data
                 })
                 .IsUnique()
                 .HasFilter(null);
+
+            modelBuilder.Entity<HiringRequest>()
+                .HasOne(h => h.RequestedByUser)
+                .WithMany()
+                .HasForeignKey(h => h.RequestedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<HiringRequest>()
+                .HasOne(h => h.TalentLeadReviewedByUser)
+                .WithMany()
+                .HasForeignKey(h => h.TalentLeadReviewedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<HiringRequest>()
+                .HasOne(h => h.ExecutiveApprovedByUser)
+                .WithMany()
+                .HasForeignKey(h => h.ExecutiveApprovedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<HiringRequest>()
+                .HasOne(h => h.RejectedByUser)
+                .WithMany()
+                .HasForeignKey(h => h.RejectedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 

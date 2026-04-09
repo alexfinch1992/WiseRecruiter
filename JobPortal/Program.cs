@@ -55,6 +55,9 @@ builder.Services.AddScoped<IStageAuthorizationService, StageAuthorizationService
 builder.Services.AddScoped<IStageStateMachine<Stage1TransitionContext>, Stage1StateMachine>();
 builder.Services.AddScoped<IStageStateMachine<Stage2TransitionContext>, Stage2StateMachine>();
 builder.Services.AddScoped<IRecommendationService, RecommendationService>();
+builder.Services.AddScoped<JobPortal.Domain.HiringRequests.IHiringRequestStateMachine<JobPortal.Domain.HiringRequests.Stage1HiringRequestTransitionContext>, JobPortal.Domain.HiringRequests.Stage1HiringRequestStateMachine>();
+builder.Services.AddScoped<JobPortal.Domain.HiringRequests.IHiringRequestStateMachine<JobPortal.Domain.HiringRequests.Stage2HiringRequestTransitionContext>, JobPortal.Domain.HiringRequests.Stage2HiringRequestStateMachine>();
+builder.Services.AddScoped<IHiringRequestService, HiringRequestService>();
 builder.Services.AddScoped<IStageOrderService, StageOrderService>();
 builder.Services.AddScoped<IApplicationStageService, ApplicationStageService>();
 builder.Services.AddScoped<IHiringPipelineService, HiringPipelineService>();

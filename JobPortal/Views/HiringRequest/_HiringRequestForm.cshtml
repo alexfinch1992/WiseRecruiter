@@ -1,0 +1,57 @@
+@model JobPortal.Models.ViewModels.HiringRequestViewModel
+
+<div class="row mb-3">
+    <div class="col-md-8">
+        <label class="form-label fw-semibold" for="RoleTitle">Role Title</label>
+        <input id="RoleTitle" name="RoleTitle" type="text" class="form-control" value="@Model.RoleTitle" required />
+    </div>
+    <div class="col-md-4">
+        <label class="form-label fw-semibold" for="Headcount">Headcount</label>
+        <input id="Headcount" name="Headcount" type="number" min="1" class="form-control" value="@Model.Headcount" required />
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-6">
+        <label class="form-label fw-semibold" for="Department">Department</label>
+        <input id="Department" name="Department" type="text" class="form-control" value="@Model.Department" required />
+    </div>
+    <div class="col-md-6">
+        <label class="form-label fw-semibold" for="LevelBand">Level / Band</label>
+        <input id="LevelBand" name="LevelBand" type="text" class="form-control"
+               placeholder="e.g. L4, Senior, IC5" value="@Model.LevelBand" required />
+    </div>
+</div>
+
+<div class="mb-3">
+    <label class="form-label fw-semibold" for="Location">Location</label>
+    <input id="Location" name="Location" type="text" class="form-control"
+           placeholder="e.g. Sydney, Remote" value="@Model.Location" required />
+</div>
+
+<div class="mb-3">
+    <div class="form-check">
+        <input id="IsReplacement" name="IsReplacement" type="checkbox" class="form-check-input"
+               value="true" @(Model.IsReplacement ? "checked" : "") />
+        <input name="IsReplacement" type="hidden" value="false" />
+        <label class="form-check-label fw-semibold" for="IsReplacement">Replacement hire</label>
+    </div>
+</div>
+
+<div class="mb-3" id="replacementReasonBlock" style="@(Model.IsReplacement ? "" : "display:none")">
+    <label class="form-label fw-semibold" for="ReplacementReason">Replacement Reason</label>
+    <input id="ReplacementReason" name="ReplacementReason" type="text" class="form-control"
+           value="@Model.ReplacementReason" />
+</div>
+
+<div class="mb-3">
+    <label class="form-label fw-semibold" for="Justification">Justification</label>
+    <textarea id="Justification" name="Justification" rows="4" class="form-control" required>@Model.Justification</textarea>
+    <div class="form-text text-muted">Why is this hire needed?</div>
+</div>
+
+<script>
+    document.getElementById('IsReplacement').addEventListener('change', function () {
+        document.getElementById('replacementReasonBlock').style.display = this.checked ? '' : 'none';
+    });
+</script>
