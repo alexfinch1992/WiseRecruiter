@@ -7,13 +7,14 @@ namespace JobPortal.Services.Interfaces
     public interface IHiringRequestService
     {
         Task<List<HiringRequest>> GetAllAsync();
-        Task<HiringRequest?> GetByIdAsync(int id);
+        /// <summary>Returns the request if the caller is authorized to view it, otherwise null.</summary>
+        Task<HiringRequest?> GetByIdAsync(int id, string userId, string userRole);
 
         /// <summary>Creates a new HiringRequest in Draft and returns it.</summary>
         Task<HiringRequest> CreateDraftAsync(string userId, HiringRequestViewModel vm);
 
-        /// <summary>Overwrites content fields on a Draft request.</summary>
-        Task<TransitionResult> SaveDraftAsync(int id, HiringRequestViewModel vm);
+        /// <summary>Overwrites content fields on a Draft request. Only the request creator may edit.</summary>
+        Task<TransitionResult> SaveDraftAsync(int id, HiringRequestViewModel vm, string userId);
 
         /// <summary>Submits a Draft request for Stage 1 (Senior Talent Lead) review.</summary>
         Task<TransitionResult> SubmitAsync(int id, string userId);

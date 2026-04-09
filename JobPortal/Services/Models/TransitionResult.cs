@@ -4,6 +4,7 @@ namespace JobPortal.Services.Models
     {
         Success,
         NotFound,
-        InvalidState
+        InvalidState,
+        Unauthorized
     }
 }

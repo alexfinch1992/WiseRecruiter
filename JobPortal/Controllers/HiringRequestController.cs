@@ -43,7 +43,11 @@ public class HiringRequestController : Controller
     [HttpGet]
     public async Task<IActionResult> Edit(int id)
     {
-        var request = await _service.GetByIdAsync(id);
+        var userId = GetCurrentUserId();
+        if (userId == null)
+            return Forbid();
+
+        var request = await _service.GetByIdAsync(id, userId, GetCurrentUserRole());
         if (request == null)
             return NotFound();
 
@@ -72,11 +76,16 @@ public class HiringRequestController : Controller
             return View(model);
         }
 
-        var result = await _service.SaveDraftAsync(id, model);
+        var userId = GetCurrentUserId();
+        if (userId == null)
+            return Forbid();
+
+        var result = await _service.SaveDraftAsync(id, model, userId);
         return result switch
         {
             TransitionResult.NotFound     => NotFound(),
             TransitionResult.InvalidState => BadRequest(),
+            TransitionResult.Unauthorized => Forbid(),
             _                             => RedirectToAction(nameof(Details), new { id })
         };
     }
@@ -84,7 +93,11 @@ public class HiringRequestController : Controller
     [HttpGet]
     public async Task<IActionResult> Details(int id)
     {
-        var request = await _service.GetByIdAsync(id);
+        var userId = GetCurrentUserId();
+        if (userId == null)
+            return Forbid();
+
+        var request = await _service.GetByIdAsync(id, userId, GetCurrentUserRole());
         if (request == null)
             return NotFound();
 
@@ -104,6 +117,7 @@ public class HiringRequestController : Controller
         {
             TransitionResult.NotFound     => NotFound(),
             TransitionResult.InvalidState => BadRequest(),
+            TransitionResult.Unauthorized => Forbid(),
             _                             => RedirectToAction(nameof(Details), new { id })
         };
     }
@@ -186,4 +200,12 @@ public class HiringRequestController : Controller
 
     private string? GetCurrentUserId() =>
         User?.FindFirstValue(ClaimTypes.NameIdentifier);
+
+    private string GetCurrentUserRole()
+    {
+        if (User.IsInRole("Admin")) return "Admin";
+        if (User.IsInRole("TalentLead")) return "TalentLead";
+        if (User.IsInRole("ApprovingExecutive")) return "ApprovingExecutive";
+        return "HiringManager";
+    }
 }
