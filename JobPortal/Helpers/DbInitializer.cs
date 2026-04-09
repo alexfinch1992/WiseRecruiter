@@ -602,5 +602,30 @@ namespace JobPortal.Helpers
             if (result.Succeeded)
                 await userManager.AddToRoleAsync(admin, "Admin");
         }
+
+        /// <summary>
+        /// Seeds a test approving executive user. Idempotent — skips if the user already exists.
+        /// </summary>
+        public static async Task SeedExecutiveUserAsync(UserManager<ApplicationUser> userManager)
+        {
+            const string email    = "executive@wiserecruiter.com";
+            const string password = "Password123!";
+
+            if (await userManager.FindByEmailAsync(email) != null)
+                return;
+
+            var executive = new ApplicationUser
+            {
+                UserName             = email,
+                Email                = email,
+                FullName             = "Approving Executive",
+                EmailConfirmed       = true,
+                IsApprovingExecutive = true
+            };
+
+            var result = await userManager.CreateAsync(executive, password);
+            if (result.Succeeded)
+                await userManager.AddToRoleAsync(executive, "HiringManager");
+        }
     }
 }

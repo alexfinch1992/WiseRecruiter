@@ -19,5 +19,8 @@ namespace JobPortal.Domain.HiringRequests
 
         public static Stage2HiringRequestTransitionContext ForRejection(string userId, string? reason = null)
             => new(userId, notes: null, rejectionReason: reason);
+
+        public static Stage2HiringRequestTransitionContext ForMoreInfoRequested(string userId, string? notes = null)
+            => new(userId, notes, rejectionReason: null);
     }
 }

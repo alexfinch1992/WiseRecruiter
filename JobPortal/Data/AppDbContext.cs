@@ -47,6 +47,7 @@ namespace JobPortal.Data
         public DbSet<JobAlertSubscription> JobAlertSubscriptions { get; set; } = null!;
         public DbSet<Alert> Alerts { get; set; } = null!;
         public DbSet<HiringRequest> HiringRequests { get; set; } = null!;
+        public DbSet<HiringRequestComment> HiringRequestComments { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -259,6 +260,20 @@ namespace JobPortal.Data
                 .IsUnique()
                 .HasFilter(null);
 
+            modelBuilder.Entity<HiringRequestComment>()
+                .HasOne(c => c.HiringRequest)
+                .WithMany(h => h.Comments)
+                .HasForeignKey(c => c.HiringRequestId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<HiringRequestComment>()
+                .HasOne(c => c.User)
+                .WithMany()
+                .HasForeignKey(c => c.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<HiringRequestComment>()
+                .HasIndex(c => c.HiringRequestId);
         }
     }
 
