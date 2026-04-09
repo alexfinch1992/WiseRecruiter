@@ -49,7 +49,10 @@ public class HiringRequestController : Controller
 
         var request = await _service.GetByIdAsync(id, userId, GetCurrentUserRole());
         if (request == null)
-            return NotFound();
+        {
+            TempData["ErrorMessage"] = "The requested hiring request could not be found.";
+            return RedirectToAction(nameof(Index));
+        }
 
         var vm = new HiringRequestViewModel
         {
@@ -99,7 +102,10 @@ public class HiringRequestController : Controller
 
         var request = await _service.GetByIdAsync(id, userId, GetCurrentUserRole());
         if (request == null)
-            return NotFound();
+        {
+            TempData["ErrorMessage"] = "The requested hiring request could not be found.";
+            return RedirectToAction(nameof(Index));
+        }
 
         return View(request);
     }
