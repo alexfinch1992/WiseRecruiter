@@ -27,8 +27,13 @@ namespace JobPortal.Services.Implementations
         public Task<List<HiringRequest>> GetAllAsync() =>
             _context.HiringRequests.OrderByDescending(r => r.CreatedUtc).ToListAsync();
 
-        public Task<HiringRequest?> GetByIdAsync(int id) =>
-            _context.HiringRequests.FirstOrDefaultAsync(r => r.Id == id);
+        public Task<HiringRequest?> GetByIdAsync(int id, string userId, string userRole)
+        {
+            if (userRole == "Admin" || userRole == "TalentLead" || userRole == "ApprovingExecutive")
+                return _context.HiringRequests.FirstOrDefaultAsync(r => r.Id == id);
+
+            return _context.HiringRequests.FirstOrDefaultAsync(r => r.Id == id && r.RequestedByUserId == userId);
+        }
 
         public async Task<HiringRequest> CreateDraftAsync(string userId, HiringRequestViewModel vm)
         {
@@ -49,11 +54,14 @@ namespace JobPortal.Services.Implementations
             return request;
         }
 
-        public async Task<TransitionResult> SaveDraftAsync(int id, HiringRequestViewModel vm)
+        public async Task<TransitionResult> SaveDraftAsync(int id, HiringRequestViewModel vm, string userId)
         {
             var request = await _context.HiringRequests.FindAsync(id);
             if (request == null)
                 return TransitionResult.NotFound;
+
+            if (request.RequestedByUserId != userId)
+                return TransitionResult.Unauthorized;
 
             var result = _stage1Machine.ApplyTransition(request, HiringRequestStatus.Draft,
                 Stage1HiringRequestTransitionContext.ForDraftSave(
@@ -72,6 +80,9 @@ namespace JobPortal.Services.Implementations
             var request = await _context.HiringRequests.FindAsync(id);
             if (request == null)
                 return TransitionResult.NotFound;
+
+            if (request.RequestedByUserId != userId)
+                return TransitionResult.Unauthorized;
 
             var result = _stage1Machine.ApplyTransition(request, HiringRequestStatus.Submitted,
                 Stage1HiringRequestTransitionContext.ForSubmit(userId));
