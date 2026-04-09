@@ -64,6 +64,13 @@ namespace JobPortal.Services.Auth
                 }
             }
 
+            // Grant ApprovingExecutive role claim to users flagged as approving executives,
+            // so that [Authorize(Roles = "ApprovingExecutive")] works regardless of assigned role.
+            if (user.IsApprovingExecutive)
+            {
+                identity.AddClaim(new Claim(ClaimTypes.Role, "ApprovingExecutive"));
+            }
+
             return identity;
         }
     }

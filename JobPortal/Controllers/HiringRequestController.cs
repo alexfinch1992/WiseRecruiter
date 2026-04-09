@@ -135,6 +135,12 @@ public class HiringRequestController : Controller
     [Authorize(Roles = "Admin,TalentLead")]
     public async Task<IActionResult> ApproveStage1(int id, string? notes)
     {
+        if (string.IsNullOrWhiteSpace(notes))
+        {
+            TempData["ErrorMessage"] = "Notes are required when approving a request.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
         var userId = GetCurrentUserId();
         if (userId == null)
             return Forbid();
@@ -151,13 +157,43 @@ public class HiringRequestController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = "Admin,TalentLead")]
-    public async Task<IActionResult> RejectStage1(int id, string? reason)
+    public async Task<IActionResult> RejectStage1(int id, string? notes)
     {
+        if (string.IsNullOrWhiteSpace(notes))
+        {
+            TempData["ErrorMessage"] = "Notes are required when rejecting a request.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
         var userId = GetCurrentUserId();
         if (userId == null)
             return Forbid();
 
-        var result = await _service.RejectStage1Async(id, userId, reason);
+        var result = await _service.RejectStage1Async(id, userId, notes);
+        return result switch
+        {
+            TransitionResult.NotFound     => NotFound(),
+            TransitionResult.InvalidState => BadRequest(),
+            _                             => RedirectToAction(nameof(Details), new { id })
+        };
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Admin,TalentLead")]
+    public async Task<IActionResult> RequestMoreInfoStage1(int id, string? notes)
+    {
+        if (string.IsNullOrWhiteSpace(notes))
+        {
+            TempData["ErrorMessage"] = "Notes are required when requesting more information.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        var userId = GetCurrentUserId();
+        if (userId == null)
+            return Forbid();
+
+        var result = await _service.RequestMoreInfoStage1Async(id, userId, notes);
         return result switch
         {
             TransitionResult.NotFound     => NotFound(),
@@ -173,6 +209,12 @@ public class HiringRequestController : Controller
     [Authorize(Roles = "Admin,ApprovingExecutive")]
     public async Task<IActionResult> ApproveStage2(int id, string? notes)
     {
+        if (string.IsNullOrWhiteSpace(notes))
+        {
+            TempData["ErrorMessage"] = "Notes are required when approving a request.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
         var userId = GetCurrentUserId();
         if (userId == null)
             return Forbid();
@@ -189,13 +231,43 @@ public class HiringRequestController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = "Admin,ApprovingExecutive")]
-    public async Task<IActionResult> RejectStage2(int id, string? reason)
+    public async Task<IActionResult> RejectStage2(int id, string? notes)
     {
+        if (string.IsNullOrWhiteSpace(notes))
+        {
+            TempData["ErrorMessage"] = "Notes are required when rejecting a request.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
         var userId = GetCurrentUserId();
         if (userId == null)
             return Forbid();
 
-        var result = await _service.RejectStage2Async(id, userId, reason);
+        var result = await _service.RejectStage2Async(id, userId, notes);
+        return result switch
+        {
+            TransitionResult.NotFound     => NotFound(),
+            TransitionResult.InvalidState => BadRequest(),
+            _                             => RedirectToAction(nameof(Details), new { id })
+        };
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Admin,ApprovingExecutive")]
+    public async Task<IActionResult> RequestMoreInfoStage2(int id, string? notes)
+    {
+        if (string.IsNullOrWhiteSpace(notes))
+        {
+            TempData["ErrorMessage"] = "Notes are required when requesting more information.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        var userId = GetCurrentUserId();
+        if (userId == null)
+            return Forbid();
+
+        var result = await _service.RequestMoreInfoStage2Async(id, userId, notes);
         return result switch
         {
             TransitionResult.NotFound     => NotFound(),

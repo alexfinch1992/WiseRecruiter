@@ -14,6 +14,7 @@ namespace JobPortal.Domain.HiringRequests
             {
                 (HiringRequestStatus.TalentLeadApproved, HiringRequestStatus.ExecutiveApproved) => true,
                 (HiringRequestStatus.TalentLeadApproved, HiringRequestStatus.Rejected)         => true,
+                (HiringRequestStatus.TalentLeadApproved, HiringRequestStatus.MoreInfoRequested) => true,
                 _ => false
             };
 
@@ -43,6 +44,11 @@ namespace JobPortal.Domain.HiringRequests
                     entity.RejectedByUserId = ctx.UserId;
                     entity.RejectedUtc = now;
                     entity.RejectionReason = ctx.RejectionReason;
+                    entity.UpdatedUtc = now;
+                    break;
+
+                case HiringRequestStatus.MoreInfoRequested:
+                    entity.Status = HiringRequestStatus.MoreInfoRequested;
                     entity.UpdatedUtc = now;
                     break;
             }
