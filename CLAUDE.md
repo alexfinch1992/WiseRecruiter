@@ -37,7 +37,7 @@
 - **ClientApp/** — React 18 + TypeScript components, built with Vite, output to wwwroot/js/dist/
 - **Data/** — AppDbContext with 23 entities, 24+ EF migrations
 - **WiseRecruiter.Tests/** — 56 xUnit test files (unit + integration)
-- **playwright/** — E2E framework installed but 0 spec files written yet
+- **playwright/** — E2E framework with 22 test cases across 8 spec files (see docs/PLAYWRIGHT_TESTING_PLAN.md for details)
 
 ### Key patterns
 
@@ -65,7 +65,7 @@
 
 **Known technical debt:**
 - AdminController.cs is ~1000 lines and needs decomposition
-- E2E tests (Playwright): framework installed, zero specs written
+- E2E tests (Playwright): 22 tests exist but gaps in HiringRequest, CSRF, and job alerts coverage (see docs/PLAYWRIGHT_TESTING_PLAN.md)
 - React component tests: minimal coverage (testing libraries configured)
 - Service-layer authorization is inconsistent between controllers and services
 - Some Console.WriteLine calls may still exist (should use ILogger)
@@ -84,3 +84,10 @@
 2. Check for any Daily Digest files (DailyDigest-*.md) for recent activity
 3. Ask Michael what he'd like to work on
 4. If continuing previous work, check git status and recent commits to understand current state
+
+## How Claude should end each session
+
+1. If any files were created or edited, remind Michael to commit and push to GitHub
+2. Walk him through the git commands (add, commit, push) step by step
+3. Update the "Current state" section of this file if anything significant changed
+4. Suggest updating the Daily Digest if relevant
