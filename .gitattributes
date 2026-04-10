@@ -1,2 +1,16 @@
-JobPortal/wwwroot/js/dist/*.js text eol=lf
-JobPortal/wwwroot/js/dist/assets/*.js text eol=lf
+* text=auto
+
+*.cs text working-tree-encoding=UTF-8
+*.cshtml text working-tree-encoding=UTF-8
+*.js text working-tree-encoding=UTF-8
+*.ts text working-tree-encoding=UTF-8
+*.json text working-tree-encoding=UTF-8
+*.css text working-tree-encoding=UTF-8
+*.html text working-tree-encoding=UTF-8
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
