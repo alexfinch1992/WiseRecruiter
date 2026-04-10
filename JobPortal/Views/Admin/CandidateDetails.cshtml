@@ -697,7 +697,7 @@
                                         </small>
                                     </div>
                                     <div class="ms-3">
-                                        <a href="@doc.FilePath" target="_blank" class="btn btn-sm btn-outline-primary" title="Download">
+                                        <a asp-action="DownloadDocument" asp-route-id="@doc.Id" target="_blank" class="btn btn-sm btn-outline-primary" title="Download">
                                             <i class="fas fa-download"></i>
                                         </a>
                                         <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteDocument(@doc.Id)" title="Delete">

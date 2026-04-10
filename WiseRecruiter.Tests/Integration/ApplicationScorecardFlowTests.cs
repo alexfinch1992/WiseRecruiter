@@ -38,7 +38,20 @@ namespace WiseRecruiter.Tests.Integration
             IScorecardTemplateService templateService = new ScorecardTemplateService(context);
             IScorecardService scorecardService = new ScorecardService(context, templateService);
 
-            var controller = new ApplicationsController(context, environment.Object, applicationService, scorecardService)
+            var fileUploadMock = new Mock<IFileUploadService>();
+            fileUploadMock.Setup(f => f.ValidateResume(It.IsAny<IFormFile>()))
+                          .Returns((true, (string?)null));
+            fileUploadMock.Setup(f => f.UploadResumeAsync(It.IsAny<IFormFile>()))
+                          .ReturnsAsync(new JobPortal.Helpers.FileUploadResult
+                          {
+                              Success = true,
+                              StoredFileName = "test-resume.pdf",
+                              OriginalFileName = "resume.txt",
+                              ContentType = "text/plain",
+                              UploadedAt = DateTime.UtcNow
+                          });
+
+            var controller = new ApplicationsController(context, fileUploadMock.Object, applicationService, scorecardService)
             {
                 ControllerContext = new ControllerContext
                 {
