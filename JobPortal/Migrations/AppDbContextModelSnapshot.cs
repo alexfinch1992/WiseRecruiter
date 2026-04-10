@@ -633,6 +633,39 @@ namespace JobPortal.Migrations
                     b.ToTable("HiringRequests");
                 });
 
+            modelBuilder.Entity("JobPortal.Models.HiringRequestComment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Comment")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("HiringRequestId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HiringRequestId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("HiringRequestComments");
+                });
+
             modelBuilder.Entity("JobPortal.Models.Interview", b =>
                 {
                     b.Property<int>("Id")
@@ -1162,6 +1195,25 @@ namespace JobPortal.Migrations
                     b.Navigation("TalentLeadReviewedByUser");
                 });
 
+            modelBuilder.Entity("JobPortal.Models.HiringRequestComment", b =>
+                {
+                    b.HasOne("JobPortal.Models.HiringRequest", "HiringRequest")
+                        .WithMany("Comments")
+                        .HasForeignKey("HiringRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("JobPortal.Models.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("HiringRequest");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("JobPortal.Models.Interview", b =>
                 {
                     b.HasOne("JobPortal.Models.Application", "Application")
@@ -1394,6 +1446,11 @@ namespace JobPortal.Migrations
                     b.Navigation("Applications");
 
                     b.Navigation("Scorecards");
+                });
+
+            modelBuilder.Entity("JobPortal.Models.HiringRequest", b =>
+                {
+                    b.Navigation("Comments");
                 });
 
             modelBuilder.Entity("JobPortal.Models.Interview", b =>

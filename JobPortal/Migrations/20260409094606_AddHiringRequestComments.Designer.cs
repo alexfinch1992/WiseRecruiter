@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace JobPortal.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260407142810_AddResumeMetadataFields")]
-    partial class AddResumeMetadataFields
+    [Migration("20260409094606_AddHiringRequestComments")]
+    partial class AddHiringRequestComments
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -196,6 +196,9 @@ namespace JobPortal.Migrations
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsApprovingExecutive")
+                        .HasColumnType("INTEGER");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("INTEGER");
@@ -543,6 +546,127 @@ namespace JobPortal.Migrations
                         .IsUnique();
 
                     b.ToTable("Facets");
+                });
+
+            modelBuilder.Entity("JobPortal.Models.HiringRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Department")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExecutiveApprovedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ExecutiveApprovedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExecutiveNotes")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Headcount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsReplacement")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Justification")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LevelBand")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Location")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RejectedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("RejectedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ReplacementReason")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RequestedByUserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RoleTitle")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("TalentLeadNotes")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TalentLeadReviewedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("TalentLeadReviewedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExecutiveApprovedByUserId");
+
+                    b.HasIndex("RejectedByUserId");
+
+                    b.HasIndex("RequestedByUserId");
+
+                    b.HasIndex("TalentLeadReviewedByUserId");
+
+                    b.ToTable("HiringRequests");
+                });
+
+            modelBuilder.Entity("JobPortal.Models.HiringRequestComment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Comment")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("HiringRequestId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HiringRequestId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("HiringRequestComments");
                 });
 
             modelBuilder.Entity("JobPortal.Models.Interview", b =>
@@ -1042,6 +1166,57 @@ namespace JobPortal.Migrations
                     b.Navigation("Category");
                 });
 
+            modelBuilder.Entity("JobPortal.Models.HiringRequest", b =>
+                {
+                    b.HasOne("JobPortal.Models.ApplicationUser", "ExecutiveApprovedByUser")
+                        .WithMany()
+                        .HasForeignKey("ExecutiveApprovedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("JobPortal.Models.ApplicationUser", "RejectedByUser")
+                        .WithMany()
+                        .HasForeignKey("RejectedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("JobPortal.Models.ApplicationUser", "RequestedByUser")
+                        .WithMany()
+                        .HasForeignKey("RequestedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("JobPortal.Models.ApplicationUser", "TalentLeadReviewedByUser")
+                        .WithMany()
+                        .HasForeignKey("TalentLeadReviewedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ExecutiveApprovedByUser");
+
+                    b.Navigation("RejectedByUser");
+
+                    b.Navigation("RequestedByUser");
+
+                    b.Navigation("TalentLeadReviewedByUser");
+                });
+
+            modelBuilder.Entity("JobPortal.Models.HiringRequestComment", b =>
+                {
+                    b.HasOne("JobPortal.Models.HiringRequest", "HiringRequest")
+                        .WithMany("Comments")
+                        .HasForeignKey("HiringRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("JobPortal.Models.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("HiringRequest");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("JobPortal.Models.Interview", b =>
                 {
                     b.HasOne("JobPortal.Models.Application", "Application")
@@ -1274,6 +1449,11 @@ namespace JobPortal.Migrations
                     b.Navigation("Applications");
 
                     b.Navigation("Scorecards");
+                });
+
+            modelBuilder.Entity("JobPortal.Models.HiringRequest", b =>
+                {
+                    b.Navigation("Comments");
                 });
 
             modelBuilder.Entity("JobPortal.Models.Interview", b =>

@@ -104,7 +104,7 @@ namespace WiseRecruiter.Tests.Integration
             var viewResult = result.Should().BeOfType<ViewResult>().Subject;
             var model = viewResult.Model.Should().BeOfType<ResumeReviewViewModel>().Subject;
             model.HasResume.Should().BeTrue();
-            model.ResumeUrl.Should().Contain("ViewResumeInline");
+            model.ResumeUrl.Should().Be("/uploads/resumes/cv.pdf");
         }
 
         [Fact]
@@ -274,7 +274,7 @@ namespace WiseRecruiter.Tests.Integration
 
             var viewResult = result.Should().BeOfType<ViewResult>().Subject;
             var model = viewResult.Model.Should().BeOfType<ResumeReviewViewModel>().Subject;
-            model.ResumeUrl.Should().Contain("ViewResumeInline");
+            model.ResumeUrl.Should().Be("/uploads/resumes/test.pdf");
             model.HasResume.Should().BeTrue();
         }
 

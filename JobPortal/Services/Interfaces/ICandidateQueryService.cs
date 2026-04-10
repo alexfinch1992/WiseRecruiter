@@ -43,6 +43,5 @@ namespace JobPortal.Services.Interfaces
         Task<Application?> GetApplicationByIdAsync(int id);
         Task<Application?> GetApplicationWithCandidateAsync(int id);
         Task RejectApplicationAsync(int applicationId, string reason, string notes, bool globalArchive, string userId);
-        Task<Document?> GetDocumentByIdAsync(int id);
     }
 }

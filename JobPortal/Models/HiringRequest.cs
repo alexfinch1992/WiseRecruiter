@@ -6,7 +6,8 @@ namespace JobPortal.Models
         Submitted,
         TalentLeadApproved,
         ExecutiveApproved,
-        Rejected
+        Rejected,
+        MoreInfoRequested
     }
 
     public class HiringRequest
@@ -46,5 +47,7 @@ namespace JobPortal.Models
 
         public DateTime CreatedUtc { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedUtc { get; set; } = DateTime.UtcNow;
+
+        public ICollection<HiringRequestComment> Comments { get; set; } = new List<HiringRequestComment>();
     }
 }
