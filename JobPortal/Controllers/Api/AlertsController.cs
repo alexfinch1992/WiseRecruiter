@@ -91,6 +91,7 @@ namespace JobPortal.Controllers.Api
         }
 
         [HttpPost("toggle-job/{jobId}")]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleJobAlert(int jobId)
         {
             var user = await _userManager.GetUserAsync(User);

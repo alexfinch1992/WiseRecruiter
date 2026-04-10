@@ -4,7 +4,7 @@ import { RecommendationPanel } from './components/RecommendationPanel';
 
 const el = document.getElementById('recommendation-editor-root');
 if (el) {
-  const { applicationId, recStatus, stage } = el.dataset;
+  const { applicationId, recStatus, stage, csrfToken } = el.dataset;
   const stageNum = (Number(stage) || 1) as 1 | 2;
 
   function RecommendationEditorApp() {
@@ -17,6 +17,7 @@ if (el) {
           stage1Status={stageNum === 1 ? status : null}
           onStage1StatusChanged={setStatus}
           stage={stageNum}
+          csrfToken={csrfToken ?? ''}
         />
       </div>
     );

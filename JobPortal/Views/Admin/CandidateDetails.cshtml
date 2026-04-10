@@ -1,5 +1,6 @@
 @model JobPortal.Models.ViewModels.CandidateAdminViewModel
 @using JobPortal.Models
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 
 @{
     ViewData["Title"] = $"{Model.Name} - Candidate Profile";
@@ -280,7 +281,8 @@
                          data-application-id="@Model.Id"
                          data-job-id="@Model.JobId"
                          data-current-stage="@currentStageEncoded"
-                         data-stage1-status="@stage1RecStatus"></div>
+                         data-stage1-status="@stage1RecStatus"
+                         data-csrf-token="@Antiforgery.GetAndStoreTokens(Context).RequestToken"></div>
                 </div>
             </div>
 

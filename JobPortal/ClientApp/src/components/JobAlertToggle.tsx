@@ -1,17 +1,20 @@
 import { useEffect, useState } from "react";
 
-export function JobAlertToggle({ jobId }: { jobId: number }) {
+export function JobAlertToggle({ jobId, csrfToken = '' }: { jobId: number; csrfToken?: string }) {
   const [enabled, setEnabled] = useState<boolean | null>(null);
 
   useEffect(() => {
     fetch(`/api/alerts/job/${jobId}`)
-      .then(res => res.json())
+      .then(res => res.json() as Promise<boolean>)
       .then(setEnabled);
   }, [jobId]);
 
   const toggle = async () => {
     await fetch(`/api/alerts/toggle-job/${jobId}`, {
-      method: "POST"
+      method: "POST",
+      headers: {
+        'RequestVerificationToken': csrfToken,
+      },
     });
 
     setEnabled(prev => !prev);

@@ -1,7 +1,9 @@
 @model JobPortal.Models.ViewModels.WriteRecommendationViewModel
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 
 @{
     ViewData["Title"] = $"Stage 2 Recommendation — {Model.Name}";
+    var tokens = Antiforgery.GetAndStoreTokens(Context);
 }
 
 <div class="container-fluid py-5">
@@ -31,7 +33,8 @@
                          data-application-id="@Model.Id"
                          data-job-id="@Model.JobId"
                          data-stage="2"
-                         data-rec-status="@Model.RecStatus">
+                         data-rec-status="@Model.RecStatus"
+                         data-csrf-token="@tokens.RequestToken">
                         <div class="text-center py-5">
                             <div class="spinner-border" style="color: #7B3FF2;" role="status">
                                 <span class="visually-hidden">Loading&hellip;</span>

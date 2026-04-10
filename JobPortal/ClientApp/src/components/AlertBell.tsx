@@ -1,13 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-
-interface Alert {
-  id: number;
-  type: string;
-  message: string;
-  isRead: boolean;
-  createdAt: string;
-  linkUrl: string | null;
-}
+import type { Alert } from '../types/Alert';
 
 export function AlertBell() {
   const [unreadCount, setUnreadCount] = useState(0);
@@ -19,7 +11,7 @@ export function AlertBell() {
     try {
       const res = await fetch('/api/alerts/unread-count');
       if (res.ok) {
-        const count = await res.json();
+        const count: number = await res.json();
         setUnreadCount(count);
       }
     } catch { /* ignore */ }
@@ -29,7 +21,7 @@ export function AlertBell() {
     try {
       const res = await fetch('/api/alerts/recent');
       if (res.ok) {
-        const data = await res.json();
+        const data: Alert[] = await res.json();
         setAlerts(data);
         setUnreadCount(0);
       }

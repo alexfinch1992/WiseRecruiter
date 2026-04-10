@@ -1,13 +1,5 @@
 import React, { useState, useEffect } from 'react';
-
-interface Alert {
-  id: number;
-  type: string;
-  message: string;
-  isRead: boolean;
-  createdAt: string;
-  linkUrl: string | null;
-}
+import type { Alert } from '../types/Alert';
 
 export function AlertsPage() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
@@ -18,7 +10,8 @@ export function AlertsPage() {
       try {
         const res = await fetch('/api/alerts');
         if (res.ok) {
-          setAlerts(await res.json());
+          const data: Alert[] = await res.json();
+          setAlerts(data);
         }
       } catch { /* ignore */ }
       setLoading(false);

@@ -4,7 +4,7 @@ import { CandidateActionPanel } from './components/CandidateActionPanel';
 
 const el = document.getElementById('stage-move-root');
 if (el) {
-  const { applicationId, jobId, currentStage, stage1Status } = el.dataset;
+  const { applicationId, jobId, currentStage, stage1Status, csrfToken } = el.dataset;
   console.log('React mounting to:', el);
   createRoot(el).render(
     <React.StrictMode>
@@ -15,6 +15,7 @@ if (el) {
         stage1RecommendationStatus={stage1Status ?? null}
         onStageChanged={() => window.location.reload()}
         onStage1StatusChanged={() => {}}
+        csrfToken={csrfToken ?? ''}
       />
     </React.StrictMode>,
   );

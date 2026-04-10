@@ -1,12 +1,5 @@
 import React, { useEffect, useState } from 'react';
-
-interface RecData {
-  status: string; // 'None' | 'Draft' | 'Submitted' | 'Approved' | 'Rejected'
-  notes: string | null;
-  strengths: string | null;
-  concerns: string | null;
-  hireRecommendation: boolean | null;
-}
+import type { RecData, RecActionResult, SubmitResult } from '../types/Recommendation';
 
 interface RecommendationPanelProps {
   applicationId: number;
@@ -16,6 +9,8 @@ interface RecommendationPanelProps {
   onStage1StatusChanged: (status: string) => void;
   /** 1 = Stage 1 editor (default), 2 = Stage 2 editor */
   stage?: 1 | 2;
+  /** Antiforgery token for POST requests that require it */
+  csrfToken?: string;
 }
 
 const STATUS_BADGE: Record<string, string> = {
@@ -140,6 +135,7 @@ export function RecommendationPanel({
   stage1Status,
   onStage1StatusChanged,
   stage = 1,
+  csrfToken = '',
 }: RecommendationPanelProps) {
   // In stage-2 editor mode, skip S1 entirely and show S2 directly
   const showS1 = stage === 1 && (currentStage === 'Screen' || (stage1Status !== null && stage1Status !== 'None'));
@@ -156,7 +152,11 @@ export function RecommendationPanel({
   useEffect(() => {
     if (!showS1) return;
     fetch(`/Admin/GetStage1RecJson?applicationId=${applicationId}`)
-      .then((r) => (r.ok ? (r.json() as Promise<RecData>) : null))
+      .then(async (r) => {
+        if (!r.ok) return null;
+        const data: RecData = await r.json();
+        return data;
+      })
       .then((data) => data && setS1(data))
       .catch(() => {});
   }, [applicationId, showS1]);
@@ -165,7 +165,11 @@ export function RecommendationPanel({
   useEffect(() => {
     if (!showS2) return;
     fetch(`/Admin/GetStage2RecJson?applicationId=${applicationId}`)
-      .then((r) => (r.ok ? (r.json() as Promise<RecData>) : null))
+      .then(async (r) => {
+        if (!r.ok) return null;
+        const data: RecData = await r.json();
+        return data;
+      })
       .then((data) => {
         if (data) setS2(data);
         else setS2({ status: 'None', notes: null, strengths: null, concerns: null, hireRecommendation: null });
@@ -181,7 +185,10 @@ export function RecommendationPanel({
     try {
       const resp = await fetch('/Admin/SaveRecDraftJson', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'RequestVerificationToken': csrfToken,
+        },
         body: new URLSearchParams({
           applicationId: String(applicationId),
           notes: s1.notes ?? '',
@@ -191,7 +198,7 @@ export function RecommendationPanel({
         }),
       });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      const result = (await resp.json()) as { success: boolean; status: string };
+      const result: RecActionResult = await resp.json();
       setS1((prev) => (prev ? { ...prev, status: result.status } : prev));
       onStage1StatusChanged(result.status);
     } catch {
@@ -206,16 +213,15 @@ export function RecommendationPanel({
     setS1Saving(true);
     setS1Error(null);
     try {
-      const token = (window as any).__CSRF_TOKEN__ ?? '';
       const resp = await fetch('/Recommendation/SubmitStage1', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'RequestVerificationToken': token,
+          'RequestVerificationToken': csrfToken,
         },
         body: new URLSearchParams({ applicationId: String(applicationId) }),
       });
-      const data = await resp.json() as { success: boolean; error?: string };
+      const data: SubmitResult = await resp.json();
       console.log('SubmitStage1:', resp.status, data);
       if (resp.ok && data.success) {
         window.location.href = `/Admin/CandidateDetails/${applicationId}`;
@@ -237,7 +243,10 @@ export function RecommendationPanel({
     try {
       const resp = await fetch('/Admin/SaveStage2RecDraftJson', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'RequestVerificationToken': csrfToken,
+        },
         body: new URLSearchParams({
           applicationId: String(applicationId),
           notes: s2.notes ?? '',
@@ -247,7 +256,7 @@ export function RecommendationPanel({
         }),
       });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      const result = (await resp.json()) as { success: boolean; status: string };
+      const result: RecActionResult = await resp.json();
       setS2((prev) => (prev ? { ...prev, status: result.status } : prev));
     } catch {
       setS2Error('Save failed. Please try again.');
@@ -262,11 +271,14 @@ export function RecommendationPanel({
     try {
       const resp = await fetch('/Admin/SubmitStage2RecJson', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'RequestVerificationToken': csrfToken,
+        },
         body: new URLSearchParams({ applicationId: String(applicationId) }),
       });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      const result = (await resp.json()) as { success: boolean; status: string };
+      const result: RecActionResult = await resp.json();
       setS2((prev) => (prev ? { ...prev, status: result.status } : prev));
       if (result.status === 'Submitted' || result.status === 'Approved') {
         window.location.href = `/Admin/CandidateDetails/${applicationId}`;

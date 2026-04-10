@@ -4,10 +4,11 @@ import CandidateFilterSidebar from './components/CandidateFilterSidebar';
 
 const el = document.getElementById('candidate-filter-root');
 
-if (el && (window as any).__candidateFilters) {
+if (el && el.dataset.initial) {
+    const initial = JSON.parse(el.dataset.initial);
     createRoot(el).render(
         <React.StrictMode>
-            <CandidateFilterSidebar initial={(window as any).__candidateFilters} />
+            <CandidateFilterSidebar initial={initial} />
         </React.StrictMode>
     );
 }

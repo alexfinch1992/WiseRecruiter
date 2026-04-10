@@ -8,14 +8,10 @@ interface CandidateActionPanelProps {
   stage1RecommendationStatus: string | null;
   onStageChanged: (newStage: string) => void;
   onStage1StatusChanged: (status: string) => void;
+  csrfToken?: string;
 }
 
-interface MoveResult {
-  success: boolean;
-  requiresApproval: boolean;
-  message?: string;
-  newStage: string;
-}
+import type { MoveStageResult } from '../types/MoveStageResult';
 
 export function CandidateActionPanel({
   applicationId,
@@ -24,6 +20,7 @@ export function CandidateActionPanel({
   stage1RecommendationStatus,
   onStageChanged,
   onStage1StatusChanged,
+  csrfToken = '',
 }: CandidateActionPanelProps) {
   const [stages, setStages] = useState<StageOption[]>([]);
   const [selectedId, setSelectedId] = useState('');
@@ -62,7 +59,10 @@ export function CandidateActionPanel({
     try {
       const resp = await fetch('/Admin/MoveApplicationStageJson', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'RequestVerificationToken': csrfToken,
+        },
         body: new URLSearchParams({
           applicationId: String(applicationId),
           selectedStage: selectedId,
@@ -70,7 +70,7 @@ export function CandidateActionPanel({
         }),
       });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      const result = (await resp.json()) as MoveResult;
+      const result: MoveStageResult = await resp.json();
       onStageChanged(result.newStage);
       setHardConfirmed(false);
       setBypassConfirmed(false);

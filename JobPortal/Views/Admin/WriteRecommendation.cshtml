@@ -34,7 +34,8 @@
                          data-application-id="@Model.Id"
                          data-job-id="@Model.JobId"
                          data-stage="1"
-                         data-rec-status="@Model.RecStatus">
+                         data-rec-status="@Model.RecStatus"
+                         data-csrf-token="@tokens.RequestToken">
                         <div class="text-center py-5">
                             <div class="spinner-border" style="color: #7B3FF2;" role="status">
                                 <span class="visually-hidden">Loading&hellip;</span>
@@ -48,6 +49,5 @@
 </div>
 
 @section Scripts {
-    <script>window.__CSRF_TOKEN__ = '@tokens.RequestToken';</script>
     <script type="module" src="~/js/dist/recommendation-editor.js" asp-append-version="true"></script>
 }
