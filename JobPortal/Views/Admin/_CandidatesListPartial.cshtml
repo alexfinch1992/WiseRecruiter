@@ -31,31 +31,49 @@
     }
 }
 
-<div class="btn-group mb-3" role="group">
-    <a href="@BuildSortHref("name")" class="btn btn-sm sort-link @(currentSort == "name" ? "btn-secondary" : "btn-outline-secondary")">
-        <i class="fas @SortIcon("name") me-1"></i>Name
-    </a>
-    <a href="@BuildSortHref("stage")" class="btn btn-sm sort-link @(currentSort == "stage" ? "btn-secondary" : "btn-outline-secondary")">
-        <i class="fas @SortIcon("stage") me-1"></i>Stage
-    </a>
-    <a href="@BuildSortHref("date")" class="btn btn-sm sort-link @(currentSort == "date" ? "btn-secondary" : "btn-outline-secondary")">
-        <i class="fas @SortIcon("date") me-1"></i>Date
-    </a>
-</div>
-
 @if (Model.Applications.Any())
 {
     <div class="card shadow-sm border-0">
         <div class="table-responsive">
-            <table class="table table-hover mb-0">
+            <table class="table table-hover w-100 mb-0">
                 <thead>
                     <tr>
-                        <th><i class="fas fa-user me-2"></i>Name</th>
+                        <th class="align-middle">
+                            <a href="@BuildSortHref("name")" class="sort-link d-flex align-items-center justify-content-between gap-2 w-100 text-nowrap text-decoration-none text-reset fw-semibold">
+                                <span class="d-inline-flex align-items-center gap-2 text-nowrap">
+                                    <i class="fas fa-user"></i>
+                                    <span>Name</span>
+                                </span>
+                                <span class="flex-shrink-0">
+                                    <i class="fas @SortIcon("name") text-muted"></i>
+                                </span>
+                            </a>
+                        </th>
                         <th><i class="fas fa-envelope me-2"></i>Email</th>
                         <th><i class="fas fa-briefcase me-2"></i>Job</th>
                         <th><i class="fas fa-map-marker-alt me-2"></i>City</th>
-                        <th><i class="fas fa-calendar me-2"></i>Applied</th>
-                        <th class="text-center"><i class="fas fa-tasks me-2"></i>Stage</th>
+                        <th class="align-middle">
+                            <a href="@BuildSortHref("date")" class="sort-link d-flex align-items-center justify-content-between gap-2 w-100 text-nowrap text-decoration-none text-reset fw-semibold">
+                                <span class="d-inline-flex align-items-center gap-2 text-nowrap">
+                                    <i class="fas fa-calendar"></i>
+                                    <span>Applied</span>
+                                </span>
+                                <span class="flex-shrink-0">
+                                    <i class="fas @SortIcon("date") text-muted"></i>
+                                </span>
+                            </a>
+                        </th>
+                        <th class="align-middle">
+                            <a href="@BuildSortHref("stage")" class="sort-link d-flex align-items-center justify-content-between gap-2 w-100 text-nowrap text-decoration-none text-reset fw-semibold">
+                                <span class="d-inline-flex align-items-center gap-2 text-nowrap">
+                                    <i class="fas fa-tasks"></i>
+                                    <span>Stage</span>
+                                </span>
+                                <span class="flex-shrink-0">
+                                    <i class="fas @SortIcon("stage") text-muted"></i>
+                                </span>
+                            </a>
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -67,7 +85,11 @@
                                     <strong>@app.Name</strong>
                                 </a>
                             </td>
-                            <td><a href="mailto:@app.Email">@app.Email</a></td>
+                            <td>
+                                <a href="mailto:@app.Email" class="d-inline-block text-truncate align-middle" style="max-width: 28ch;" title="@app.Email">
+                                    @app.Email
+                                </a>
+                            </td>
                             <td>@app.JobTitle</td>
                             <td><span class="badge badge-primary">@(app.City ?? "Not specified")</span></td>
                             <td><small class="text-muted">@app.AppliedDate.ToString("MMM dd, yyyy")</small></td>
