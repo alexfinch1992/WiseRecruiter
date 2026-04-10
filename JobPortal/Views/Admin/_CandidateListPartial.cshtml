@@ -22,31 +22,49 @@
     </div>
 }
 
-<div class="btn-group mb-3" role="group">
-    <a href="@Url.Action("JobDetail", "Admin", new { id = Job.Id, searchQuery = ViewData["SearchQuery"], sort = "name", dir = NameDir() })" class="btn btn-sm sort-link @(currentSort == "name" ? "btn-secondary" : "btn-outline-secondary")">
-        <i class="fas @(NameIcon()) me-1"></i>Sort by Name
-    </a>
-    <a href="@Url.Action("JobDetail", "Admin", new { id = Job.Id, searchQuery = ViewData["SearchQuery"], sort = "stage", dir = StageDir() })" class="btn btn-sm sort-link @(currentSort == "stage" ? "btn-secondary" : "btn-outline-secondary")">
-        <i class="fas @(StageIcon()) me-1"></i>Sort by Stage
-    </a>
-    <a href="@Url.Action("JobDetail", "Admin", new { id = Job.Id, searchQuery = ViewData["SearchQuery"], sort = "date", dir = DateDir() })" class="btn btn-sm sort-link @(currentSort == "date" ? "btn-secondary" : "btn-outline-secondary")">
-        <i class="fas @(DateIcon()) me-1"></i>Sort by Date
-    </a>
-</div>
-
 <div class="card shadow-sm border-0">
     <div class="card-header">
         <h5 class="fw-bold mb-0"><i class="fas fa-list me-2"></i>Applicants</h5>
     </div>
     <div class="table-responsive">
-        <table class="table table-hover mb-0">
+        <table class="table table-hover w-100 mb-0">
             <thead>
                 <tr>
-                    <th><i class="fas fa-user me-2"></i>Name</th>
+                    <th class="align-middle">
+                        <a href="@Url.Action("JobDetail", "Admin", new { id = Job.Id, searchQuery = ViewData["SearchQuery"], sort = "name", dir = NameDir() })" class="sort-link d-flex align-items-center justify-content-between gap-2 w-100 text-nowrap text-decoration-none text-reset fw-semibold">
+                            <span class="d-inline-flex align-items-center gap-2 text-nowrap">
+                                <i class="fas fa-user"></i>
+                                <span>Name</span>
+                            </span>
+                            <span class="flex-shrink-0">
+                                <i class="fas @(NameIcon()) text-muted"></i>
+                            </span>
+                        </a>
+                    </th>
                     <th><i class="fas fa-envelope me-2"></i>Email</th>
                     <th><i class="fas fa-map-marker-alt me-2"></i>City</th>
-                    <th><i class="fas fa-calendar me-2"></i>Applied</th>
-                    <th class="text-center"><i class="fas fa-tasks me-2"></i>Stage</th>
+                    <th class="align-middle">
+                        <a href="@Url.Action("JobDetail", "Admin", new { id = Job.Id, searchQuery = ViewData["SearchQuery"], sort = "date", dir = DateDir() })" class="sort-link d-flex align-items-center justify-content-between gap-2 w-100 text-nowrap text-decoration-none text-reset fw-semibold">
+                            <span class="d-inline-flex align-items-center gap-2 text-nowrap">
+                                <i class="fas fa-calendar"></i>
+                                <span>Applied</span>
+                            </span>
+                            <span class="flex-shrink-0">
+                                <i class="fas @(DateIcon()) text-muted"></i>
+                            </span>
+                        </a>
+                    </th>
+                    <th class="align-middle">
+                        <a href="@Url.Action("JobDetail", "Admin", new { id = Job.Id, searchQuery = ViewData["SearchQuery"], sort = "stage", dir = StageDir() })" class="sort-link d-flex align-items-center justify-content-between gap-2 w-100 text-nowrap text-decoration-none text-reset fw-semibold">
+                            <span class="d-inline-flex align-items-center gap-2 text-nowrap">
+                                <i class="fas fa-tasks"></i>
+                                <span>Stage</span>
+                            </span>
+                            <span class="flex-shrink-0">
+                                <i class="fas @(StageIcon()) text-muted"></i>
+                            </span>
+                        </a>
+                    </th>
                     <th class="text-center"><i class="fas fa-file me-2"></i>Resume</th>
                     <th class="text-center"><i class="fas fa-cog me-2"></i>Actions</th>
                 </tr>
@@ -67,7 +85,9 @@
                             </a>
                         </td>
                         <td>
-                            <a href="mailto:@app.Email">@app.Email</a>
+                            <a href="mailto:@app.Email" class="d-inline-block text-truncate align-middle" style="max-width: 28ch;" title="@app.Email">
+                                @app.Email
+                            </a>
                         </td>
                         <td>
                             <span class="badge badge-primary">@app.City</span>
