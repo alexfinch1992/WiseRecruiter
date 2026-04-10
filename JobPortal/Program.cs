@@ -98,16 +98,17 @@ using (var scope = app.Services.CreateScope())
 
     // Seed Identity roles
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-    string[] roles = { "Admin", "Recruiter", "HiringManager" };
+    string[] roles = { "Admin", "Recruiter", "HiringManager", "TalentLead", "ApprovingExecutive" };
     foreach (var role in roles)
     {
         if (!await roleManager.RoleExistsAsync(role))
             await roleManager.CreateAsync(new IdentityRole(role));
     }
 
-    // Seed the master Admin user
+    // Seed the master Admin user and test executive user
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
     await DbInitializer.SeedAdminUserAsync(userManager);
+    await DbInitializer.SeedExecutiveUserAsync(userManager);
 }
 
 // Configure the HTTP request pipeline.

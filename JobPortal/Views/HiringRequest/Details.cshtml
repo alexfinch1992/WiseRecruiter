@@ -5,11 +5,14 @@
     ViewData["Title"] = $"Hiring Request — {Model.RoleTitle}";
     Layout = "_Layout";
 
-    var canEdit   = Model.Status == HiringRequestStatus.Draft;
-    var canSubmit = Model.Status == HiringRequestStatus.Draft;
+    var canEdit   = Model.Status is HiringRequestStatus.Draft or HiringRequestStatus.MoreInfoRequested;
+    var canSubmit = Model.Status is HiringRequestStatus.Draft or HiringRequestStatus.MoreInfoRequested;
     var isStage1Pending = Model.Status == HiringRequestStatus.Submitted;
     var isStage2Pending = Model.Status == HiringRequestStatus.TalentLeadApproved;
     var isTerminal = Model.Status is HiringRequestStatus.ExecutiveApproved or HiringRequestStatus.Rejected;
+
+    var isStage1Approver = User.IsInRole("Admin") || User.IsInRole("TalentLead");
+    var isStage2Approver = User.IsInRole("Admin") || User.IsInRole("ApprovingExecutive");
 
     var statusClass = Model.Status switch
     {
@@ -17,6 +20,7 @@
         HiringRequestStatus.TalentLeadApproved => "info",
         HiringRequestStatus.Rejected           => "danger",
         HiringRequestStatus.Submitted          => "primary",
+        HiringRequestStatus.MoreInfoRequested  => "warning",
         _                                      => "secondary"
     };
 }
@@ -35,10 +39,19 @@
         </div>
     </div>
 
-    @if (Model.Status == HiringRequestStatus.Rejected)
+    @if (TempData["ErrorMessage"] != null)
     {
-        <div class="alert alert-danger mb-4">
-            <strong>Rejected:</strong> @(Model.RejectionReason ?? "No reason provided.")
+        <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (Model.Status == HiringRequestStatus.MoreInfoRequested)
+    {
+        <div class="alert alert-warning mb-4">
+            <strong>More information requested.</strong>
+            Please review the notes in the activity timeline below, update your request, and resubmit.
         </div>
     }
 
@@ -68,34 +81,43 @@
         </div>
     </div>
 
-    <!-- Approval timeline -->
-    @if (Model.TalentLeadReviewedUtc.HasValue || Model.ExecutiveApprovedUtc.HasValue)
+    <!-- Activity timeline -->
+    @if (Model.Comments.Any())
     {
         <div class="card border-0 shadow-sm mb-4">
-            <div class="card-header bg-light fw-semibold">Approval History</div>
+            <div class="card-header bg-light fw-semibold">Activity Timeline</div>
             <div class="card-body pb-2">
-                @if (Model.TalentLeadReviewedUtc.HasValue)
-                {
-                    <div class="mb-2">
-                        <span class="fw-semibold">Senior Talent Lead</span>
-                        <span class="text-muted ms-2 small">@Model.TalentLeadReviewedUtc.Value.ToString("d MMM yyyy HH:mm") UTC</span>
-                        @if (!string.IsNullOrEmpty(Model.TalentLeadNotes))
+                <div class="timeline">
+                    @foreach (var comment in Model.Comments)
+                    {
+                        var (badgeClass, actionLabel) = comment.Action switch
                         {
-                            <div class="text-muted small mt-1">@Model.TalentLeadNotes</div>
-                        }
-                    </div>
-                }
-                @if (Model.ExecutiveApprovedUtc.HasValue)
-                {
-                    <div class="mb-2">
-                        <span class="fw-semibold">Senior Executive</span>
-                        <span class="text-muted ms-2 small">@Model.ExecutiveApprovedUtc.Value.ToString("d MMM yyyy HH:mm") UTC</span>
-                        @if (!string.IsNullOrEmpty(Model.ExecutiveNotes))
-                        {
-                            <div class="text-muted small mt-1">@Model.ExecutiveNotes</div>
-                        }
-                    </div>
-                }
+                            "Submitted"          => ("primary",  "Submitted"),
+                            "TalentLeadApproved" => ("success",  "Approved — Talent Lead"),
+                            "ExecutiveApproved"  => ("success",  "Approved — Executive"),
+                            "Rejected"           => ("danger",   "Rejected"),
+                            "MoreInfoRequested"  => ("warning",  "More Info Requested"),
+                            _                    => ("secondary", comment.Action)
+                        };
+
+                        <div class="d-flex gap-3 mb-3">
+                            <div class="pt-1 flex-shrink-0">
+                                <span class="badge rounded-pill bg-@badgeClass" style="min-width: 140px;">@actionLabel</span>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="small text-muted mb-1">
+                                    <strong>@(comment.User?.FullName ?? comment.User?.UserName ?? "Unknown")</strong>
+                                    &middot;
+                                    @comment.CreatedUtc.ToString("d MMM yyyy HH:mm") UTC
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(comment.Comment))
+                                {
+                                    <div class="text-body small" style="white-space: pre-line;">@comment.Comment</div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
             </div>
         </div>
     }
@@ -126,35 +148,187 @@
                 }
 
                 @* Stage 1 — Talent Lead actions *@
-                @if (isStage1Pending)
+                @if (isStage1Pending && isStage1Approver)
                 {
-                    <form asp-action="ApproveStage1" asp-route-id="@Model.Id" method="post" class="d-inline">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="notes" value="" />
-                        <button class="btn btn-success"><i class="fas fa-check me-1"></i>Approve (Talent Lead)</button>
-                    </form>
-                    <form asp-action="RejectStage1" asp-route-id="@Model.Id" method="post" class="d-inline">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="reason" value="" />
-                        <button class="btn btn-danger"><i class="fas fa-times me-1"></i>Reject</button>
-                    </form>
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#approveStage1Modal">
+                        <i class="fas fa-check me-1"></i>Approve
+                    </button>
+                    <button type="button" class="btn btn-warning text-dark" data-bs-toggle="modal" data-bs-target="#moreInfoStage1Modal">
+                        <i class="fas fa-question-circle me-1"></i>Request More Info
+                    </button>
+                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectStage1Modal">
+                        <i class="fas fa-times me-1"></i>Reject
+                    </button>
                 }
 
                 @* Stage 2 — Executive actions *@
-                @if (isStage2Pending)
+                @if (isStage2Pending && isStage2Approver)
                 {
-                    <form asp-action="ApproveStage2" asp-route-id="@Model.Id" method="post" class="d-inline">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="notes" value="" />
-                        <button class="btn btn-success"><i class="fas fa-check me-1"></i>Approve (Executive)</button>
-                    </form>
-                    <form asp-action="RejectStage2" asp-route-id="@Model.Id" method="post" class="d-inline">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="reason" value="" />
-                        <button class="btn btn-danger"><i class="fas fa-times me-1"></i>Reject</button>
-                    </form>
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#approveStage2Modal">
+                        <i class="fas fa-check me-1"></i>Approve
+                    </button>
+                    <button type="button" class="btn btn-warning text-dark" data-bs-toggle="modal" data-bs-target="#moreInfoStage2Modal">
+                        <i class="fas fa-question-circle me-1"></i>Request More Info
+                    </button>
+                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectStage2Modal">
+                        <i class="fas fa-times me-1"></i>Reject
+                    </button>
                 }
             </div>
         </div>
     }
 </div>
+
+@* ── Stage 1 Modals ─────────────────────────────────────────────────────── *@
+
+@if (isStage1Pending && isStage1Approver)
+{
+    <!-- Approve Stage 1 Modal -->
+    <div class="modal fade" id="approveStage1Modal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form asp-action="ApproveStage1" asp-route-id="@Model.Id" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="fas fa-check-circle text-success me-2"></i>Approve — Talent Lead</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label for="approveStage1Notes" class="form-label fw-semibold">Notes <span class="text-danger">*</span></label>
+                        <textarea id="approveStage1Notes" name="notes" class="form-control" rows="4"
+                                  placeholder="Explain your approval decision…" required></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success">Approve</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Request More Info Stage 1 Modal -->
+    <div class="modal fade" id="moreInfoStage1Modal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form asp-action="RequestMoreInfoStage1" asp-route-id="@Model.Id" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="fas fa-question-circle text-warning me-2"></i>Request More Info</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label for="moreInfoStage1Notes" class="form-label fw-semibold">What information is needed? <span class="text-danger">*</span></label>
+                        <textarea id="moreInfoStage1Notes" name="notes" class="form-control" rows="4"
+                                  placeholder="Describe what additional information or clarification is required…" required></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-warning text-dark">Request More Info</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reject Stage 1 Modal -->
+    <div class="modal fade" id="rejectStage1Modal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form asp-action="RejectStage1" asp-route-id="@Model.Id" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="fas fa-times-circle text-danger me-2"></i>Reject Request</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label for="rejectStage1Notes" class="form-label fw-semibold">Reason for rejection <span class="text-danger">*</span></label>
+                        <textarea id="rejectStage1Notes" name="notes" class="form-control" rows="4"
+                                  placeholder="Explain why this request is being rejected…" required></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Reject</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@* ── Stage 2 Modals ─────────────────────────────────────────────────────── *@
+
+@if (isStage2Pending && isStage2Approver)
+{
+    <!-- Approve Stage 2 Modal -->
+    <div class="modal fade" id="approveStage2Modal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form asp-action="ApproveStage2" asp-route-id="@Model.Id" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="fas fa-check-circle text-success me-2"></i>Approve — Executive</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label for="approveStage2Notes" class="form-label fw-semibold">Notes <span class="text-danger">*</span></label>
+                        <textarea id="approveStage2Notes" name="notes" class="form-control" rows="4"
+                                  placeholder="Explain your approval decision…" required></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success">Approve</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Request More Info Stage 2 Modal -->
+    <div class="modal fade" id="moreInfoStage2Modal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form asp-action="RequestMoreInfoStage2" asp-route-id="@Model.Id" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="fas fa-question-circle text-warning me-2"></i>Request More Info</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label for="moreInfoStage2Notes" class="form-label fw-semibold">What information is needed? <span class="text-danger">*</span></label>
+                        <textarea id="moreInfoStage2Notes" name="notes" class="form-control" rows="4"
+                                  placeholder="Describe what additional information or clarification is required…" required></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-warning text-dark">Request More Info</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reject Stage 2 Modal -->
+    <div class="modal fade" id="rejectStage2Modal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form asp-action="RejectStage2" asp-route-id="@Model.Id" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="fas fa-times-circle text-danger me-2"></i>Reject Request</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label for="rejectStage2Notes" class="form-label fw-semibold">Reason for rejection <span class="text-danger">*</span></label>
+                        <textarea id="rejectStage2Notes" name="notes" class="form-control" rows="4"
+                                  placeholder="Explain why this request is being rejected…" required></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Reject</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
